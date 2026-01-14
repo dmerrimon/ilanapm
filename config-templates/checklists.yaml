@@ -1,0 +1,498 @@
+# Study Checklists
+# Defines required checklist items for Startup, SIV, SAV, and Closeout
+
+version: "1.0"
+description: "Clinical trial checklists for key milestones"
+
+checklists:
+  # ==========================================================================
+  # STUDY STARTUP CHECKLIST
+  # ==========================================================================
+  STARTUP:
+    name: "Study Startup Checklist"
+    description: "Required activities and documents before First Patient In"
+    phase: "Pre-Enrollment"
+    mandatory_for_phases:
+      - "Phase I"
+      - "Phase II"
+      - "Phase III"
+      - "Phase IV"
+
+    sections:
+      - section: "Regulatory Documents"
+        items:
+          - id: START-REG-001
+            task: "Protocol finalized and approved by sponsor"
+            category: Documentation
+            mandatory: true
+            evidence_required: "Signed protocol"
+
+          - id: START-REG-002
+            task: "Investigator's Brochure current (within 12 months)"
+            category: Documentation
+            mandatory: true
+            evidence_required: "IB with version date"
+
+          - id: START-REG-003
+            task: "Informed Consent Form approved by IRB/EC"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "IRB approval letter with ICF version"
+
+          - id: START-REG-004
+            task: "IND/CTA submission complete"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "FDA IND number or EMA/MHRA CTA approval"
+
+          - id: START-REG-005
+            task: "IRB/EC approval obtained"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "IRB approval letter"
+
+          - id: START-REG-006
+            task: "Clinical Trial Insurance in place"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "Insurance certificate"
+
+      - section: "Site Readiness"
+        items:
+          - id: START-SITE-001
+            task: "Site contracts executed"
+            category: Operational
+            mandatory: true
+            evidence_required: "Fully executed site agreement"
+
+          - id: START-SITE-002
+            task: "Site budget approved"
+            category: Operational
+            mandatory: true
+            evidence_required: "Budget agreement"
+
+          - id: START-SITE-003
+            task: "Principal Investigator CV and medical license current"
+            category: Documentation
+            mandatory: true
+            evidence_required: "CV and license copy"
+
+          - id: START-SITE-004
+            task: "Delegation of Authority Log completed"
+            category: Documentation
+            mandatory: true
+            evidence_required: "Signed delegation log"
+
+          - id: START-SITE-005
+            task: "Site staff GCP training current"
+            category: Training
+            mandatory: true
+            evidence_required: "GCP certificates (within 3 years)"
+
+      - section: "Study Materials"
+        items:
+          - id: START-MAT-001
+            task: "Study drug supplies shipped to site"
+            category: Operational
+            mandatory: true
+            evidence_required: "Drug shipment receipt"
+
+          - id: START-MAT-002
+            task: "Drug storage temperature monitoring in place"
+            category: Operational
+            mandatory: true
+            evidence_required: "Temperature log initiated"
+
+          - id: START-MAT-003
+            task: "Laboratory certifications obtained (CAP/CLIA)"
+            category: Operational
+            mandatory: true
+            evidence_required: "Lab certifications"
+
+          - id: START-MAT-004
+            task: "Source documents and CRFs available at site"
+            category: Documentation
+            mandatory: true
+
+      - section: "Systems & Technology"
+        items:
+          - id: START-SYS-001
+            task: "eCRF system validated and ready"
+            category: Data
+            mandatory: true
+            evidence_required: "UAT sign-off"
+
+          - id: START-SYS-002
+            task: "IWRS/IRT system tested and ready"
+            category: Operational
+            mandatory: true
+            evidence_required: "System test results"
+
+          - id: START-SYS-003
+            task: "Site staff trained on eCRF system"
+            category: Training
+            mandatory: true
+            evidence_required: "Training log"
+
+  # ==========================================================================
+  # SITE INITIATION VISIT (SIV) CHECKLIST
+  # ==========================================================================
+  SIV:
+    name: "Site Initiation Visit Checklist"
+    description: "Activities to be completed during Site Initiation Visit"
+    phase: "Site Activation"
+    typical_duration_hours: 8
+    attendees:
+      - "Principal Investigator"
+      - "Study Coordinator"
+      - "Site staff (as delegated)"
+      - "CRA/Monitor"
+      - "Optional: Medical Monitor, Data Manager"
+
+    sections:
+      - section: "Protocol Review"
+        items:
+          - id: SIV-PROT-001
+            task: "Review protocol objectives and design"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 60
+
+          - id: SIV-PROT-002
+            task: "Review inclusion/exclusion criteria in detail"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 45
+
+          - id: SIV-PROT-003
+            task: "Review schedule of assessments"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 30
+
+          - id: SIV-PROT-004
+            task: "Review prohibited medications"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 20
+
+      - section: "Informed Consent Process"
+        items:
+          - id: SIV-ICF-001
+            task: "Review informed consent process"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 30
+
+          - id: SIV-ICF-002
+            task: "Discuss patient recruitment strategies"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 20
+
+          - id: SIV-ICF-003
+            task: "Review consent documentation requirements"
+            category: Training
+            mandatory: true
+
+      - section: "Study Procedures"
+        items:
+          - id: SIV-PROC-001
+            task: "Review randomization procedures"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 30
+
+          - id: SIV-PROC-002
+            task: "Review drug accountability procedures"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 45
+
+          - id: SIV-PROC-003
+            task: "Review safety reporting procedures (AE/SAE)"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 45
+
+          - id: SIV-PROC-004
+            task: "Review laboratory procedures and sample handling"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 30
+
+      - section: "Data Management"
+        items:
+          - id: SIV-DATA-001
+            task: "eCRF training completed"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 60
+            evidence_required: "Training completion certificate"
+
+          - id: SIV-DATA-002
+            task: "Source documentation requirements reviewed"
+            category: Training
+            mandatory: true
+            time_allocation_minutes: 30
+
+          - id: SIV-DATA-003
+            task: "Query resolution process explained"
+            category: Training
+            mandatory: true
+
+      - section: "Monitoring & Compliance"
+        items:
+          - id: SIV-MON-001
+            task: "Monitoring visit schedule discussed"
+            category: Operational
+            mandatory: true
+
+          - id: SIV-MON-002
+            task: "Document retention requirements reviewed (25+ years)"
+            category: Documentation
+            mandatory: true
+
+          - id: SIV-MON-003
+            task: "Protocol deviation reporting process explained"
+            category: Training
+            mandatory: true
+
+          - id: SIV-MON-004
+            task: "Site file organization reviewed"
+            category: Documentation
+            mandatory: true
+
+      - section: "Site Activation"
+        items:
+          - id: SIV-ACT-001
+            task: "All SIV activities completed satisfactorily"
+            category: Operational
+            mandatory: true
+            evidence_required: "SIV completion form signed"
+
+          - id: SIV-ACT-002
+            task: "Site receives green light for enrollment"
+            category: Operational
+            mandatory: true
+            evidence_required: "Site activation notification"
+
+  # ==========================================================================
+  # SITE ACTIVATION VISIT (SAV) CHECKLIST
+  # ==========================================================================
+  SAV:
+    name: "Site Activation Visit Checklist"
+    description: "Pre-enrollment readiness verification"
+    phase: "Pre-Enrollment"
+    typical_duration_hours: 2
+
+    sections:
+      - section: "Regulatory Readiness"
+        items:
+          - id: SAV-REG-001
+            task: "All regulatory approvals in place and current"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "IRB approval, IND/CTA status"
+
+          - id: SAV-REG-002
+            task: "Informed consent form version matches IRB approval"
+            category: Regulatory
+            mandatory: true
+
+          - id: SAV-REG-003
+            task: "Site regulatory binder complete and organized"
+            category: Documentation
+            mandatory: true
+
+      - section: "Site Readiness"
+        items:
+          - id: SAV-SITE-001
+            task: "Site staff trained and credentialed"
+            category: Training
+            mandatory: true
+            evidence_required: "Training log, delegation log"
+
+          - id: SAV-SITE-002
+            task: "Study drug received and properly stored"
+            category: Operational
+            mandatory: true
+            evidence_required: "Drug receipt, temperature logs"
+
+          - id: SAV-SITE-003
+            task: "IWRS/IRT system access confirmed"
+            category: Operational
+            mandatory: true
+
+          - id: SAV-SITE-004
+            task: "eCRF system access confirmed for all users"
+            category: Data
+            mandatory: true
+
+          - id: SAV-SITE-005
+            task: "Laboratory ready to process samples"
+            category: Operational
+            mandatory: true
+
+      - section: "Activation"
+        items:
+          - id: SAV-ACT-001
+            task: "No outstanding issues or action items"
+            category: Operational
+            mandatory: true
+
+          - id: SAV-ACT-002
+            task: "Site formally activated for enrollment"
+            category: Operational
+            mandatory: true
+            evidence_required: "Site activation email/letter"
+
+  # ==========================================================================
+  # STUDY CLOSEOUT CHECKLIST
+  # ==========================================================================
+  CLOSEOUT:
+    name: "Site Closeout Visit Checklist"
+    description: "Required activities for site closeout after LPFV"
+    phase: "Closeout"
+    typical_duration_hours: 4
+
+    sections:
+      - section: "Data Finalization"
+        items:
+          - id: CLOSE-DATA-001
+            task: "All CRFs completed and queries resolved"
+            category: Data
+            mandatory: true
+            evidence_required: "Query resolution report"
+
+          - id: CLOSE-DATA-002
+            task: "Source document verification completed"
+            category: Data
+            mandatory: true
+
+          - id: CLOSE-DATA-003
+            task: "All serious adverse events reported and followed to resolution"
+            category: Safety
+            mandatory: true
+            evidence_required: "SAE tracking log"
+
+          - id: CLOSE-DATA-004
+            task: "Protocol deviations documented and explained"
+            category: Documentation
+            mandatory: true
+
+      - section: "Drug Accountability"
+        items:
+          - id: CLOSE-DRUG-001
+            task: "Drug accountability reconciled"
+            category: Operational
+            mandatory: true
+            evidence_required: "Drug accountability log"
+
+          - id: CLOSE-DRUG-002
+            task: "Unused drug returned or destroyed per protocol"
+            category: Operational
+            mandatory: true
+            evidence_required: "Destruction certificate or return receipt"
+
+          - id: CLOSE-DRUG-003
+            task: "Temperature logs reviewed for compliance"
+            category: Operational
+            mandatory: true
+
+      - section: "Regulatory Documents"
+        items:
+          - id: CLOSE-REG-001
+            task: "Study completion notification sent to IRB/EC"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "IRB notification"
+
+          - id: CLOSE-REG-002
+            task: "Final report submitted to IRB/EC per requirements"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "IRB submission confirmation"
+
+          - id: CLOSE-REG-003
+            task: "End of trial notification sent to regulatory authority"
+            category: Regulatory
+            mandatory: true
+            evidence_required: "Regulatory submission confirmation"
+
+      - section: "Essential Documents"
+        items:
+          - id: CLOSE-DOC-001
+            task: "Essential documents collected from site"
+            category: Documentation
+            mandatory: true
+            evidence_required: "Document collection log"
+
+          - id: CLOSE-DOC-002
+            task: "Site file complete and organized for archival"
+            category: Documentation
+            mandatory: true
+
+          - id: CLOSE-DOC-003
+            task: "Document retention instructions provided (25+ years)"
+            category: Documentation
+            mandatory: true
+            evidence_required: "Retention letter"
+
+          - id: CLOSE-DOC-004
+            task: "Essential documents archived per SOP"
+            category: Documentation
+            mandatory: true
+
+      - section: "Financial Closeout"
+        items:
+          - id: CLOSE-FIN-001
+            task: "Final financial reconciliation completed"
+            category: Operational
+            mandatory: true
+
+          - id: CLOSE-FIN-002
+            task: "Outstanding invoices processed"
+            category: Operational
+            mandatory: true
+
+      - section: "Site Closure"
+        items:
+          - id: CLOSE-SITE-001
+            task: "Site formally closed and notified"
+            category: Operational
+            mandatory: true
+            evidence_required: "Site closure letter"
+
+          - id: CLOSE-SITE-002
+            task: "System access revoked (eCRF, IWRS, etc.)"
+            category: Operational
+            mandatory: true
+
+          - id: CLOSE-SITE-003
+            task: "Closeout visit report completed"
+            category: Documentation
+            mandatory: true
+            evidence_required: "Closeout visit report"
+
+# ==========================================================================
+# CHECKLIST METADATA
+# ==========================================================================
+
+metadata:
+  completion_tracking:
+    - "Checklists should be tracked as percentage complete"
+    - "Mandatory items must be 100% before proceeding"
+    - "Evidence should be filed in appropriate binders"
+
+  responsible_parties:
+    STARTUP: "Sponsor, CRA/Monitor, Site"
+    SIV: "CRA/Monitor, Site Staff"
+    SAV: "CRA/Monitor, Site Staff"
+    CLOSEOUT: "CRA/Monitor, Site, Data Management"
+
+  regulatory_basis:
+    - "ICH-GCP E6(R2)"
+    - "21 CFR Part 312 (FDA)"
+    - "EU CTR 536/2014"
+    - "Sponsor SOPs"

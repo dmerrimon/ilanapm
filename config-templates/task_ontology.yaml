@@ -1,0 +1,393 @@
+# Task Ontology - Canonical Clinical Trial Tasks
+# Defines standard tasks with typical durations, prerequisites, and authority-specific variations
+
+version: "1.0"
+description: "Canonical task definitions for clinical trial timelines"
+
+tasks:
+  # ============================================================================
+  # REGULATORY TASKS
+  # ============================================================================
+
+  - id: REG-001
+    name: "IND/CTA Submission"
+    category: Regulatory
+    typical_duration_days: 60
+    min_duration_days: 30
+    max_duration_days: 90
+    description: "Submit Investigational New Drug application (FDA) or Clinical Trial Application (EMA/MHRA)"
+    is_mandatory: true
+    gating_requirements:
+      - "Protocol finalized and approved"
+      - "Investigator's Brochure complete"
+      - "CMC (Chemistry, Manufacturing, Controls) documentation ready"
+      - "Preclinical safety data compiled"
+    authority_specific:
+      FDA:
+        duration_days: 60
+        notes: "30-day safety review hold period after submission"
+        required_documents:
+          - "FDA Form 1571"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "CMC package"
+      EMA:
+        duration_days: 90
+        notes: "60-day review period from validation"
+        required_documents:
+          - "EudraCT application"
+          - "IMPD (Investigational Medicinal Product Dossier)"
+      MHRA:
+        duration_days: 60
+        notes: "30-day review period from validation"
+
+  - id: REG-002
+    name: "IRB/EC Approval"
+    category: Regulatory
+    typical_duration_days: 45
+    min_duration_days: 21
+    max_duration_days: 90
+    description: "Obtain Institutional Review Board or Ethics Committee approval"
+    is_mandatory: true
+    prerequisites:
+      - REG-001
+    gating_requirements:
+      - "Protocol finalized"
+      - "Informed Consent Form drafted"
+      - "Site regulatory documents prepared"
+    checklist_id: STARTUP
+
+  - id: REG-003
+    name: "Protocol Amendment Submission"
+    category: Regulatory
+    typical_duration_days: 30
+    min_duration_days: 14
+    max_duration_days: 60
+    description: "Submit and obtain approval for protocol amendments"
+    is_mandatory: false
+    prerequisites:
+      - REG-002
+
+  - id: REG-004
+    name: "Annual Safety Report"
+    category: Regulatory
+    typical_duration_days: 60
+    min_duration_days: 30
+    max_duration_days: 90
+    description: "Prepare and submit annual safety report to regulatory authority"
+    is_mandatory: true
+
+  # ============================================================================
+  # OPERATIONAL TASKS
+  # ============================================================================
+
+  - id: OPS-001
+    name: "Site Identification & Feasibility"
+    category: Operational
+    typical_duration_days: 90
+    min_duration_days: 60
+    max_duration_days: 180
+    description: "Identify potential sites and conduct feasibility assessments"
+    is_mandatory: true
+    checklist_id: STARTUP
+    gating_requirements:
+      - "Target enrollment numbers defined"
+      - "Geographic distribution planned"
+      - "Feasibility questionnaire prepared"
+
+  - id: OPS-002
+    name: "Site Contract Execution"
+    category: Operational
+    typical_duration_days: 60
+    min_duration_days: 30
+    max_duration_days: 120
+    description: "Negotiate and execute site contracts and budgets"
+    is_mandatory: true
+    prerequisites:
+      - OPS-001
+    checklist_id: STARTUP
+
+  - id: OPS-003
+    name: "Study Drug Manufacturing & Release"
+    category: Operational
+    typical_duration_days: 120
+    min_duration_days: 90
+    max_duration_days: 180
+    description: "Manufacture, test, and release study drug supplies"
+    is_mandatory: true
+    gating_requirements:
+      - "Drug specifications finalized"
+      - "Manufacturing plan approved"
+      - "Quality control testing protocols ready"
+
+  - id: OPS-004
+    name: "Study Drug Distribution"
+    category: Operational
+    typical_duration_days: 30
+    min_duration_days: 14
+    max_duration_days: 60
+    description: "Ship study drug to sites and ensure proper storage"
+    is_mandatory: true
+    prerequisites:
+      - OPS-003
+    checklist_id: SIV
+
+  - id: OPS-005
+    name: "eCRF System Build & Validation"
+    category: Operational
+    typical_duration_days: 90
+    min_duration_days: 60
+    max_duration_days: 120
+    description: "Build and validate electronic Case Report Form system"
+    is_mandatory: true
+    checklist_id: STARTUP
+    gating_requirements:
+      - "eCRF specifications finalized"
+      - "Edit checks defined"
+      - "User acceptance testing completed"
+
+  - id: OPS-006
+    name: "Randomization System Setup"
+    category: Operational
+    typical_duration_days: 30
+    min_duration_days: 14
+    max_duration_days: 60
+    description: "Set up and validate interactive randomization system (IWRS/IRT)"
+    is_mandatory: true
+    checklist_id: STARTUP
+
+  # ============================================================================
+  # SITE TASKS
+  # ============================================================================
+
+  - id: SITE-001
+    name: "Site Initiation Visit (SIV)"
+    category: Site
+    typical_duration_days: 1
+    min_duration_days: 1
+    max_duration_days: 2
+    description: "Conduct on-site training and study initiation"
+    is_mandatory: true
+    prerequisites:
+      - REG-002
+      - OPS-001
+      - OPS-002
+    checklist_id: SIV
+    gating_requirements:
+      - "Site regulatory approvals complete"
+      - "Site contracts executed"
+      - "Study materials delivered to site"
+
+  - id: SITE-002
+    name: "Site Activation"
+    category: Site
+    typical_duration_days: 7
+    min_duration_days: 1
+    max_duration_days: 14
+    description: "Complete final readiness checks and activate site for enrollment"
+    is_mandatory: true
+    prerequisites:
+      - SITE-001
+    checklist_id: SAV
+
+  - id: SITE-003
+    name: "First Patient In (FPI)"
+    category: Site
+    typical_duration_days: 1
+    min_duration_days: 1
+    max_duration_days: 1
+    description: "First patient enrolled and randomized"
+    is_mandatory: true
+    prerequisites:
+      - SITE-002
+    gating_requirements:
+      - "All regulatory approvals in place"
+      - "Site activated and ready"
+      - "Study drug available at site"
+
+  - id: SITE-004
+    name: "Patient Enrollment Period"
+    category: Site
+    typical_duration_days: 365
+    min_duration_days: 180
+    max_duration_days: 730
+    description: "Active enrollment period to reach target sample size"
+    is_mandatory: true
+    prerequisites:
+      - SITE-003
+
+  - id: SITE-005
+    name: "Last Patient In (LPI)"
+    category: Site
+    typical_duration_days: 1
+    min_duration_days: 1
+    max_duration_days: 1
+    description: "Last patient enrolled (enrollment complete)"
+    is_mandatory: true
+    prerequisites:
+      - SITE-004
+
+  - id: SITE-006
+    name: "Patient Follow-up Period"
+    category: Site
+    typical_duration_days: 180
+    min_duration_days: 90
+    max_duration_days: 365
+    description: "Follow-up period after last patient enrolled"
+    is_mandatory: true
+    prerequisites:
+      - SITE-005
+
+  - id: SITE-007
+    name: "Last Patient Out (LPO)"
+    category: Site
+    typical_duration_days: 1
+    min_duration_days: 1
+    max_duration_days: 1
+    description: "Last patient completes final study visit"
+    is_mandatory: true
+    prerequisites:
+      - SITE-006
+
+  - id: SITE-008
+    name: "Site Monitoring Visits"
+    category: Site
+    typical_duration_days: 30
+    min_duration_days: 14
+    max_duration_days: 60
+    description: "Regular monitoring visits to ensure compliance and data quality"
+    is_mandatory: true
+    prerequisites:
+      - SITE-003
+
+  # ============================================================================
+  # DATA MANAGEMENT TASKS
+  # ============================================================================
+
+  - id: DATA-001
+    name: "Data Cleaning & Query Resolution"
+    category: Data
+    typical_duration_days: 90
+    min_duration_days: 60
+    max_duration_days: 120
+    description: "Clean data, resolve queries, and prepare for database lock"
+    is_mandatory: true
+    prerequisites:
+      - SITE-007
+
+  - id: DATA-002
+    name: "Database Lock"
+    category: Data
+    typical_duration_days: 14
+    min_duration_days: 7
+    max_duration_days: 30
+    description: "Freeze database after all data cleaned and queries resolved"
+    is_mandatory: true
+    prerequisites:
+      - DATA-001
+    gating_requirements:
+      - "All CRFs completed"
+      - "All queries resolved"
+      - "All serious adverse events reported"
+
+  - id: DATA-003
+    name: "Statistical Analysis"
+    category: Data
+    typical_duration_days: 60
+    min_duration_days: 30
+    max_duration_days: 90
+    description: "Conduct statistical analysis per Statistical Analysis Plan"
+    is_mandatory: true
+    prerequisites:
+      - DATA-002
+
+  - id: DATA-004
+    name: "Clinical Study Report (CSR) Writing"
+    category: Data
+    typical_duration_days: 90
+    min_duration_days: 60
+    max_duration_days: 180
+    description: "Prepare comprehensive Clinical Study Report"
+    is_mandatory: true
+    prerequisites:
+      - DATA-003
+
+  # ============================================================================
+  # CLOSEOUT TASKS
+  # ============================================================================
+
+  - id: CLOSE-001
+    name: "Site Closeout Visits"
+    category: Closeout
+    typical_duration_days: 90
+    min_duration_days: 45
+    max_duration_days: 180
+    description: "Conduct site closeout visits and retrieve essential documents"
+    is_mandatory: true
+    prerequisites:
+      - SITE-007
+      - DATA-001
+    checklist_id: CLOSEOUT
+    gating_requirements:
+      - "All patient follow-up complete"
+      - "All data queries resolved"
+      - "Drug accountability reconciled"
+
+  - id: CLOSE-002
+    name: "Study Archival"
+    category: Closeout
+    typical_duration_days: 60
+    min_duration_days: 30
+    max_duration_days: 90
+    description: "Archive all essential study documents per regulatory requirements"
+    is_mandatory: true
+    prerequisites:
+      - CLOSE-001
+    checklist_id: CLOSEOUT
+
+  - id: CLOSE-003
+    name: "Final Regulatory Submissions"
+    category: Closeout
+    typical_duration_days: 30
+    min_duration_days: 14
+    max_duration_days: 60
+    description: "Submit final study reports to regulatory authorities and IRBs"
+    is_mandatory: true
+    prerequisites:
+      - DATA-004
+    checklist_id: CLOSEOUT
+
+# ============================================================================
+# METADATA
+# ============================================================================
+
+categories:
+  Regulatory:
+    description: "Regulatory submissions and approvals"
+    color: "#FF6B6B"
+  Operational:
+    description: "Operational setup and logistics"
+    color: "#4ECDC4"
+  Site:
+    description: "Site-level activities"
+    color: "#45B7D1"
+  Data:
+    description: "Data management and analysis"
+    color: "#96CEB4"
+  Closeout:
+    description: "Study closeout activities"
+    color: "#DDA15E"
+
+phases:
+  - "Phase I"
+  - "Phase II"
+  - "Phase III"
+  - "Phase IV"
+  - "Pilot"
+
+authorities:
+  - "FDA"
+  - "EMA"
+  - "MHRA"
+  - "Health Canada"
+  - "PMDA"

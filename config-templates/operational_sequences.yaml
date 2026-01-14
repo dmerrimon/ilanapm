@@ -1,0 +1,404 @@
+# Operational Sequences
+# Defines logical prerequisite rules and operational dependencies
+
+version: "1.0"
+description: "Operational prerequisite rules for clinical trial task sequencing"
+
+# ==========================================================================
+# REGULATORY GATING SEQUENCES - CRITICAL PATH
+# ==========================================================================
+sequences:
+  - sequence_id: SEQ-REG-001
+    name: "Regulatory Gating Sequence (FDA)"
+    description: "Required regulatory approvals before enrollment - FDA pathway"
+    authority: FDA
+    criticality: critical
+    rules:
+      - predecessor: "IND Submission"
+        successor: "IRB/EC Approval"
+        rationale: "Cannot seek IRB approval until IND is submitted (parallel possible but not recommended)"
+        lag_days: 0
+        optional: false
+        regulatory_reference: "21 CFR 312, 21 CFR 56"
+
+      - predecessor: "IND Submission"
+        successor: "First Patient In"
+        rationale: "Must complete 30-day IND safety review before enrollment"
+        lag_days: 30
+        optional: false
+        regulatory_reference: "21 CFR 312.40"
+
+      - predecessor: "IRB/EC Approval"
+        successor: "First Patient In"
+        rationale: "Cannot enroll patients without IRB approval"
+        lag_days: 0
+        optional: false
+        regulatory_reference: "21 CFR 56.109"
+
+  - sequence_id: SEQ-REG-002
+    name: "Regulatory Gating Sequence (EMA)"
+    description: "Required regulatory approvals before enrollment - EMA pathway"
+    authority: EMA
+    criticality: critical
+    rules:
+      - predecessor: "CTA Submission"
+        successor: "First Patient In"
+        rationale: "Must receive explicit CTA approval before enrollment"
+        lag_days: 60
+        optional: false
+        regulatory_reference: "EU CTR 536/2014"
+
+      - predecessor: "Ethics Committee Approval"
+        successor: "First Patient In"
+        rationale: "Cannot enroll without ethics approval"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Member State Authorization"
+        successor: "First Patient In"
+        rationale: "Need final country authorization"
+        lag_days: 0
+        optional: false
+
+  - sequence_id: SEQ-REG-003
+    name: "Regulatory Gating Sequence (MHRA)"
+    description: "Required regulatory approvals before enrollment - UK MHRA pathway"
+    authority: MHRA
+    criticality: critical
+    rules:
+      - predecessor: "CTA Submission"
+        successor: "First Patient In"
+        rationale: "Must complete 30-day MHRA review period"
+        lag_days: 30
+        optional: false
+
+      - predecessor: "REC Approval"
+        successor: "First Patient In"
+        rationale: "Need Research Ethics Committee approval"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "HRA Approval"
+        successor: "First Patient In"
+        rationale: "Health Research Authority approval required for NHS sites"
+        lag_days: 0
+        optional: false
+        condition: "NHS sites involved"
+
+# ==========================================================================
+# SITE READINESS SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-SITE-001
+    name: "Site Readiness Sequence"
+    description: "Site must be ready before enrollment"
+    criticality: high
+    rules:
+      - predecessor: "Site Identification & Feasibility"
+        successor: "Site Contract Execution"
+        rationale: "Must identify site before contracting"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Site Contract Execution"
+        successor: "Site Initiation Visit"
+        rationale: "Contract must be in place before SIV"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Site Initiation Visit"
+        successor: "Site Activation"
+        rationale: "Site must be trained before activation"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Site Activation"
+        successor: "First Patient In"
+        rationale: "Site must be formally activated before enrollment"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "IRB/EC Approval"
+        successor: "Site Initiation Visit"
+        rationale: "Should have regulatory approvals before SIV (can overlap in practice)"
+        lag_days: 0
+        optional: true
+        notes: "Some sponsors allow SIV before IRB approval if imminent"
+
+# ==========================================================================
+# STUDY MATERIALS SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-MAT-001
+    name: "Study Materials Preparation"
+    description: "Study materials must be ready before site activation"
+    criticality: high
+    rules:
+      - predecessor: "Study Drug Manufacturing & Release"
+        successor: "Study Drug Distribution"
+        rationale: "Must manufacture drug before shipping"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Study Drug Distribution"
+        successor: "Site Initiation Visit"
+        rationale: "Drug should be at site for SIV"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "eCRF System Build & Validation"
+        successor: "Site Initiation Visit"
+        rationale: "eCRF should be ready for training at SIV"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Randomization System Setup"
+        successor: "Site Activation"
+        rationale: "IWRS/IRT must be tested before site activation"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Study Drug Distribution"
+        successor: "First Patient In"
+        rationale: "Drug must be available at site before enrollment"
+        lag_days: 0
+        optional: false
+
+# ==========================================================================
+# DATA MANAGEMENT SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-DATA-001
+    name: "Data Management Sequence"
+    description: "Data flow dependencies"
+    criticality: critical
+    rules:
+      - predecessor: "Last Patient Out"
+        successor: "Data Cleaning & Query Resolution"
+        rationale: "All data must be collected before cleaning"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Data Cleaning & Query Resolution"
+        successor: "Database Lock"
+        rationale: "Data must be cleaned before lock"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Database Lock"
+        successor: "Statistical Analysis"
+        rationale: "Cannot analyze until database is locked"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Statistical Analysis"
+        successor: "Clinical Study Report Writing"
+        rationale: "Need analysis results before writing CSR"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Last Patient Out"
+        successor: "Site Closeout Visits"
+        rationale: "Should complete patient visits before site closeout"
+        lag_days: 0
+        optional: true
+        notes: "Can start closeout planning earlier"
+
+# ==========================================================================
+# ENROLLMENT MILESTONES SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-ENROLL-001
+    name: "Enrollment Milestones"
+    description: "Logical patient enrollment sequence"
+    criticality: critical
+    rules:
+      - predecessor: "First Patient In"
+        successor: "Patient Enrollment Period"
+        rationale: "Enrollment period starts with FPI"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Patient Enrollment Period"
+        successor: "Last Patient In"
+        rationale: "LPI marks end of enrollment"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Last Patient In"
+        successor: "Patient Follow-up Period"
+        rationale: "Follow-up period starts after last enrollment"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Patient Follow-up Period"
+        successor: "Last Patient Out"
+        rationale: "LPO marks completion of all patient visits"
+        lag_days: 0
+        optional: false
+
+# ==========================================================================
+# CLOSEOUT SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-CLOSE-001
+    name: "Study Closeout Sequence"
+    description: "Proper closeout order"
+    criticality: high
+    rules:
+      - predecessor: "Last Patient Out"
+        successor: "Site Closeout Visits"
+        rationale: "Complete patient visits before site closeout"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Data Cleaning & Query Resolution"
+        successor: "Site Closeout Visits"
+        rationale: "Resolve queries before closeout"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Site Closeout Visits"
+        successor: "Study Archival"
+        rationale: "Collect documents during closeout before archiving"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "Clinical Study Report Writing"
+        successor: "Final Regulatory Submissions"
+        rationale: "CSR must be complete before regulatory submission"
+        lag_days: 0
+        optional: false
+
+# ==========================================================================
+# PROTOCOL AMENDMENT SEQUENCE
+# ==========================================================================
+  - sequence_id: SEQ-AMEND-001
+    name: "Protocol Amendment Workflow"
+    description: "Required approvals for protocol amendments"
+    criticality: high
+    rules:
+      - predecessor: "Protocol Amendment Submission"
+        successor: "IRB/EC Amendment Approval"
+        rationale: "Must submit to IRB for review"
+        lag_days: 0
+        optional: false
+
+      - predecessor: "IRB/EC Amendment Approval"
+        successor: "Amendment Implementation"
+        rationale: "Cannot implement changes until approved"
+        lag_days: 0
+        optional: false
+        notes: "Emergency amendments may have different pathway"
+
+# ==========================================================================
+# PARALLELIZATION OPPORTUNITIES
+# ==========================================================================
+parallelization_opportunities:
+  - opportunity_id: PAR-001
+    name: "Site Contracts and CTA Submission"
+    description: "Site contracts can be negotiated in parallel with regulatory submissions"
+    tasks:
+      - "Site Contract Execution"
+      - "IND/CTA Submission"
+    potential_time_savings_days: 30
+    criticality: low
+    notes: "Common practice to start site selection early"
+
+  - opportunity_id: PAR-002
+    name: "eCRF Build and Drug Manufacturing"
+    description: "eCRF development and drug manufacturing are independent"
+    tasks:
+      - "eCRF System Build & Validation"
+      - "Study Drug Manufacturing & Release"
+    potential_time_savings_days: 60
+    criticality: medium
+
+  - opportunity_id: PAR-003
+    name: "Multiple Site Initiation Visits"
+    description: "SIVs for different sites can happen simultaneously"
+    tasks:
+      - "Site Initiation Visit (Site 1)"
+      - "Site Initiation Visit (Site 2)"
+      - "Site Initiation Visit (Site 3)"
+    potential_time_savings_days: 14
+    criticality: high
+    notes: "Limited by CRA availability"
+
+  - opportunity_id: PAR-004
+    name: "Site Closeout Visits"
+    description: "Closeout visits for different sites can happen in parallel"
+    tasks:
+      - "Site Closeout Visit (Site 1)"
+      - "Site Closeout Visit (Site 2)"
+    potential_time_savings_days: 45
+    criticality: medium
+
+# ==========================================================================
+# COMMON MISTAKES TO FLAG
+# ==========================================================================
+common_mistakes:
+  - mistake_id: MISTAKE-001
+    description: "FPI scheduled before IND 30-day period"
+    detection: "FPI < 30 days after IND Submission"
+    severity: error
+    message: "First Patient In cannot occur until 30 days after IND submission (FDA safety review period)"
+
+  - mistake_id: MISTAKE-002
+    description: "SIV scheduled before IRB approval"
+    detection: "SIV before IRB Approval complete"
+    severity: warning
+    message: "Site Initiation Visit typically should occur after IRB approval obtained"
+
+  - mistake_id: MISTAKE-003
+    description: "Database lock before all patients complete"
+    detection: "Database Lock before Last Patient Out"
+    severity: error
+    message: "Cannot lock database before all patient visits are complete"
+
+  - mistake_id: MISTAKE-004
+    description: "Site activation before drug available"
+    detection: "Site Activation before Study Drug Distribution"
+    severity: error
+    message: "Cannot activate site for enrollment without study drug available"
+
+  - mistake_id: MISTAKE-005
+    description: "Statistical analysis before database lock"
+    detection: "Statistical Analysis before Database Lock"
+    severity: error
+    message: "Cannot perform statistical analysis until database is locked"
+
+# ==========================================================================
+# FLEXIBLE SEQUENCES (Can vary by sponsor SOP)
+# ==========================================================================
+flexible_sequences:
+  - sequence_id: FLEX-001
+    name: "SIV Timing Relative to IRB"
+    description: "Some sponsors allow SIV before IRB approval if close"
+    flexibility: high
+    sponsor_dependent: true
+    notes: "Check sponsor SOPs for specific requirements"
+
+  - sequence_id: FLEX-002
+    name: "Closeout Timing"
+    description: "Site closeout can overlap with data cleaning"
+    flexibility: medium
+    sponsor_dependent: true
+
+# ==========================================================================
+# VALIDATION RULES
+# ==========================================================================
+validation_rules:
+  check_critical_sequences: true
+  flag_missing_prerequisites: true
+  warn_on_tight_dependencies: true
+  minimum_lag_tolerance_days: 7  # Warn if lag is < 7 days for complex tasks
+
+notes: |
+  Operational sequences define the logical flow of activities.
+  Violations may indicate:
+  - Unrealistic timeline
+  - Missing tasks
+  - Incorrect dependencies
+  - Process misunderstanding
+
+  Validators should:
+  1. Check for critical path violations (errors)
+  2. Warn about tight timelines (warnings)
+  3. Suggest parallelization opportunities (info)
+  4. Flag common mistakes (errors/warnings)

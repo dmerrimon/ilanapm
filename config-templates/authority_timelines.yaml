@@ -1,0 +1,349 @@
+# Authority-Specific Regulatory Timelines and Gating Requirements
+# Defines regulatory requirements, gates, and timelines for different authorities
+
+version: "1.0"
+description: "Regulatory authority-specific timeline requirements and gating logic"
+
+authorities:
+  # ==========================================================================
+  # FDA - U.S. Food and Drug Administration
+  # ==========================================================================
+  FDA:
+    name: "U.S. Food and Drug Administration"
+    country: "United States"
+    abbreviation: "FDA"
+
+    regulatory_gates:
+      - gate_id: FDA-IND
+        name: "IND Submission"
+        typical_duration_days: 60
+        min_duration_days: 30
+        description: "Investigational New Drug application with 30-day safety review hold"
+        blocking: true
+        required_documents:
+          - "FDA Form 1571 (Cover Sheet)"
+          - "FDA Form 1572 (Investigator Statement)"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "CMC (Chemistry, Manufacturing, and Controls)"
+          - "Pharmacology and Toxicology Data"
+        regulatory_reference: "21 CFR 312"
+        notes: |
+          - FDA has 30 days to review for safety
+          - Can proceed after 30 days unless FDA places clinical hold
+          - Additional time needed for FDA responses/questions
+
+      - gate_id: FDA-IRB
+        name: "IRB Approval"
+        typical_duration_days: 45
+        min_duration_days: 21
+        max_duration_days: 90
+        description: "Local or Central IRB approval required before enrollment"
+        blocking: true
+        required_documents:
+          - "Protocol"
+          - "Informed Consent Form"
+          - "Investigator's Brochure"
+          - "Recruitment materials"
+        regulatory_reference: "21 CFR 56"
+        notes: |
+          - Must be obtained before any patient procedures
+          - Continuing review required annually
+          - Amendments require IRB approval
+
+      - gate_id: FDA-SAE-REPORTING
+        name: "SAE Reporting Setup"
+        typical_duration_days: 14
+        description: "Serious Adverse Event reporting procedures in place"
+        blocking: true
+        requirements:
+          - "24-hour SAE reporting to sponsor"
+          - "IND safety reports within 15 days (fatal/life-threatening)"
+          - "Annual safety reports"
+        regulatory_reference: "21 CFR 312.32"
+
+    milestone_timelines:
+      protocol_to_ind:
+        typical_days: 90
+        description: "Time from protocol finalization to IND submission"
+
+      ind_to_fpi:
+        min_days: 90
+        typical_days: 120
+        max_days: 180
+        description: "Time from IND submission to First Patient In"
+        prerequisites:
+          - "IND 30-day safety review complete"
+          - "IRB approval obtained"
+          - "Sites contracted and activated"
+
+      lpo_to_csr:
+        typical_days: 365
+        max_days: 365
+        description: "FDA expects CSR within 1 year of study completion"
+        regulatory_reference: "21 CFR 312.55"
+
+    operational_requirements:
+      - "Site contracts executed before patient enrollment"
+      - "eCRF system validated before FPI"
+      - "Drug accountability procedures in place"
+      - "Protocol deviations tracked and reported"
+      - "Data Safety Monitoring Board (DSMB) if Phase III"
+
+    compliance_notes: |
+      - FDA emphasizes Good Clinical Practice (ICH-GCP E6)
+      - Expect FDA inspections during study or post-completion
+      - Maintain regulatory binder per 21 CFR 312.62
+
+  # ==========================================================================
+  # EMA - European Medicines Agency
+  # ==========================================================================
+  EMA:
+    name: "European Medicines Agency"
+    region: "European Union"
+    abbreviation: "EMA"
+
+    regulatory_gates:
+      - gate_id: EMA-CTA
+        name: "Clinical Trial Application (CTA)"
+        typical_duration_days: 90
+        min_duration_days: 60
+        description: "Clinical Trial Application with 60-day review period"
+        blocking: true
+        required_documents:
+          - "EudraCT number"
+          - "IMPD (Investigational Medicinal Product Dossier)"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "Informed Consent Form"
+        regulatory_reference: "EU CTR 536/2014"
+        notes: |
+          - Submitted via Clinical Trials Information System (CTIS)
+          - Member state review period: 60 days
+          - Can have additional questions extending timeline
+
+      - gate_id: EMA-REC
+        name: "Research Ethics Committee Opinion"
+        typical_duration_days: 60
+        min_duration_days: 45
+        max_duration_days: 90
+        description: "Ethics committee approval (country-specific)"
+        blocking: true
+        required_documents:
+          - "Protocol"
+          - "Patient information and consent forms"
+          - "Suitability of investigators"
+        regulatory_reference: "EU CTR Article 7"
+        notes: |
+          - Required for each member state
+          - Can run in parallel with CTA review
+
+      - gate_id: EMA-NOTIFICATION
+        name: "Authorization from Member State"
+        typical_duration_days: 14
+        description: "Final authorization from national competent authority"
+        blocking: true
+        prerequisites:
+          - EMA-CTA
+          - EMA-REC
+
+    milestone_timelines:
+      protocol_to_cta:
+        typical_days: 120
+        description: "Time from protocol finalization to CTA submission"
+
+      cta_to_fpi:
+        min_days: 120
+        typical_days: 150
+        max_days: 210
+        description: "Time from CTA submission to First Patient In"
+        prerequisites:
+          - "CTA approved by member state"
+          - "Ethics committee approval obtained"
+          - "Sites ready and activated"
+
+      lpo_to_csr:
+        typical_days: 365
+        description: "CSR expected within 1 year of trial completion"
+
+    operational_requirements:
+      - "CTIS registration required"
+      - "Annual safety reports"
+      - "EudraCT database updates"
+      - "End of trial notification within 90 days"
+      - "Summary results posted within 12 months"
+
+    compliance_notes: |
+      - EU Clinical Trials Regulation (CTR) 536/2014 applies
+      - GCP Directive 2005/28/EC compliance required
+      - Member state inspections possible
+      - Post-study result reporting mandatory
+
+  # ==========================================================================
+  # MHRA - Medicines and Healthcare products Regulatory Agency (UK)
+  # ==========================================================================
+  MHRA:
+    name: "Medicines and Healthcare products Regulatory Agency"
+    country: "United Kingdom"
+    abbreviation: "MHRA"
+
+    regulatory_gates:
+      - gate_id: MHRA-CTA
+        name: "Clinical Trial Authorisation"
+        typical_duration_days: 60
+        min_duration_days: 30
+        description: "MHRA Clinical Trial Authorisation (post-Brexit)"
+        blocking: true
+        required_documents:
+          - "IRAS form (Integrated Research Application System)"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "IMPD summary"
+          - "Insurance/indemnity"
+        regulatory_reference: "UK Medicines for Human Use (Clinical Trials) Regulations 2004 (as amended)"
+        notes: |
+          - MHRA has 30 days to review
+          - Can proceed if no objections within 30 days
+          - Additional questions may extend timeline
+
+      - gate_id: MHRA-REC
+        name: "NHS Research Ethics Committee Approval"
+        typical_duration_days: 60
+        min_duration_days: 45
+        description: "UK Research Ethics Committee approval"
+        blocking: true
+        required_documents:
+          - "IRAS application"
+          - "Protocol"
+          - "Patient information sheets"
+          - "Consent forms"
+        notes: |
+          - Required for NHS sites
+          - Health Research Authority (HRA) approval also needed
+          - Can run in parallel with MHRA CTA
+
+      - gate_id: MHRA-HRA
+        name: "HRA Approval"
+        typical_duration_days: 30
+        description: "Health Research Authority approval for NHS sites"
+        blocking: true
+        prerequisites:
+          - MHRA-REC
+
+    milestone_timelines:
+      protocol_to_cta:
+        typical_days: 90
+        description: "Time from protocol finalization to CTA submission"
+
+      cta_to_fpi:
+        min_days: 90
+        typical_days: 120
+        max_days: 150
+        description: "Time from CTA submission to First Patient In"
+        prerequisites:
+          - "MHRA CTA approved (30-day period elapsed)"
+          - "REC approval obtained"
+          - "HRA approval obtained (if NHS sites)"
+          - "Sites ready"
+
+    operational_requirements:
+      - "IRAS submission required"
+      - "Annual progress reports"
+      - "Safety reporting per MHRA guidelines"
+      - "End of trial notification within 90 days"
+      - "Results summary within 12 months"
+
+    compliance_notes: |
+      - Post-Brexit UK requirements apply
+      - GCP compliance required (UK GCP regulations)
+      - MHRA inspection possible
+      - Clinical Trial Registry (ISRCTN or ClinicalTrials.gov) registration
+
+  # ==========================================================================
+  # Health Canada
+  # ==========================================================================
+  HEALTH_CANADA:
+    name: "Health Canada"
+    country: "Canada"
+    abbreviation: "HC"
+
+    regulatory_gates:
+      - gate_id: HC-CTA
+        name: "Clinical Trial Application"
+        typical_duration_days: 30
+        description: "Health Canada CTA submission with 30-day no-objection period"
+        blocking: true
+        required_documents:
+          - "Form 3011 (Clinical Trial Application)"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "Chemistry and Manufacturing Information"
+        regulatory_reference: "Food and Drug Regulations C.05.005"
+        notes: |
+          - 30-day no-objection period
+          - Can proceed if no objection from Health Canada
+          - Additional clarifications may extend timeline
+
+      - gate_id: HC-REB
+        name: "Research Ethics Board Approval"
+        typical_duration_days: 45
+        description: "Local REB approval required"
+        blocking: true
+
+    milestone_timelines:
+      cta_to_fpi:
+        typical_days: 90
+        description: "Typical time from CTA to First Patient In"
+
+  # ==========================================================================
+  # PMDA - Pharmaceuticals and Medical Devices Agency (Japan)
+  # ==========================================================================
+  PMDA:
+    name: "Pharmaceuticals and Medical Devices Agency"
+    country: "Japan"
+    abbreviation: "PMDA"
+
+    regulatory_gates:
+      - gate_id: PMDA-CTA
+        name: "Clinical Trial Notification"
+        typical_duration_days: 30
+        description: "PMDA notification with 30-day waiting period"
+        blocking: true
+        required_documents:
+          - "Clinical trial notification"
+          - "Protocol"
+          - "Investigator's Brochure"
+          - "Drug information"
+        notes: |
+          - 30-day waiting period after submission
+          - PMDA may request additional information
+
+      - gate_id: PMDA-IRB
+        name: "Institutional Review Board Approval"
+        typical_duration_days: 45
+        description: "Local IRB approval required"
+        blocking: true
+
+    milestone_timelines:
+      notification_to_fpi:
+        typical_days: 90
+        description: "Time from notification to First Patient In"
+
+# ==========================================================================
+# CROSS-AUTHORITY COMPARISONS
+# ==========================================================================
+
+comparison_notes: |
+  Key Differences:
+  - FDA: 30-day safety review, can proceed unless clinical hold
+  - EMA: 60-day review period, requires explicit approval
+  - MHRA: 30-day review, can proceed if no objections (post-Brexit)
+  - All require independent ethics committee approval
+  - Timelines vary by authority complexity and responsiveness
+
+  Common Requirements:
+  - Protocol, Investigator's Brochure, Informed Consent
+  - Drug manufacturing information (CMC/IMPD)
+  - Ethics committee approval
+  - Safety reporting procedures
+  - Good Clinical Practice compliance

@@ -1,0 +1,348 @@
+# Duration Bounds
+# Defines acceptable duration ranges for tasks by category, phase, and authority
+
+version: "1.0"
+description: "Duration validation rules for clinical trial tasks"
+
+# ==========================================================================
+# REGULATORY TASKS - Strict bounds based on regulatory timelines
+# ==========================================================================
+duration_rules:
+  - rule_id: DUR-REG-001
+    task_category: Regulatory
+    phase: all
+    authority: FDA
+    description: "FDA regulatory task durations"
+    rules:
+      - task_name_pattern: "IND.*Submission"
+        min_days: 30
+        max_days: 90
+        typical_days: 60
+        rationale: "30-day FDA safety review minimum; additional time for responses"
+
+      - task_name_pattern: "IRB.*Approval|Ethics.*Approval"
+        min_days: 21
+        max_days: 90
+        typical_days: 45
+        rationale: "IRBs require minimum review time; can extend if amendments needed"
+
+      - task_name_pattern: "Protocol.*Amendment"
+        min_days: 14
+        max_days: 60
+        typical_days: 30
+        rationale: "Amendment review typically faster than initial approval"
+
+      - task_name_pattern: "Annual.*Report|Annual.*Update"
+        min_days: 30
+        max_days: 90
+        typical_days: 60
+        rationale: "Adequate time for data compilation and review"
+
+  - rule_id: DUR-REG-002
+    task_category: Regulatory
+    phase: all
+    authority: EMA
+    description: "EMA regulatory task durations"
+    rules:
+      - task_name_pattern: "CTA.*Submission|Clinical.*Trial.*Application"
+        min_days: 60
+        max_days: 120
+        typical_days: 90
+        rationale: "60-day EMA review period plus preparation time"
+
+      - task_name_pattern: "Ethics.*Committee|REC.*Approval"
+        min_days: 45
+        max_days: 90
+        typical_days: 60
+        rationale: "European ethics committees typically longer than US IRBs"
+
+  - rule_id: DUR-REG-003
+    task_category: Regulatory
+    phase: all
+    authority: MHRA
+    description: "MHRA regulatory task durations"
+    rules:
+      - task_name_pattern: "CTA.*Submission|Clinical.*Trial.*Authorisation"
+        min_days: 30
+        max_days: 90
+        typical_days: 60
+        rationale: "30-day MHRA review period"
+
+# ==========================================================================
+# OPERATIONAL TASKS - Variable based on complexity
+# ==========================================================================
+  - rule_id: DUR-OPS-001
+    task_category: Operational
+    phase: all
+    authority: all
+    description: "Operational setup tasks"
+    rules:
+      - task_name_pattern: "Site.*Identification|Site.*Feasibility"
+        min_days: 60
+        max_days: 180
+        typical_days: 90
+        rationale: "Site selection is complex; depends on therapeutic area"
+
+      - task_name_pattern: "Site.*Contract|Contract.*Execution"
+        min_days: 30
+        max_days: 120
+        typical_days: 60
+        rationale: "Legal review and negotiation timelines vary"
+
+      - task_name_pattern: "Drug.*Manufacturing|Drug.*Production"
+        min_days: 90
+        max_days: 180
+        typical_days: 120
+        rationale: "GMP manufacturing requires significant lead time"
+
+      - task_name_pattern: "Drug.*Distribution|Drug.*Shipment"
+        min_days: 14
+        max_days: 60
+        typical_days: 30
+        rationale: "Logistics and customs clearance"
+
+      - task_name_pattern: "eCRF.*Build|eCRF.*Development|Database.*Build"
+        min_days: 60
+        max_days: 120
+        typical_days: 90
+        rationale: "EDC system build, validation, and UAT"
+
+      - task_name_pattern: "Randomization.*Setup|IWRS.*Setup|IRT.*Setup"
+        min_days: 14
+        max_days: 60
+        typical_days: 30
+        rationale: "IWRS/IRT configuration and testing"
+
+# ==========================================================================
+# SITE TASKS - Short durations for visits, long for enrollment
+# ==========================================================================
+  - rule_id: DUR-SITE-001
+    task_category: Site
+    phase: all
+    authority: all
+    description: "Site-level activity durations"
+    rules:
+      - task_name_pattern: "Site.*Initiation.*Visit|SIV"
+        min_days: 1
+        max_days: 2
+        typical_days: 1
+        rationale: "SIV is typically 1 day on-site"
+
+      - task_name_pattern: "Site.*Activation"
+        min_days: 1
+        max_days: 14
+        typical_days: 7
+        rationale: "Post-SIV readiness checks"
+
+      - task_name_pattern: "First.*Patient.*In|FPI"
+        min_days: 1
+        max_days: 1
+        typical_days: 1
+        rationale: "Milestone date"
+
+      - task_name_pattern: "Patient.*Enrollment|Enrollment.*Period"
+        min_days: 180
+        max_days: 730
+        typical_days: 365
+        rationale: "Highly variable by indication and site count"
+        phase_specific:
+          Phase I:
+            min_days: 90
+            typical_days: 180
+          Phase II:
+            min_days: 180
+            typical_days: 365
+          Phase III:
+            min_days: 365
+            typical_days: 540
+
+      - task_name_pattern: "Last.*Patient.*In|LPI"
+        min_days: 1
+        max_days: 1
+        typical_days: 1
+        rationale: "Milestone date"
+
+      - task_name_pattern: "Follow.*up.*Period|Follow-up"
+        min_days: 90
+        max_days: 365
+        typical_days: 180
+        rationale: "Depends on protocol-specified follow-up duration"
+
+      - task_name_pattern: "Last.*Patient.*Out|LPO|Last.*Patient.*Visit"
+        min_days: 1
+        max_days: 1
+        typical_days: 1
+        rationale: "Milestone date"
+
+      - task_name_pattern: "Monitoring.*Visit"
+        min_days: 14
+        max_days: 60
+        typical_days: 30
+        rationale: "Regular monitoring visit intervals"
+
+# ==========================================================================
+# DATA MANAGEMENT TASKS
+# ==========================================================================
+  - rule_id: DUR-DATA-001
+    task_category: Data
+    phase: all
+    authority: all
+    description: "Data management task durations"
+    rules:
+      - task_name_pattern: "Data.*Cleaning|Query.*Resolution"
+        min_days: 60
+        max_days: 120
+        typical_days: 90
+        rationale: "Adequate time for thorough data cleaning"
+
+      - task_name_pattern: "Database.*Lock|Data.*Lock"
+        min_days: 7
+        max_days: 30
+        typical_days: 14
+        rationale: "Final review and lock procedures"
+
+      - task_name_pattern: "Statistical.*Analysis"
+        min_days: 30
+        max_days: 90
+        typical_days: 60
+        rationale: "Depends on complexity of endpoints"
+
+      - task_name_pattern: "Clinical.*Study.*Report|CSR.*Writing"
+        min_days: 60
+        max_days: 180
+        typical_days: 90
+        rationale: "Comprehensive CSR preparation"
+
+# ==========================================================================
+# CLOSEOUT TASKS
+# ==========================================================================
+  - rule_id: DUR-CLOSE-001
+    task_category: Closeout
+    phase: all
+    authority: all
+    description: "Study closeout task durations"
+    rules:
+      - task_name_pattern: "Site.*Closeout.*Visit|Closeout.*Visit"
+        min_days: 45
+        max_days: 180
+        typical_days: 90
+        rationale: "Multiple sites require scheduling and travel"
+
+      - task_name_pattern: "Study.*Archival|Document.*Archival"
+        min_days: 30
+        max_days: 90
+        typical_days: 60
+        rationale: "Document collection and archiving"
+
+      - task_name_pattern: "Final.*Regulatory.*Submission"
+        min_days: 14
+        max_days: 60
+        typical_days: 30
+        rationale: "Final report submissions to authorities"
+
+# ==========================================================================
+# PHASE-SPECIFIC ADJUSTMENTS
+# ==========================================================================
+phase_modifiers:
+  Phase I:
+    description: "Phase I trials are typically faster and smaller"
+    duration_multiplier: 0.7
+    applies_to_categories:
+      - Operational
+      - Site
+
+  Phase II:
+    description: "Phase II trials are moderate complexity"
+    duration_multiplier: 1.0
+    applies_to_categories:
+      - Operational
+      - Site
+
+  Phase III:
+    description: "Phase III trials are larger and more complex"
+    duration_multiplier: 1.3
+    applies_to_categories:
+      - Operational
+      - Site
+      - Data
+
+  Phase IV:
+    description: "Phase IV (post-marketing) can vary widely"
+    duration_multiplier: 1.0
+
+# ==========================================================================
+# AUTHORITY-SPECIFIC ADJUSTMENTS
+# ==========================================================================
+authority_modifiers:
+  FDA:
+    description: "US FDA timelines"
+    multiplier: 1.0
+    notes: "Baseline timelines"
+
+  EMA:
+    description: "European EMA timelines typically longer"
+    multiplier: 1.2
+    notes: "Multi-country coordination adds time"
+
+  MHRA:
+    description: "UK MHRA timelines similar to FDA post-Brexit"
+    multiplier: 1.0
+
+  HEALTH_CANADA:
+    description: "Health Canada timelines similar to FDA"
+    multiplier: 1.0
+
+  PMDA:
+    description: "Japanese PMDA timelines can be longer"
+    multiplier: 1.3
+    notes: "Language translation and cultural differences"
+
+# ==========================================================================
+# THERAPEUTIC AREA ADJUSTMENTS
+# ==========================================================================
+therapeutic_area_modifiers:
+  Oncology:
+    enrollment_multiplier: 0.9
+    notes: "Often faster enrollment due to unmet need"
+
+  Rare Diseases:
+    enrollment_multiplier: 2.0
+    notes: "Patient recruitment is challenging"
+
+  Infectious Diseases:
+    enrollment_multiplier: 1.0
+    notes: "Variable by disease prevalence"
+
+  Cardiovascular:
+    enrollment_multiplier: 1.1
+    notes: "Large trials, moderate enrollment rates"
+
+  Neurology:
+    enrollment_multiplier: 1.2
+    notes: "Complex endpoints, slower enrollment"
+
+# ==========================================================================
+# VALIDATION LOGIC
+# ==========================================================================
+validation_behavior:
+  severity_if_below_min: "warning"
+  severity_if_above_max: "warning"
+  severity_if_significantly_below_min: "error"  # < 50% of minimum
+  severity_if_significantly_above_max: "error"  # > 200% of maximum
+
+  confidence_levels:
+    regulatory_tasks: 0.95  # High confidence in regulatory timelines
+    operational_tasks: 0.85
+    site_tasks: 0.80
+    enrollment_tasks: 0.60  # Lower confidence due to variability
+
+notes: |
+  Duration bounds are guidelines based on historical data and regulatory requirements.
+  Actual durations will vary based on:
+  - Study complexity
+  - Therapeutic area
+  - Site experience
+  - Regulatory authority responsiveness
+  - Sponsor resources
+
+  Validators should flag durations outside bounds but allow sponsor justification.
