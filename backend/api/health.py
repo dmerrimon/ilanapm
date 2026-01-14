@@ -5,7 +5,7 @@ Provides health check and status endpoints for monitoring
 """
 
 from fastapi import APIRouter
-from datetime import datetime
+from datetime import datetime, UTC
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -29,7 +29,7 @@ async def health_check():
     """
     return HealthResponse(
         status="healthy",
-        timestamp=datetime.utcnow().isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         version="0.1.0",
         message="Ilana PM Intelligence API is running"
     )
@@ -50,7 +50,7 @@ async def readiness_check():
 
     return {
         "ready": True,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
 
@@ -64,5 +64,5 @@ async def liveness_check():
     """
     return {
         "alive": True,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
