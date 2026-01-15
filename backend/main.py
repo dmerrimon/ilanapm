@@ -7,7 +7,7 @@ and registers all API routes.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api import health
+from backend.api import health, validate, config, analytics, advisory
 import logging
 
 # Configure logging
@@ -37,12 +37,10 @@ app.add_middleware(
 
 # Register API routes
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
-
-# TODO: Additional routers will be registered here as we build them:
-# app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
-# app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
-# app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
-# app.include_router(advisory.router, prefix="/api/v1", tags=["advisory"])
+app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
+app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
+app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
+app.include_router(advisory.router, prefix="/api/v1", tags=["advisory"])
 
 
 @app.on_event("startup")
@@ -50,6 +48,11 @@ async def startup_event():
     """Run on application startup"""
     logger.info("🚀 Ilana PM Intelligence API starting up...")
     logger.info("📍 API documentation available at: /docs")
+    logger.info("✅ Validation endpoints: /api/v1/validate")
+    logger.info("📊 Analytics endpoints: /api/v1/analytics/*")
+    logger.info("🤖 ML Advisory endpoints: /api/v1/advisory/*")
+    logger.info("⚙️  Configuration endpoints: /api/v1/config/*")
+    logger.info("❤️  Health check: /api/v1/health")
 
 
 @app.on_event("shutdown")

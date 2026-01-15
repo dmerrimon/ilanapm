@@ -1,0 +1,921 @@
+{
+  "MCAZ_ZW": {
+    "country": "Zimbabwe",
+    "name": "Medicines Control Authority of Zimbabwe",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "MCAZ_ZW-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "MCAZ_ZW-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {
+      "local_sponsor_usd": 50,
+      "foreign_sponsor_usd": 100,
+      "expedited_fee_usd": 400,
+      "amendment_fee_usd": 50
+    },
+    "contact": {
+      "email": "mcaz@mcaz.co.zw",
+      "phone": "+263-4-736981"
+    }
+  },
+  "TGA_AU": {
+    "country": "Australia",
+    "name": "Medical Research Council",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "TGA_AU-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 30,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "TGA_AU-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "standard_review_days": 30
+    },
+    "fees": {},
+    "contact": {
+      "email": "clinical.trials@health.gov.au",
+      "phone": "1 800 020 653 ("
+    }
+  },
+  "BFDA_BD": {
+    "country": "Bangladesh",
+    "name": "Drug Administration",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "BFDA_BD-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "BFDA_BD-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "dgda.gov@gmail.com",
+      "phone": "+8802-9880803"
+    }
+  },
+  "ANVISA_BR": {
+    "country": "Brazil",
+    "name": "National Health Surveillance Agency",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "ANVISA_BR-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "ANVISA_BR-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "expedited_review_days": 120
+    },
+    "fees": {},
+    "contact": {
+      "email": "asnvs@anvisa.gov.br",
+      "phone": "(61) 3462-4120"
+    }
+  },
+  "HEALTH_CANADA": {
+    "country": "Canada",
+    "name": "Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "HEALTH_CANADA-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "HEALTH_CANADA-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "amendment_review_days": 15
+    },
+    "fees": {},
+    "contact": {
+      "email": "ich@hc-sc.gc.ca",
+      "phone": "613-957-1722"
+    }
+  },
+  "NMPA_CN": {
+    "country": "China",
+    "name": "National Medical Products Administration",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "NMPA_CN-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "NMPA_CN-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "expedited_review_days": 45
+    },
+    "fees": {},
+    "contact": {
+      "email": "ycb@cncbd.org.cn"
+    }
+  },
+  "DGRDF_CD": {
+    "country": "DRC",
+    "name": "Congolese Pharmaceutical Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "DGRDF_CD-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "DGRDF_CD-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "contact@acorep.gouv.cd",
+      "phone": "+243 824 007 007"
+    }
+  },
+  "DNPL_GN": {
+    "country": "Guinea",
+    "name": "Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "DNPL_GN-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "DNPL_GN-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "contact@sante.gov.gn",
+      "phone": "+224 000 00 00 00"
+    }
+  },
+  "CDSCO_IN": {
+    "country": "India",
+    "name": "Data Protection Board",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "CDSCO_IN-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "CDSCO_IN-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "amendment_review_days": 30
+    },
+    "fees": {},
+    "contact": {
+      "email": "dci@nic.in",
+      "phone": "+91-11-23216367"
+    }
+  },
+  "PPB_KE": {
+    "country": "Kenya",
+    "name": "Poisons Board",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "PPB_KE-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "PPB_KE-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {
+      "application_fee_usd": 1000
+    },
+    "contact": {
+      "email": "info@ppb.go.ke",
+      "phone": "(+254) 709 770 100"
+    }
+  },
+  "LMHRA_LR": {
+    "country": "Liberia",
+    "name": "Health Products Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "LMHRA_LR-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "LMHRA_LR-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "expedited_review_days": 21
+    },
+    "fees": {
+      "amendment_fee_usd": 1000
+    },
+    "contact": {
+      "email": "info@lmhra.gov.lr",
+      "phone": "(+231) 777-140-555"
+    }
+  },
+  "MCAZ_MW": {
+    "country": "Malawi",
+    "name": "Medicines Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "MCAZ_MW-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "MCAZ_MW-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {
+      "amendment_fee_usd": 300
+    },
+    "contact": {
+      "email": "info@pmra.mw",
+      "phone": "+265 212 755 165"
+    }
+  },
+  "DPM_ML": {
+    "country": "Mali",
+    "name": "Unspecified\nRegulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "DPM_ML-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "DPM_ML-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "info@dirpharma.ml",
+      "phone": "+223 20 22 24 63"
+    }
+  },
+  "COFEPRIS_MX": {
+    "country": "Mexico",
+    "name": "Yes\nRegulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "COFEPRIS_MX-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "COFEPRIS_MX-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "contactociudadano@cofepris.gob.mx",
+      "phone": "55 5080 5200"
+    }
+  },
+  "DIGEMID_PE": {
+    "country": "Peru",
+    "name": "Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "DIGEMID_PE-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 30,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "DIGEMID_PE-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "standard_review_days": 30
+    },
+    "fees": {},
+    "contact": {
+      "email": "comunicaciones@ins.gob.pe",
+      "phone": "(01) 748 1111"
+    }
+  },
+  "PSLB_SL": {
+    "country": "Sierra Leone",
+    "name": "Yes\nRegulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "PSLB_SL-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "PSLB_SL-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {
+      "expedited_fee_usd": 1200,
+      "amendment_fee_usd": 1000
+    },
+    "contact": {
+      "email": "info@pharmacyboard.gov.sl",
+      "phone": "+232 73994830"
+    }
+  },
+  "SAHPRA_ZA": {
+    "country": "South Africa",
+    "name": "South African Health Products Regulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "SAHPRA_ZA-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "SAHPRA_ZA-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "ctcresponses@sahpra.org.za"
+    }
+  },
+  "TFDA_TZ": {
+    "country": "Tanzania",
+    "name": "Medical Devices Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "TFDA_TZ-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "TFDA_TZ-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "expedited_review_days": 60,
+      "amendment_review_days": 60
+    },
+    "fees": {
+      "application_fee_usd": 50,
+      "expedited_fee_usd": 5125,
+      "amendment_fee_usd": 750
+    },
+    "contact": {
+      "email": "info@tmda.go.tz",
+      "phone": "+255 22 262961989"
+    }
+  },
+  "FDA_TH": {
+    "country": "Thailand",
+    "name": "Drug Administration",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "FDA_TH-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "FDA_TH-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "expedited_review_days": 10,
+      "amendment_review_days": 30
+    },
+    "fees": {},
+    "contact": {
+      "email": "drug@fda.moph.go.th",
+      "phone": "0 2590 7000"
+    }
+  },
+  "NDA_UG": {
+    "country": "Uganda",
+    "name": "National Drug Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "NDA_UG-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "NDA_UG-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "amendment_review_days": 15
+    },
+    "fees": {
+      "amendment_fee_usd": 700
+    },
+    "contact": {
+      "email": "ndaug@nda.or.ug",
+      "phone": "+256"
+    }
+  },
+  "MHRA_UK": {
+    "country": "United Kingdom",
+    "name": "Health Research Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "MHRA_UK-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "MHRA_UK-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "amendment_review_days": 60
+    },
+    "fees": {},
+    "contact": {
+      "email": "info@mhra.gov.uk",
+      "phone": "+44 020 3080 6000"
+    }
+  },
+  "FDA_US": {
+    "country": "United States",
+    "name": "Drug Administration",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "FDA_US-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 30,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "FDA_US-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {
+      "standard_review_days": 30,
+      "amendment_review_days": 30
+    },
+    "fees": {},
+    "contact": {
+      "email": "Industry.Biologics@fda.hhs.gov",
+      "phone": "(800) 835-4709"
+    }
+  },
+  "MOH_VN": {
+    "country": "Vietnam",
+    "name": "Yes\nRegulatory Authority",
+    "regulatory_authority": {},
+    "ethics_committee": {},
+    "regulatory_gates": [
+      {
+        "gate_id": "MOH_VN-CTA",
+        "name": "Clinical Trial Authorization",
+        "typical_duration_days": 60,
+        "description": "Regulatory authority review and approval",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Investigator's Brochure",
+          "Informed Consent Forms"
+        ]
+      },
+      {
+        "gate_id": "MOH_VN-ETHICS",
+        "name": "Ethics Committee Approval",
+        "typical_duration_days": 45,
+        "description": "National or institutional ethics committee review",
+        "blocking": true,
+        "required_documents": [
+          "Protocol",
+          "Informed Consent Forms",
+          "Investigator CVs"
+        ]
+      }
+    ],
+    "review_timelines": {},
+    "fees": {},
+    "contact": {
+      "email": "cuck2dt@moh.gov.vn",
+      "phone": "04"
+    }
+  }
+}

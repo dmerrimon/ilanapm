@@ -21,12 +21,44 @@ class StudyPhase(str, Enum):
 
 
 class RegulatoryAuthority(str, Enum):
-    """Regulatory authorities for clinical trials"""
+    """Regulatory authorities for clinical trials (23 countries supported)"""
+    # Original authorities
     FDA = "FDA"
     EMA = "EMA"
     MHRA = "MHRA"
     HEALTH_CANADA = "Health Canada"
     PMDA = "PMDA"
+
+    # Expanded global coverage (23 countries total)
+    # Africa
+    MCAZ_ZW = "MCAZ Zimbabwe"
+    PPB_KE = "PPB Kenya"
+    LMHRA_LR = "LMHRA Liberia"
+    MCAZ_MW = "MCAZ Malawi"
+    DPM_ML = "DPM Mali"
+    PSLB_SL = "PSLB Sierra Leone"
+    SAHPRA_ZA = "SAHPRA South Africa"
+    TFDA_TZ = "TFDA Tanzania"
+    NDA_UG = "NDA Uganda"
+    DGRDF_CD = "DGRDF DRC"
+    DNPL_GN = "DNPL Guinea"
+
+    # Americas
+    FDA_US = "FDA United States"
+    ANVISA_BR = "ANVISA Brazil"
+    COFEPRIS_MX = "COFEPRIS Mexico"
+    DIGEMID_PE = "DIGEMID Peru"
+
+    # Asia-Pacific
+    TGA_AU = "TGA Australia"
+    BFDA_BD = "BFDA Bangladesh"
+    NMPA_CN = "NMPA China"
+    CDSCO_IN = "CDSCO India"
+    FDA_TH = "FDA Thailand"
+    MOH_VN = "MOH Vietnam"
+
+    # Europe
+    MHRA_UK = "MHRA United Kingdom"
 
 
 class TaskCategory(str, Enum):
