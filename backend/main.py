@@ -7,7 +7,7 @@ and registers all API routes.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api import health, validate, config, analytics, advisory
+from backend.api import health, validate, config, analytics, advisory, teams
 import logging
 
 # Configure logging
@@ -41,6 +41,7 @@ app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
 app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
 app.include_router(advisory.router, prefix="/api/v1", tags=["advisory"])
+app.include_router(teams.router, prefix="/api/v1", tags=["teams"])
 
 
 @app.on_event("startup")
@@ -52,6 +53,7 @@ async def startup_event():
     logger.info("📊 Analytics endpoints: /api/v1/analytics/*")
     logger.info("🤖 ML Advisory endpoints: /api/v1/advisory/*")
     logger.info("⚙️  Configuration endpoints: /api/v1/config/*")
+    logger.info("📢 Teams integration: /api/v1/teams/*")
     logger.info("❤️  Health check: /api/v1/health")
 
 

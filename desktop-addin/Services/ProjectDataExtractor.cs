@@ -14,12 +14,18 @@ namespace IlanaPM.AddIn.Services
             }
 
             Project activeProject = projectApp.ActiveProject;
+
+            // Read from custom fields or use defaults
+            string regulatoryAuthority = GetCustomFieldText(activeProject, "Regulatory Authority") ?? "FDA";
+            string studyPhase = GetCustomFieldText(activeProject, "Study Phase") ?? "Phase II";
+            string therapeuticArea = GetCustomFieldText(activeProject, "Therapeutic Area") ?? "Oncology";
+
             Models.Timeline timeline = new Models.Timeline
             {
                 study_name = activeProject.Name,
-                phase = "Phase II",
-                authority = "FDA",
-                therapeutic_area = "Oncology"
+                phase = studyPhase,
+                authority = regulatoryAuthority,
+                therapeutic_area = therapeuticArea
             };
 
             foreach (Microsoft.Office.Interop.MSProject.Task task in activeProject.Tasks)
@@ -33,11 +39,12 @@ namespace IlanaPM.AddIn.Services
                         duration_days = ConvertMinutesToDays(task.Duration),
                         start_date = task.Start.ToString("yyyy-MM-dd"),
                         end_date = task.Finish.ToString("yyyy-MM-dd"),
-                        category = DetermineCategoryFromName(task.Name),
+                        category = GetTaskCustomFieldText(task, "Task Category") ?? DetermineCategoryFromName(task.Name),
                         phase = timeline.phase,
                         authority = timeline.authority,
-                        is_mandatory = task.Critical,
-                        checklist_completion_pct = (int)task.PercentComplete
+                        is_mandatory = GetTaskCustomFieldFlag(task, "Is Mandatory") ?? task.Critical,
+                        checklist_completion_pct = GetTaskCustomFieldNumber(task, "Checklist Completion %") ?? (int)task.PercentComplete,
+                        therapeutic_area = timeline.therapeutic_area
                     };
 
                     timeline.tasks.Add(taskModel);
@@ -50,6 +57,9 @@ namespace IlanaPM.AddIn.Services
                 {
                     foreach (TaskDependency dep in task.TaskDependencies)
                     {
+                        // Skip self-references
+                        if (dep.From.ID == task.ID) continue;
+
                         var dependency = new Models.Dependency
                         {
                             predecessor_id = dep.From.ID.ToString(),
@@ -107,6 +117,62 @@ namespace IlanaPM.AddIn.Services
                     return "start-to-finish";
                 default:
                     return "finish-to-start";
+            }
+        }
+
+        private string GetCustomFieldText(Project project, string fieldName)
+        {
+            try
+            {
+                var fieldConstant = project.Application.FieldNameToFieldConstant(fieldName, PjField.pjTaskField);
+                return project.ProjectSummaryTask.GetField(fieldConstant)?.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private string GetTaskCustomFieldText(Microsoft.Office.Interop.MSProject.Task task, string fieldName)
+        {
+            try
+            {
+                var fieldConstant = task.Application.FieldNameToFieldConstant(fieldName, PjField.pjTaskField);
+                return task.GetField(fieldConstant)?.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private bool? GetTaskCustomFieldFlag(Microsoft.Office.Interop.MSProject.Task task, string fieldName)
+        {
+            try
+            {
+                var fieldConstant = task.Application.FieldNameToFieldConstant(fieldName, PjField.pjTaskField);
+                var value = task.GetField(fieldConstant);
+                if (value == null) return null;
+                return Convert.ToBoolean(value);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private int? GetTaskCustomFieldNumber(Microsoft.Office.Interop.MSProject.Task task, string fieldName)
+        {
+            try
+            {
+                var fieldConstant = task.Application.FieldNameToFieldConstant(fieldName, PjField.pjTaskField);
+                var value = task.GetField(fieldConstant);
+                if (value == null) return null;
+                return Convert.ToInt32(value);
+            }
+            catch
+            {
+                return null;
             }
         }
     }
