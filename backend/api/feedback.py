@@ -7,6 +7,7 @@ Enables ML learning by tracking predicted vs actual durations
 from fastapi import APIRouter, HTTPException
 from typing import List
 from datetime import datetime
+import logging
 
 from backend.models.feedback import (
     TaskCompletionFeedback,
@@ -16,6 +17,7 @@ from backend.models.feedback import (
 from backend.database import get_db_connection
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/feedback/task-completion", response_model=TaskCompletionResponse)
@@ -50,6 +52,74 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
         # Insert into database
         with get_db_connection() as conn:
             cursor = conn.cursor()
+
+            # Check for duplicate submission (if project_id and task_id provided)
+            if feedback.project_id and feedback.task_id:
+                cursor.execute(
+                    "SELECT COUNT(*) FROM task_outcomes WHERE project_id=? AND task_id=?",
+                    (feedback.project_id, feedback.task_id)
+                )
+                if cursor.fetchone()[0] > 0:
+                    logger.warning(
+                        f"Duplicate feedback attempt: project={feedback.project_id}, "
+                        f"task={feedback.task_id} - updating existing record"
+                    )
+                    # Update existing record instead of inserting new one
+                    cursor.execute("""
+                        UPDATE task_outcomes
+                        SET actual_duration_days=?, actual_start_date=?, actual_end_date=?,
+                            variance_days=?, variance_percent=?, was_accurate=?,
+                            recorded_by=?, category=?, country_code=?, authority=?,
+                            study_phase=?, therapeutic_area=?
+                        WHERE project_id=? AND task_id=?
+                    """, (
+                        feedback.actual_duration_days,
+                        feedback.actual_start_date,
+                        feedback.actual_end_date,
+                        variance_days,
+                        variance_percent,
+                        was_accurate,
+                        feedback.recorded_by,
+                        feedback.category,
+                        feedback.country_code,
+                        feedback.authority,
+                        feedback.study_phase,
+                        feedback.therapeutic_area,
+                        feedback.project_id,
+                        feedback.task_id
+                    ))
+
+                    # Get total count
+                    cursor.execute("SELECT COUNT(*) FROM task_outcomes")
+                    total_count = cursor.fetchone()[0]
+
+                    # Build accuracy summary
+                    accuracy_summary = None
+                    if feedback.predicted_duration_days is not None:
+                        accuracy_summary = {
+                            "predicted_days": feedback.predicted_duration_days,
+                            "actual_days": feedback.actual_duration_days,
+                            "variance_days": variance_days,
+                            "variance_percent": round(variance_percent, 1) if variance_percent is not None else None,
+                            "was_accurate": was_accurate,
+                            "threshold": "±20%"
+                        }
+
+                    logger.info(
+                        f"Feedback updated: task_id={feedback.task_id}, "
+                        f"task_name='{feedback.task_name}', country={feedback.country_code}, "
+                        f"authority={feedback.authority}, variance={variance_days} days, "
+                        f"accurate={was_accurate}, total_entries={total_count}"
+                    )
+
+                    return TaskCompletionResponse(
+                        success=True,
+                        recorded_count=1,
+                        message=f"Task completion updated (duplicate). Total feedback entries: {total_count}",
+                        accuracy_summary=accuracy_summary
+                    )
+
+            # No duplicate - insert new record
             cursor.execute("""
                 INSERT INTO task_outcomes (
                     task_id, task_name, category,
@@ -96,6 +166,14 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                 "threshold": "±20%"
             }
 
+        # Log successful feedback submission
+        logger.info(
+            f"Feedback recorded: task_id={feedback.task_id}, "
+            f"task_name='{feedback.task_name}', country={feedback.country_code}, "
+            f"authority={feedback.authority}, variance={variance_days} days, "
+            f"accurate={was_accurate}, total_entries={total_count}"
+        )
+
         return TaskCompletionResponse(
             success=True,
             recorded_count=1,
@@ -104,6 +182,7 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
         )
 
     except Exception as e:
+        logger.error(f"Failed to record feedback for task {feedback.task_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to record feedback: {str(e)}")
 
 
@@ -150,8 +229,46 @@ async def record_multiple_completions(
                     variance_percent = None
                     was_accurate = False
 
-                cursor.execute("""
-                    INSERT INTO task_outcomes (
+                # Check for duplicate in bulk submission
+                is_duplicate = False
+                if feedback.project_id and feedback.task_id:
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM task_outcomes WHERE project_id=? AND task_id=?",
+                        (feedback.project_id, feedback.task_id)
+                    )
+                    if cursor.fetchone()[0] > 0:
+                        is_duplicate = True
+                        logger.warning(
+                            f"Duplicate in bulk: project={feedback.project_id}, task={feedback.task_id} - updating"
+                        )
+                        cursor.execute("""
+                            UPDATE task_outcomes
+                            SET actual_duration_days=?, actual_start_date=?, actual_end_date=?,
+                                variance_days=?, variance_percent=?, was_accurate=?,
+                                recorded_by=?, category=?, country_code=?, authority=?,
+                                study_phase=?, therapeutic_area=?
+                            WHERE project_id=? AND task_id=?
+                        """, (
+                            feedback.actual_duration_days,
+                            feedback.actual_start_date,
+                            feedback.actual_end_date,
+                            variance_days,
+                            variance_percent,
+                            was_accurate,
+                            feedback.recorded_by,
+                            feedback.category,
+                            feedback.country_code,
+                            feedback.authority,
+                            feedback.study_phase,
+                            feedback.therapeutic_area,
+                            feedback.project_id,
+                            feedback.task_id
+                        ))
+                        recorded_count += 1
+
+                if not is_duplicate:
+                    cursor.execute("""
+                        INSERT INTO task_outcomes (
                         task_id, task_name, category,
                         predicted_duration_days, predicted_confidence, model_version,
                         actual_duration_days, actual_start_date, actual_end_date,
@@ -179,11 +296,17 @@ async def record_multiple_completions(
                     feedback.project_id,
                     feedback.recorded_by
                 ))
-                recorded_count += 1
+                    recorded_count += 1
 
             # Get total count
             cursor.execute("SELECT COUNT(*) FROM task_outcomes")
             total_count = cursor.fetchone()[0]
+
+        # Log bulk submission
+        logger.info(
+            f"Bulk feedback recorded: {recorded_count} tasks, "
+            f"total_entries={total_count}"
+        )
 
         return TaskCompletionResponse(
             success=True,
@@ -192,6 +315,7 @@ async def record_multiple_completions(
         )
 
     except Exception as e:
+        logger.error(f"Failed to record bulk feedback: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to record feedback: {str(e)}")
 
 
@@ -327,6 +451,13 @@ async def get_accuracy_report() -> AccuracyReport:
         if not recommendations:
             recommendations.append(f"✓ Good performance! {accuracy_rate:.1f}% accuracy across {overall['total']} tasks.")
 
+        # Log accuracy report generation
+        logger.info(
+            f"Accuracy report generated: total={overall['total']}, "
+            f"accurate={overall['accurate']}, accuracy_rate={accuracy_rate:.1f}%, "
+            f"avg_error={overall['avg_error_days']:.1f} days"
+        )
+
         return AccuracyReport(
             total_predictions=overall['total'],
             accurate_predictions=overall['accurate'],
@@ -342,6 +473,7 @@ async def get_accuracy_report() -> AccuracyReport:
         )
 
     except Exception as e:
+        logger.error(f"Failed to generate accuracy report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate accuracy report: {str(e)}")
 
 

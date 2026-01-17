@@ -4,7 +4,7 @@ Feedback models for task completion data
 Tracks predicted vs actual durations to enable ML learning
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -36,6 +36,17 @@ class TaskCompletionFeedback(BaseModel):
     # Metadata
     project_id: Optional[str] = Field(None, description="MS Project file identifier")
     recorded_by: Optional[str] = Field(None, description="User who submitted feedback")
+
+    @field_validator('actual_start_date', 'actual_end_date')
+    @classmethod
+    def validate_date_format(cls, v):
+        """Validate date is in YYYY-MM-DD format"""
+        if v is not None:
+            try:
+                datetime.strptime(v, '%Y-%m-%d')
+            except ValueError:
+                raise ValueError('Date must be in YYYY-MM-DD format (e.g., 2025-01-15)')
+        return v
 
 
 class TaskCompletionResponse(BaseModel):
