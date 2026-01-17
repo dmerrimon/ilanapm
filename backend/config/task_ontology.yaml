@@ -1,52 +1,271 @@
-# Task Ontology v3.0 - Canonical Clinical Trial Tasks with International Regulatory Variations
-# Defines standard tasks with typical durations, prerequisites, and country-specific regulatory variations
-# Version 3.0 adds comprehensive international regulatory authority workflows for 22 countries
+# Task Ontology v3.0 - Comprehensive Industry Benchmarks + International Regulatory Variations
+# Combines WCG, Emmes, Tufts CSDD, CenterWatch data with 22-country regulatory workflows
 
-version: "3.0"
-description: "Canonical task definitions for clinical trial timelines with international regulatory variations"
+metadata:
+  version: "3.0"
+  created: "2026-01-17"
+  description: "Canonical task definitions with international regulatory variations and industry reality benchmarks"
+
+  data_sources:
+    - "WCG Clintrax: Site Strategy Guide"
+    - "Emmes CRO: Standard Timelines v3.0"
+    - "Tufts CSDD: Clinical Development Metrics"
+    - "CenterWatch: Industry Surveys"
+    - "International Regulatory Authority Guidelines (22 countries)"
+
+  industry_reality:
+    timeline_failure_rate: 0.80  # 80% fail initial timelines
+    enrollment_doubling_rate: 0.90  # 90% must double enrollment
+    site_non_enrollment: 0.11  # 11% sites enroll zero
+    amendment_rate_complex: 0.57  # 57% complex protocols
+    contract_delay_cause: 0.49  # 49% delays from contracts
+
+  financial_benchmarks:
+    cost_per_month_delay: 733000  # $733K/month (WCG)
+    startup_costs_annual: 2700000000  # $2.7B
+    contracting_costs_annual: 353000000  # $353M
+
+  international_coverage:
+    countries: 23
+    authorities: 60
+    workflow_types: 8
+    complexity_levels: 6
+    timeline_range_days: "5-120+"
+
+# ============================================================================
+# PHASE DURATIONS BY THERAPEUTIC AREA (Tufts CSDD Data)
+# ============================================================================
+
+phase_durations:
+  oncology:
+    phase_i_months: 42  # 3.5 years
+    phase_ii_months: 30
+    phase_iii_months: 48
+    total_dev_years: 6.7
+    enrollment_rate_phase_i: 0.6  # patients/site/month
+    notes: "Complex dose escalation, disease-specific patients"
+
+  infectious_disease:
+    phase_i_months: 21  # 1.8 years
+    phase_ii_months: 24
+    phase_iii_months: 30
+    total_dev_years: 9.2
+    enrollment_rate_phase_i: 2.5  # Healthy volunteers
+    notes: "Faster enrollment, shorter treatment"
+
+  cardiovascular:
+    phase_i_months: 30
+    phase_ii_months: 30
+    phase_iii_months: 42
+    total_dev_years: 12.2
+    notes: "Extensive safety monitoring"
+
+  neurology:
+    phase_i_months: 33
+    phase_ii_months: 30
+    phase_iii_months: 42
+    total_dev_years: 12.2
+    notes: "Complex biomarkers, long follow-up"
+
+# ============================================================================
+# PROTOCOL DEVELOPMENT (Industry Benchmarks)
+# ============================================================================
+
+protocol_development:
+  phase_i:
+    standard_days: 180  # 6 months
+    combination_phase_1_2_days: 270  # 9 months
+    source: "Industry practice"
+
+  phase_ii:
+    simple_days: 105  # 3-5 months average
+    complex_days: 195  # 6-9 months (oncology, rare disease)
+    adaptive_design_add: 45  # +1.5 months
+    source: "NCI/industry benchmarks"
+
+  phase_iii:
+    protocol_writing_days: 210  # 7 months
+    total_startup_days: 920  # 2.5 YEARS concept→activation
+    regulatory_consult_days: 120  # FDA End-of-Phase 2
+    multinational_irb_days: 210  # 36+ approvals
+    source: "WCG/Tufts CSDD"
+    notes: "Protocol writing is ONE component of 2.5yr startup"
+
+  phase_iv:
+    observational_days: 180
+    interventional_days: 270
+
+# ============================================================================
+# SITE CONTRACTING (WCG CLINTRAX DATA - CRITICAL SECTION)
+# ============================================================================
+
+site_contracting:
+  # INDUSTRY DATA FROM WCG
+  academic_medical_centers:
+    typical_duration_days: 280  # 9.4 months MEDIAN
+    min_days: 210
+    max_days: 365
+    source: "WCG Clintrax proprietary data"
+    notes: "Multiple layers legal review, institutional policies"
+
+  independent_research_sites:
+    typical_duration_days: 145  # 4.8 months MEDIAN
+    min_days: 90
+    max_days: 180
+    source: "WCG Clintrax proprietary data"
+    notes: "Streamlined contracting, 2X faster than academic"
+
+  # CRITICAL FACTS
+  industry_benchmarks:
+    average_startup_weeks: 31.4  # UP 1 month from 10 years ago
+    delay_cause_percentage: 49  # 49% of delays = contracts
+    annual_contracting_costs: 353000000  # $353M
+    delay_cost_per_3_months: 2200000  # $2.2M
+    source: "WCG Site Strategy Guide, Tufts CSDD"
+
+  validation:
+    academic_minimum_days: 200
+    academic_error_message: "Academic sites average 9.4mo (280 days)"
+    independent_minimum_days: 100
+    financial_impact_formula: "(gap_months) * 733000"
+
+# ============================================================================
+# PATIENT ENROLLMENT (CENTERWATCH DATA - #1 DELAY CAUSE)
+# ============================================================================
+
+enrollment:
+  industry_statistics:
+    must_double_timeline_pct: 90  # 90% must double
+    sites_enroll_zero_pct: 11  # 11% enroll ZERO
+    underperforming_sites_pct: 30  # Additional 30% <50% target
+    source: "CenterWatch industry surveys"
+
+  enrollment_rates:
+    pm_typical_assumption: 1.5  # patients/site/month
+    realistic_rate: 0.75  # Use this unless proven otherwise
+    oncology_phase_i: 0.6  # Disease-specific, slow
+    infectious_phase_i: 2.5  # Healthy volunteers, fast
+
+  durations:
+    oncology_phase_i_days: 730  # 24 months!
+    oncology_phase_iii_days: 730
+    infectious_phase_i_days: 270  # 9 months
+    cardiovascular_phase_iii_days: 545
+    rare_disease_modifier: 1.5  # Add 50%
+
+  validation:
+    buffer_minimum_pct: 100  # Must double
+    backup_sites_minimum_pct: 15
+    rate_warning_threshold: 1.5  # patients/site/month
+    error_message: "90% of trials must double enrollment timeline"
+
+# ============================================================================
+# DATABASE LOCK & CLOSEOUT (EMMES CRO v3.0 DATA)
+# ============================================================================
+
+database_lock:
+  clinical:
+    lplv_to_lock_days: 42  # 6 weeks TOTAL
+    data_entry_days: 4  # After LPLV
+    data_cleaning_days: 14  # 2 weeks
+    sae_reconciliation_days: 21  # 3 weeks
+    final_monitoring_days: 35  # 5 weeks cumulative from LPLV
+    query_resolution_days: 1
+    source: "Emmes Study Closeout v3.0"
+
+  laboratory:
+    assay_completion_days: 84  # 12 weeks from last specimen
+    qc_query_days: 4
+    query_resolution_days: 7
+    total_from_specimen_days: 98  # ~14 weeks
+    source: "Emmes Study Closeout v3.0"
+    critical_fact: "Laboratory is typically CRITICAL PATH (longer than clinical)"
+
+  validation:
+    clinical_minimum_days: 42
+    laboratory_minimum_days: 98
+    error_if_no_lab_planning: "Lab lock (12wks) typically critical path"
+
+# ============================================================================
+# CSR PREPARATION (EMMES CRO v3.0 DATA)
+# ============================================================================
+
+csr_preparation:
+  total_db_lock_to_fda_days: 210  # 30 weeks median
+  min_days: 182  # 26 weeks
+  max_days: 245  # 35 weeks
+  source: "Emmes CSR Preparation v3.0"
+
+  phases:
+    draft_csr_days: 84  # 12 weeks
+    pi_review_days: 35  # 4-6 weeks average
+    incorporate_pi_days: 7
+    sponsor_review_days: 28  # 4 weeks
+    incorporate_sponsor_days: 7
+    approvals_days: 3
+    formatting_days: 3
+    pi_signature_days: 3
+    distribution_days: 1
+    fda_submission_days: 18  # 2-3 weeks
+
+  prerequisite: "Cannot begin until BOTH clinical AND lab databases locked"
+  typical_pm_error: "Planning 3 months instead of 7-8 months"
+
+  validation:
+    minimum_days: 210
+    error_message: "CSR averages 30 weeks (Emmes CRO standard)"
+
+# ============================================================================
+# CANONICAL TASKS WITH INTERNATIONAL VARIATIONS
+# ============================================================================
 
 tasks:
-  # ============================================================================
+  # ========================================================================
   # REGULATORY TASKS
-  # ============================================================================
+  # ========================================================================
 
   - id: REG-001
-    name: "IND/CTA Submission"
+    name: "IND/CTA Submission & Review"
     category: Regulatory
-    typical_duration_days: 60
+    typical_duration_days: 45  # Updated from industry data
     min_duration_days: 30
     max_duration_days: 90
-    description: "Submit Investigational New Drug application (FDA) or Clinical Trial Application (EMA/MHRA)"
+    description: "Submit and obtain clearance for Investigational New Drug application or Clinical Trial Application"
     is_mandatory: true
+
+    # Industry benchmarks
+    fda_statutory_minimum: 30  # 21 CFR 312.42
+    fda_typical_with_questions: 45
+    fda_complex_multiround: 90
+    legal_requirement: "30 days minimum by law"
+    notes: "Clock PAUSES for FDA questions, RESUMES on response"
+
     gating_requirements:
       - "Protocol finalized and approved"
       - "Investigator's Brochure complete"
       - "CMC (Chemistry, Manufacturing, Controls) documentation ready"
       - "Preclinical safety data compiled"
+
     authority_specific:
       FDA:
-        duration_days: 60
-        notes: "30-day safety review hold period after submission"
-        required_documents:
-          - "FDA Form 1571"
-          - "Protocol"
-          - "Investigator's Brochure"
-          - "CMC package"
+        duration_days: 45
+        min_days: 30
+        max_days: 90
+        notes: "30-day statutory minimum, typically 45 days if questions"
       EMA:
         duration_days: 90
         notes: "60-day review period from validation"
-        required_documents:
-          - "EudraCT application"
-          - "IMPD (Investigational Medicinal Product Dossier)"
       MHRA:
         duration_days: 60
         notes: "30-day review period from validation"
+
+    # International regulatory variations (22 countries)
     country_variations:
       US:
         authority_code: FDA
         duration_days: 30
         workflow_type: "parallel"
-        notes: "Can run parallel with IRB"
+        notes: "Can run parallel with IRB, 30-day statutory minimum"
       AU:
         authority_code: TGA
         duration_days: 30
@@ -57,76 +276,76 @@ tasks:
         duration_days: 60
         workflow_type: "parallel"
         auto_approval_days: 60
-        notes: "Automatic approval if no response in 60 days"
+        notes: "Automatic approval if no response in 60 days (standard pathway)"
       IN:
         authority_code: DCGI
         duration_days: 90
         workflow_type: "concurrent_sequential"
         auto_approval_days: 90
-        notes: "Concurrent submission with EC, but must confirm EC approvals before final authorization"
+        notes: "New drug/IND: 90 days (30 days for India-developed); concurrent with EC but must confirm EC approvals"
       KE:
         authority_code: PPB
         duration_days: 30
         workflow_type: "three_layer_sequential"
-        notes: "Second layer in EC → PPB → NACOSTI sequence"
+        notes: "Second layer in EC → PPB → NACOSTI sequence (60+ days total)"
       TZ:
         authority_code: TMDA
         duration_days: 60
         fast_track_days: 30
         fast_track_fee_multiplier: 2
-        workflow_type: "multi_body"
-        notes: "Three-body system: TMDA + NatHREC + COSTECH"
+        workflow_type: "three_body_hybrid"
+        notes: "Three-body system: TMDA || NatHREC → COSTECH (90-120+ days total)"
       VN:
         authority_code: MOH_ASTT
         duration_days: 25
         workflow_type: "four_layer_sequential"
-        notes: "Part of 4-layer: CEBRGL → ASTT → NECBR → Minister (60+ days total)"
+        notes: "ASTT is layer 2 in CEBRGL → ASTT → NECBR → Minister (60+ days total)"
       ZW:
         authority_code: MCAZ
         duration_days: 60
         fast_track_days: 15
-        workflow_type: "multi_body"
-        notes: "Multi-body system: MCAZ + RCZ + NBA, parallel submissions encouraged"
+        workflow_type: "four_body_parallel"
+        notes: "Multi-body: MCAZ + RCZ + NBA + MRCZ, parallel submissions encouraged"
       GB:
         authority_code: MHRA
         duration_days: 30
         notification_scheme_days: 14
         auto_approval_days: 30
         workflow_type: "parallel_integrated"
-        notes: "IRAS combined review, automatic authorization if no response in 30 days"
+        notes: "IRAS combined review, automatic if no response in 30 days, Phase 3/4 can use 14-day notification"
       TH:
         authority_code: ThaiFDA
         duration_days: 60
         express_days: 10
         workflow_type: "concurrent_sequential"
-        notes: "Concurrent with EC via Skynet E-Submission System"
+        notes: "60 working days standard, 10 days express channel, Skynet E-Submission System"
       UG:
         authority_code: NDA
         duration_days: 60
         fast_track_days: 15
-        workflow_type: "multi_body"
-        notes: "Three-body oversight: NDA + UNCST + UNHRO"
+        workflow_type: "concurrent_sequential_multibody"
+        notes: "Three-body oversight: NDA + UNCST + UNHRO, stop-clock during review"
       MX:
         authority_code: COFEPRIS
         duration_days: 30
         workflow_type: "sequential"
-        notes: "REC approval required BEFORE COFEPRIS submission"
+        notes: "REC approval required BEFORE COFEPRIS (45 days if FRA reliance)"
       PE:
         authority_code: INS
         duration_days: 30
         workflow_type: "sequential"
-        notes: "EC approval required BEFORE INS submission (includes ANM binding opinion)"
+        notes: "EC + ANM binding opinion BEFORE INS (30 working days includes ANM)"
       ZA:
         authority_code: SAHPRA
         duration_days: 91
         workflow_type: "flexible"
-        notes: "Parallel allowed, but sequential recommended when EC lacks scientific review capacity"
+        notes: "~13 weeks (3 screening + 10 CTC), parallel allowed but sequential recommended if EC lacks scientific review"
       SL:
         authority_code: PBSL
         duration_days: 50
         expedited_days: 10
         workflow_type: "flexible"
-        notes: "Sequential default, switches to parallel for emergencies (40-120 days by product type)"
+        notes: "40-120 days by product type (40 devices, 50 pharma, 60 bio, 120 GMO), expedited 10-20 days"
 
   - id: REG-002
     name: "IRB/EC Approval"
@@ -136,13 +355,26 @@ tasks:
     max_duration_days: 90
     description: "Obtain Institutional Review Board or Ethics Committee approval"
     is_mandatory: true
-    prerequisites:
-      - REG-001
+
+    # Industry benchmarks
+    submission_prep_days: 30
+    review_days: 45
+    variance_days: 30  # Meeting schedules matter
+    industry_notes: "Submits SAME TIME as IND (parallel, not sequential)"
+    common_pm_error: "Planning sequential (IND then IRB) vs parallel"
+
+    critical_gate:
+      description: "Study CANNOT start until BOTH FDA and IRB complete"
+      fda_requirement: "30-day period elapsed with no hold"
+      irb_requirement: "Formal approval received"
+      critical_path: "Whichever takes longer (usually ~60-75 days)"
+
     gating_requirements:
       - "Protocol finalized"
       - "Informed Consent Form drafted"
       - "Site regulatory documents prepared"
-    checklist_id: STARTUP
+
+    # International regulatory variations (22 countries)
     country_variations:
       US:
         authority_code: IRB
@@ -155,91 +387,94 @@ tasks:
         duration_days: null
         is_national: true
         workflow_type: "sequential"
-        notes: "National committee, must approve BEFORE DGDA submission"
+        notes: "National committee, must approve BEFORE DGDA submission (60 working days)"
       KE:
         authority_code: EC
         duration_days: null
         is_national: false
         workflow_type: "three_layer_sequential"
-        notes: "First step in 3-layer approval: EC → PPB → NACOSTI"
+        notes: "First step in 3-layer: EC → PPB → NACOSTI (60+ days total)"
       TZ:
         authority_code: NatHREC
         duration_days: 30
         is_national: true
-        workflow_type: "multi_body"
-        notes: "National EC, runs parallel with TMDA (acknowledgement required), then COSTECH clearance"
+        workflow_type: "three_body_hybrid"
+        notes: "National EC, concurrent with TMDA (acknowledgement required), then COSTECH"
       VN:
         authority_code: CEBRGL
         duration_days: 30
         is_national: false
         workflow_type: "four_layer_sequential"
-        notes: "Institutional EC, first step in 4-layer sequential: CEBRGL → ASTT → NECBR → Minister"
+        notes: "Institutional EC, layer 1 in CEBRGL → ASTT → NECBR → Minister"
       ZW:
         authority_code: MRCZ
         duration_days: 30
         is_national: true
-        workflow_type: "multi_body"
-        notes: "National EC (MRCZ), parallel with regulatory bodies (MCAZ + RCZ + NBA)"
+        workflow_type: "four_body_parallel"
+        notes: "National EC, 4-6 weeks, parallel with MCAZ + RCZ + NBA"
       GB:
         authority_code: REC
         duration_days: 60
+        max_days: 90
+        gene_therapy_days: 180
         is_national: true
         workflow_type: "parallel_integrated"
-        notes: "Research Ethics Committee, integrated IRAS review with MHRA (single UK decision)"
+        notes: "IRAS combined review, 60 days final opinion (90 gene therapy, 180 if specialist consult), £0 fees"
       IN:
         authority_code: EC
         duration_days: null
         is_national: false
         workflow_type: "concurrent_sequential"
-        notes: "Decentralized EC, concurrent submission with DCGI, but DCGI confirms EC approvals"
+        notes: "Decentralized EC, concurrent with DCGI, but DCGI confirms EC approvals before final authorization"
       CN:
         authority_code: EC
         duration_days: 30
         is_national: false
         workflow_type: "parallel"
-        notes: "Runs parallel with NMPA (standard pathway); sequential for HGR pathway"
+        notes: "Parallel with NMPA (standard), sequential for HGR pathway (NMPA → NHC → EC)"
       AU:
         authority_code: HREC
         duration_days: 30
         is_national: false
         workflow_type: "parallel"
-        notes: "Human Research Ethics Committee, runs parallel with TGA"
+        notes: "Human Research Ethics Committee, parallel with TGA, NMA for multicenter"
       CA:
         authority_code: REB
         duration_days: null
         is_national: false
         workflow_type: "parallel"
-        notes: "Research Ethics Board, runs parallel with Health Canada"
+        notes: "Research Ethics Board, parallel with Health Canada (30 days HC)"
       GN:
         authority_code: CNERS
         duration_days: 60
+        emergency_days: 2
         is_national: true
         workflow_type: "sequential"
-        notes: "National ethics committee, must approve BEFORE DNPM submission (48-hour emergency response)"
+        notes: "National EC, BEFORE DNPM (14 days), 48-hour emergency response, monthly meetings last Thursday"
       MW:
         authority_code: NHSRC
         duration_days: null
         is_national: true
         workflow_type: "sequential"
-        notes: "NCST-approved EC, must approve BEFORE PMRA submission"
+        notes: "NCST-approved EC (NHSRC or COMREC), BEFORE PMRA"
       ML:
         authority_code: CIESS_USTTB
         duration_days: null
         is_national: true
         workflow_type: "sequential"
-        notes: "Primary EC for clinical research, must approve BEFORE DPM submission"
+        notes: "Primary EC for clinical research, BEFORE DPM (15-day target)"
       MX:
         authority_code: REC
         duration_days: 30
         is_national: false
         workflow_type: "sequential"
-        notes: "Registered Ethics Committee, must approve BEFORE COFEPRIS submission"
+        notes: "Registered Ethics Committee, ≤30 calendar days recommended, BEFORE COFEPRIS"
       PE:
         authority_code: EC
         duration_days: null
         is_national: false
         workflow_type: "sequential"
-        notes: "INS-accredited EC, must approve BEFORE INS submission"
+        notes: "INS-accredited EC, BEFORE INS submission"
       SL:
         authority_code: SLESRC
         duration_days: null
@@ -251,30 +486,50 @@ tasks:
         duration_days: null
         is_national: false
         workflow_type: "flexible"
-        notes: "NHREC-registered EC, parallel with SAHPRA allowed"
+        notes: "NHREC-registered EC, parallel with SAHPRA allowed, joint reviews for multicenter"
       TH:
         authority_code: ECMOPH
         duration_days: 75
+        expedited_days: 10
         is_national: true
         workflow_type: "concurrent_sequential"
-        notes: "Central EC (ECMOPH or CREC), concurrent with Thai FDA"
+        notes: "Central EC (ECMOPH 2-3mo or CREC 10+ days expedited), concurrent with Thai FDA"
       UG:
         authority_code: EC
         duration_days: 60
         is_national: false
-        workflow_type: "multi_body"
+        workflow_type: "concurrent_sequential_multibody"
         notes: "UNCST-accredited EC, part of 3-body oversight with NDA + UNCST + UNHRO"
 
   - id: REG-003
-    name: "Protocol Amendment Submission"
+    name: "Protocol Amendment Submission & Approval"
     category: Regulatory
     typical_duration_days: 30
     min_duration_days: 14
-    max_duration_days: 60
+    max_duration_days: 260  # Updated from industry data
     description: "Submit and obtain approval for protocol amendments"
     is_mandatory: false
-    prerequisites:
-      - REG-002
+
+    # Industry reality (critical!)
+    complex_protocol_rate: 0.57  # 57% probability
+    average_implementation_days: 260  # 8.5 months
+    phase_iii_typical_delay_days: 150  # 4-6 months
+    source: "Industry data, CenterWatch"
+
+    triggers:
+      - "Regulatory feedback during IND review"
+      - "New safety data"
+      - "Enrollment challenges"
+      - "Operational feasibility"
+
+    cascading_effects:
+      - "Fresh IRB approvals (45-60 days)"
+      - "Contract renegotiations (30-60 days)"
+      - "Site retraining (14-30 days)"
+
+    validation:
+      recommend_buffer_days: 150
+      error_message: "57% of complex protocols need amendments (avg 260 days)"
 
   - id: REG-004
     name: "Annual Safety Report"
@@ -285,9 +540,9 @@ tasks:
     description: "Prepare and submit annual safety report to regulatory authority"
     is_mandatory: true
 
-  # ============================================================================
-  # INTERNATIONAL REGULATORY TASKS
-  # ============================================================================
+  # ========================================================================
+  # INTERNATIONAL REGULATORY TASKS (Multi-Body Systems)
+  # ========================================================================
 
   - id: REG-INT-001
     name: "Additional Regulatory Body Approval"
@@ -298,23 +553,24 @@ tasks:
     max_duration_days: 60
     description: "Additional regulatory body approval required in multi-body systems"
     is_mandatory: true
+
     country_variations:
       KE:
         authority_code: NACOSTI
         duration_days: 30
-        notes: "Third layer in EC → PPB → NACOSTI sequence, county-level notifications required"
+        notes: "Third layer in EC → PPB → NACOSTI, county notifications, 3-year EC accreditation"
       TZ:
         authority_code: COSTECH
         duration_days: null
-        notes: "Third body after TMDA + NatHREC, reviews every 2 months, research clearance required"
+        notes: "Third body after TMDA + NatHREC, reviews every 2 months, security clearance"
       UG:
         authority_code: UNCST
         duration_days: 14
-        notes: "Research permit required, part of 3-body oversight, includes security clearance from Office of President"
+        notes: "Research permit, 10-14 working days, security clearance from Office of President"
       ZW:
         authority_code: RCZ
         duration_days: 42
-        notes: "Research Council of Zimbabwe, parallel with MCAZ, foreign researcher permits required"
+        notes: "Research Council, 6-8 weeks, parallel with MCAZ, foreign researcher permits"
 
   - id: REG-INT-002
     name: "National Ethics Committee Review"
@@ -325,19 +581,20 @@ tasks:
     max_duration_days: 60
     description: "National-level ethics committee review (in addition to institutional EC)"
     is_mandatory: true
+
     country_variations:
       VN:
         authority_code: NECBR
         duration_days: 25
-        notes: "Third layer in 4-layer sequential: CEBRGL → ASTT → NECBR → Minister"
+        notes: "Layer 3 in CEBRGL → ASTT → NECBR → Minister (4-layer sequential)"
       BD:
         authority_code: NREC
         duration_days: null
-        notes: "National Research Ethics Committee, must approve BEFORE DGDA"
+        notes: "National Research Ethics Committee, BEFORE DGDA (60 working days)"
       TZ:
         authority_code: NatHREC
         duration_days: 30
-        notes: "National HREC in addition to institutional EC, runs parallel with TMDA"
+        notes: "National HREC + institutional EC dual review for clinical trials"
 
   - id: REG-INT-003
     name: "Ministerial/Final Approval"
@@ -348,78 +605,26 @@ tasks:
     max_duration_days: 14
     description: "Final ministerial or highest-level approval stage"
     is_mandatory: true
+
     country_variations:
       VN:
         authority_code: Minister
         duration_days: 5
-        notes: "Final layer in 4-layer sequential: CEBRGL → ASTT → NECBR → Minister (5 days for final approval)"
+        notes: "Layer 4 final approval in CEBRGL → ASTT → NECBR → Minister (most complex sequential)"
 
-  - id: REG-INT-004
-    name: "Technical Review Authority Opinion"
-    aliases: ["ANM Opinion", "Technical Assessment"]
-    category: Regulatory
-    typical_duration_days: 30
-    min_duration_days: 14
-    max_duration_days: 45
-    description: "Additional technical review authority opinion required"
-    is_mandatory: true
-    country_variations:
-      PE:
-        authority_code: ANM
-        duration_days: null
-        notes: "ANM binding technical opinion on IP safety/quality (included in INS 30-day timeline)"
-
-  - id: REG-INT-005
-    name: "National Bioethics Authority Approval"
-    aliases: ["NBA Approval", "Bioethics Review"]
-    category: Regulatory
-    typical_duration_days: 30
-    min_duration_days: 14
-    max_duration_days: 60
-    description: "National bioethics authority approval (for genetic/bioethics oversight)"
-    is_mandatory: false
-    country_variations:
-      ZW:
-        authority_code: NBA
-        duration_days: null
-        notes: "National Bioethics Authority, part of multi-body system with MCAZ + RCZ"
-      CN:
-        authority_code: NHC
-        duration_days: 30
-        notes: "National Health Commission, required for HGR pathway (genetic resources trials)"
-
-  - id: REG-INT-006
-    name: "Clinical Trial Registration"
-    aliases: ["CT Registration", "Trial Registry Submission"]
-    category: Regulatory
-    typical_duration_days: 7
-    min_duration_days: 1
-    max_duration_days: 14
-    description: "Clinical trial registration in national or international registry"
-    is_mandatory: true
-    country_variations:
-      KE:
-        authority_code: PPB
-        duration_days: 7
-        notes: "Dual CT registration required: PPB + Pan African (PACTR)"
-      SL:
-        authority_code: PBSL
-        duration_days: 7
-        notes: "PACTR registration required"
-
-  # ============================================================================
+  # ========================================================================
   # OPERATIONAL TASKS
-  # ============================================================================
+  # ========================================================================
 
   - id: OPS-001
     name: "Site Identification & Feasibility"
     category: Operational
-    typical_duration_days: 90
-    min_duration_days: 60
+    typical_duration_days: 45  # Updated from industry data
+    min_duration_days: 30
     max_duration_days: 180
     description: "Identify potential sites and conduct feasibility assessments"
     is_mandatory: true
-    checklist_id: STARTUP
+
     gating_requirements:
       - "Target enrollment numbers defined"
       - "Geographic distribution planned"
@@ -428,14 +633,39 @@ tasks:
   - id: OPS-002
     name: "Site Contract Execution"
     category: Operational
-    typical_duration_days: 60
-    min_duration_days: 30
-    max_duration_days: 120
+    typical_duration_days: 145  # Updated from WCG data (independent sites)
+    min_duration_days: 90
+    max_duration_days: 365
     description: "Negotiate and execute site contracts and budgets"
     is_mandatory: true
     prerequisites:
       - OPS-001
-    checklist_id: STARTUP
+
+    # CRITICAL WCG CLINTRAX DATA
+    academic_medical_centers:
+      typical_duration_days: 280  # 9.4 months MEDIAN
+      min_days: 210
+      max_days: 365
+      source: "WCG Clintrax proprietary data"
+      notes: "Multiple layers legal review, institutional policies"
+
+    independent_research_sites:
+      typical_duration_days: 145  # 4.8 months MEDIAN
+      min_days: 90
+      max_days: 180
+      source: "WCG Clintrax proprietary data"
+      notes: "Streamlined contracting, 2X faster than academic"
+
+    industry_benchmarks:
+      delay_cause_percentage: 49  # 49% of delays = contracts
+      annual_contracting_costs: 353000000  # $353M
+      delay_cost_per_3_months: 2200000  # $2.2M
+
+    validation:
+      academic_minimum_days: 200
+      academic_error_message: "Academic sites average 9.4mo (280 days) - WCG data"
+      independent_minimum_days: 100
+      financial_impact_formula: "(gap_months) * 733000"
 
   - id: OPS-003
     name: "Study Drug Manufacturing & Release"
@@ -445,50 +675,25 @@ tasks:
     max_duration_days: 180
     description: "Manufacture, test, and release study drug supplies"
     is_mandatory: true
-    gating_requirements:
-      - "Drug specifications finalized"
-      - "Manufacturing plan approved"
-      - "Quality control testing protocols ready"
 
   - id: OPS-004
-    name: "Study Drug Distribution"
-    category: Operational
-    typical_duration_days: 30
-    min_duration_days: 14
-    max_duration_days: 60
-    description: "Ship study drug to sites and ensure proper storage"
-    is_mandatory: true
-    prerequisites:
-      - OPS-003
-    checklist_id: SIV
-
-  - id: OPS-005
     name: "eCRF System Build & Validation"
     category: Operational
-    typical_duration_days: 90
-    min_duration_days: 60
+    typical_duration_days: 42  # Updated from Emmes data
+    min_duration_days: 30
     max_duration_days: 120
     description: "Build and validate electronic Case Report Form system"
     is_mandatory: true
-    checklist_id: STARTUP
-    gating_requirements:
-      - "eCRF specifications finalized"
-      - "Edit checks defined"
-      - "User acceptance testing completed"
 
-  - id: OPS-006
-    name: "Randomization System Setup"
-    category: Operational
-    typical_duration_days: 30
-    min_duration_days: 14
-    max_duration_days: 60
-    description: "Set up and validate interactive randomization system (IWRS/IRT)"
-    is_mandatory: true
-    checklist_id: STARTUP
+    # Emmes v3.0 data
+    timing_after_protocol: 28  # 4 weeks after protocol review
+    final_after_protocol_v1: 14  # 2 weeks after protocol v1.0
+    cannot_start_until: "Forms finalized"
+    system_opens: "Same day as site activation"
 
-  # ============================================================================
+  # ========================================================================
   # SITE TASKS
-  # ============================================================================
+  # ========================================================================
 
   - id: SITE-001
     name: "Site Initiation Visit (SIV)"
@@ -502,11 +707,15 @@ tasks:
       - REG-002
       - OPS-001
       - OPS-002
-    checklist_id: SIV
-    gating_requirements:
-      - "Site regulatory approvals complete"
+
+    # Emmes v3.0 prerequisites
+    timing: "After FDA clearance + IRB approval + contracts + training + IP shipped"
+    prerequisites_list:
+      - "FDA clearance"
+      - "IRB approval"
       - "Site contracts executed"
-      - "Study materials delivered to site"
+      - "Training complete (4 weeks before activation)"
+      - "IP shipped to site"
 
   - id: SITE-002
     name: "Site Activation"
@@ -518,26 +727,23 @@ tasks:
     is_mandatory: true
     prerequisites:
       - SITE-001
-    checklist_id: SAV
 
   - id: SITE-003
     name: "First Patient In (FPI)"
     category: Site
-    typical_duration_days: 1
-    min_duration_days: 1
-    max_duration_days: 1
+    typical_duration_days: 30  # Updated from industry data
+    min_duration_days: 7
+    max_duration_days: 120
     description: "First patient enrolled and randomized"
     is_mandatory: true
     prerequisites:
       - SITE-002
-    gating_requirements:
-      - "All regulatory approvals in place"
-      - "Site activated and ready"
-      - "Study drug available at site"
+
+    variance_pct: 100  # Highly variable!
 
   - id: SITE-004
     name: "Patient Enrollment Period"
-    category: Site
+    category: Operational
     typical_duration_days: 365
     min_duration_days: 180
     max_duration_days: 730
@@ -546,79 +752,87 @@ tasks:
     prerequisites:
       - SITE-003
 
+    # CRITICAL CENTERWATCH DATA
+    industry_statistics:
+      must_double_timeline_pct: 90  # 90% must double
+      sites_enroll_zero_pct: 11  # 11% enroll ZERO
+      underperforming_sites_pct: 30  # Additional 30% <50% target
+
+    enrollment_rates:
+      pm_typical_assumption: 1.5  # patients/site/month
+      realistic_rate: 0.75  # Use this unless proven otherwise
+      oncology_phase_i: 0.6  # Disease-specific, slow
+      infectious_phase_i: 2.5  # Healthy volunteers, fast
+
+    durations_by_therapeutic_area:
+      oncology_phase_i_days: 730  # 24 months!
+      oncology_phase_iii_days: 730
+      infectious_phase_i_days: 270  # 9 months
+      cardiovascular_phase_iii_days: 545
+      rare_disease_modifier: 1.5  # Add 50%
+
+    validation:
+      buffer_minimum_pct: 100  # Must double
+      backup_sites_minimum_pct: 15
+      rate_warning_threshold: 1.5  # patients/site/month
+      error_message: "90% of trials must double enrollment timeline - CenterWatch"
+
   - id: SITE-005
-    name: "Last Patient In (LPI)"
+    name: "Last Patient Last Visit (LPLV)"
     category: Site
     typical_duration_days: 1
-    min_duration_days: 1
-    max_duration_days: 1
-    description: "Last patient enrolled (enrollment complete)"
+    description: "Last patient completes final study visit"
     is_mandatory: true
-    prerequisites:
-      - SITE-004
+    notes: "Triggers database lock process"
 
-  - id: SITE-006
-    name: "Patient Follow-up Period"
-    category: Site
-    typical_duration_days: 180
-    min_duration_days: 90
-    max_duration_days: 365
-    description: "Follow-up period after last patient enrolled"
+  # ========================================================================
+  # DATA MANAGEMENT TASKS
+  # ========================================================================
+
+  - id: DATA-001
+    name: "Clinical Database Lock"
+    category: Data
+    typical_duration_days: 42  # Updated from Emmes v3.0
+    min_duration_days: 42
+    max_duration_days: 60
+    description: "Complete data cleaning and lock clinical database"
     is_mandatory: true
     prerequisites:
       - SITE-005
 
-  - id: SITE-007
-    name: "Last Patient Out (LPO)"
-    category: Site
-    typical_duration_days: 1
-    min_duration_days: 1
-    max_duration_days: 1
-    description: "Last patient completes final study visit"
-    is_mandatory: true
-    prerequisites:
-      - SITE-006
+    # EMMES CRO v3.0 DETAILED BREAKDOWN
+    lplv_to_lock_days: 42  # 6 weeks TOTAL
+    data_entry_days: 4  # After LPLV
+    data_cleaning_days: 14  # 2 weeks
+    sae_reconciliation_days: 21  # 3 weeks (parallel with cleaning)
+    final_monitoring_days: 35  # 5 weeks cumulative from LPLV
+    query_resolution_days: 1
+    source: "Emmes Study Closeout v3.0"
 
-  - id: SITE-008
-    name: "Site Monitoring Visits"
-    category: Site
-    typical_duration_days: 30
-    min_duration_days: 14
-    max_duration_days: 60
-    description: "Regular monitoring visits to ensure compliance and data quality"
-    is_mandatory: true
-    prerequisites:
-      - SITE-003
-
-  # ============================================================================
-  # DATA MANAGEMENT TASKS
-  # ============================================================================
-
-  - id: DATA-001
-    name: "Data Cleaning & Query Resolution"
-    category: Data
-    typical_duration_days: 90
-    min_duration_days: 60
-    max_duration_days: 120
-    description: "Clean data, resolve queries, and prepare for database lock"
-    is_mandatory: true
-    prerequisites:
-      - SITE-007
+    validation:
+      minimum_days: 42
+      error_message: "Clinical database lock requires minimum 6 weeks from LPLV - Emmes standard"
 
   - id: DATA-002
-    name: "Database Lock"
+    name: "Laboratory Database Lock"
     category: Data
-    typical_duration_days: 14
-    min_duration_days: 7
-    max_duration_days: 30
-    description: "Freeze database after all data cleaned and queries resolved"
+    typical_duration_days: 98  # Updated from Emmes v3.0
+    min_duration_days: 84
+    max_duration_days: 120
+    description: "Complete laboratory assays and lock lab database"
     is_mandatory: true
-    prerequisites:
-      - DATA-001
-    gating_requirements:
-      - "All CRFs completed"
-      - "All queries resolved"
-      - "All serious adverse events reported"
+
+    # EMMES CRO v3.0 - CRITICAL PATH!
+    assay_completion_days: 84  # 12 weeks from last specimen
+    qc_query_days: 4
+    query_resolution_days: 7
+    total_from_specimen_days: 98  # ~14 weeks
+    source: "Emmes Study Closeout v3.0"
+    critical_fact: "Laboratory is typically CRITICAL PATH (longer than clinical)"
+
+    validation:
+      minimum_days: 98
+      error_message: "Lab lock requires 12+ weeks from last specimen - typically critical path!"
 
   - id: DATA-003
     name: "Statistical Analysis"
@@ -629,22 +843,46 @@ tasks:
     description: "Conduct statistical analysis per Statistical Analysis Plan"
     is_mandatory: true
     prerequisites:
+      - DATA-001
       - DATA-002
+
+    notes: "Cannot begin until BOTH clinical AND lab databases locked"
 
   - id: DATA-004
     name: "Clinical Study Report (CSR) Writing"
     category: Data
-    typical_duration_days: 90
-    min_duration_days: 60
-    max_duration_days: 180
+    typical_duration_days: 210  # Updated from Emmes v3.0
+    min_duration_days: 182
+    max_duration_days: 245
     description: "Prepare comprehensive Clinical Study Report"
     is_mandatory: true
     prerequisites:
       - DATA-003
 
-  # ============================================================================
+    # EMMES CRO v3.0 DETAILED BREAKDOWN
+    total_db_lock_to_fda_days: 210  # 30 weeks median
+    draft_csr_days: 84  # 12 weeks
+    pi_review_days: 35  # 4-6 weeks average
+    incorporate_pi_days: 7
+    sponsor_review_days: 28  # 4 weeks
+    incorporate_sponsor_days: 7
+    approvals_days: 3
+    formatting_days: 3
+    pi_signature_days: 3
+    distribution_days: 1
+    fda_submission_days: 18  # 2-3 weeks
+    source: "Emmes CSR Preparation v3.0"
+
+    prerequisite: "Cannot begin until BOTH clinical AND lab databases locked"
+    typical_pm_error: "Planning 3 months instead of 7-8 months"
+
+    validation:
+      minimum_days: 210
+      error_message: "CSR averages 30 weeks from database lock - Emmes CRO standard"
+
+  # ========================================================================
   # CLOSEOUT TASKS
-  # ============================================================================
+  # ========================================================================
 
   - id: CLOSE-001
     name: "Site Closeout Visits"
@@ -655,13 +893,8 @@ tasks:
     description: "Conduct site closeout visits and retrieve essential documents"
     is_mandatory: true
     prerequisites:
-      - SITE-007
+      - SITE-005
       - DATA-001
-    checklist_id: CLOSEOUT
-    gating_requirements:
-      - "All patient follow-up complete"
-      - "All data queries resolved"
-      - "Drug accountability reconciled"
 
   - id: CLOSE-002
     name: "Study Archival"
@@ -673,7 +906,6 @@ tasks:
     is_mandatory: true
     prerequisites:
       - CLOSE-001
-    checklist_id: CLOSEOUT
 
   - id: CLOSE-003
     name: "Final Regulatory Submissions"
@@ -685,7 +917,99 @@ tasks:
     is_mandatory: true
     prerequisites:
       - DATA-004
-    checklist_id: CLOSEOUT
+
+# ============================================================================
+# VALIDATION RULES (Industry Reality Checks)
+# ============================================================================
+
+validation_rules:
+  - id: "VR-001"
+    name: "Timeline Failure Rate"
+    condition: "buffer < 50%"
+    severity: "WARNING"
+    message: "80% of trials fail initial timelines - add buffer"
+    source: "Industry data"
+
+  - id: "VR-002"
+    name: "Enrollment Must Double"
+    condition: "enrollment_buffer < 100%"
+    severity: "ERROR"
+    message: "90% of trials must double enrollment timeline"
+    financial_impact: "months * 733000"
+    source: "CenterWatch"
+
+  - id: "VR-003"
+    name: "Site Non-Enrollment"
+    condition: "backup_sites < 15%"
+    severity: "ERROR"
+    message: "11% of sites enroll zero patients - add 15-20% backup"
+    source: "Industry data"
+
+  - id: "VR-004"
+    name: "Academic Contracts 9.4 Months"
+    condition: "site_type=academic AND duration<200"
+    severity: "ERROR"
+    message: "Academic sites average 9.4mo (280 days) - WCG Clintrax"
+    financial_impact: "gap_months * 733000"
+    source: "WCG Clintrax"
+
+  - id: "VR-005"
+    name: "Phase III Startup 2.5 Years"
+    condition: "phase=III AND startup<730"
+    severity: "ERROR"
+    message: "Phase III startup averages 2.5 years (920 days) - WCG/Tufts CSDD"
+    source: "WCG/Tufts CSDD"
+
+  - id: "VR-006"
+    name: "Database Lock 6 Weeks"
+    condition: "lplv_to_lock < 42"
+    severity: "ERROR"
+    message: "Clinical database lock requires 6 weeks from LPLV - Emmes v3.0"
+    source: "Emmes Study Closeout v3.0"
+
+  - id: "VR-007"
+    name: "Laboratory Lock 12 Weeks"
+    condition: "has_lab AND lab_lock<98"
+    severity: "ERROR"
+    message: "Lab lock requires 12 weeks - typically critical path! - Emmes v3.0"
+    source: "Emmes Study Closeout v3.0"
+
+  - id: "VR-008"
+    name: "CSR 30 Weeks Minimum"
+    condition: "csr_duration < 210"
+    severity: "ERROR"
+    message: "CSR averages 30 weeks from database lock - Emmes v3.0"
+    source: "Emmes CSR Preparation v3.0"
+
+  - id: "VR-009"
+    name: "Complex Protocol Amendments"
+    condition: "complexity=high AND no_buffer"
+    severity: "ERROR"
+    message: "57% of complex protocols need amendments (260 days avg) - CenterWatch"
+    source: "Industry data"
+
+  - id: "VR-010"
+    name: "Contracts Primary Delay Cause"
+    condition: "contracts < median"
+    severity: "WARNING"
+    message: "49% of delays caused by contracts - WCG"
+    source: "CenterWatch"
+
+# ============================================================================
+# FINANCIAL IMPACT CALCULATOR
+# ============================================================================
+
+financial_impact:
+  cost_per_month: 733000  # $733K per month
+  cost_per_3_months: 2200000  # $2.2M
+  source: "WCG proprietary data"
+
+  example_scenarios:
+    site_contracts_short_5_4_months: 3960000  # $3.96M
+    enrollment_delayed_12_months: 8800000  # $8.8M
+    amendment_4_month_delay: 2930000  # $2.93M
+
+  calculation_formula: "delay_months * 733000"
 
 # ============================================================================
 # METADATA
@@ -716,140 +1040,136 @@ phases:
   - "Pilot"
 
 # ============================================================================
-# INTERNATIONAL REGULATORY AUTHORITIES (22 Countries, 57+ Authorities)
+# INTERNATIONAL REGULATORY AUTHORITIES (23 Countries, 60+ Authorities)
 # ============================================================================
 
 authorities:
   # North America
-  - "FDA"  # United States
-  - "IRB"  # United States - Institutional Review Board
-  - "Health Canada"  # Canada
-  - "REB"  # Canada - Research Ethics Board
+  - "FDA"
+  - "IRB"
+  - "Health Canada"
+  - "REB"
 
   # Europe
-  - "EMA"  # European Union
-  - "MHRA"  # United Kingdom
-  - "REC"  # United Kingdom - Research Ethics Committee
-  - "UKECA"  # United Kingdom - UK Ethics Committee Authority
+  - "EMA"
+  - "MHRA"
+  - "REC"
+  - "UKECA"
 
   # Asia-Pacific
-  - "PMDA"  # Japan
-  - "TGA"  # Australia
-  - "HREC"  # Australia - Human Research Ethics Committee
-  - "NMPA"  # China
-  - "NHC"  # China - National Health Commission
-  - "SEC"  # China - Scientific Ethics Committee
-  - "DCGI"  # India
-  - "ThaiFDA"  # Thailand
-  - "ECMOPH"  # Thailand - Ethics Committee Ministry of Public Health
-  - "CREC"  # Thailand - Central Research Ethics Committee
-  - "MOH_ASTT"  # Vietnam - Ministry of Health Agency of Science Technology and Training
-  - "NECBR"  # Vietnam - National Ethics Committee in Biomedical Research
-  - "CEBRGL"  # Vietnam - Committee for Ethics in Biomedical Research at Grassroot Level
+  - "PMDA"
+  - "TGA"
+  - "HREC"
+  - "NMPA"
+  - "NHC"
+  - "SEC"
+  - "DCGI"
+  - "ThaiFDA"
+  - "ECMOPH"
+  - "CREC"
+  - "MOH_ASTT"
+  - "NECBR"
+  - "CEBRGL"
 
   # Latin America
-  - "COFEPRIS"  # Mexico
-  - "INS"  # Peru - Instituto Nacional de Salud
-  - "ANM"  # Peru - Autoridad Nacional de Medicamentos
+  - "COFEPRIS"
+  - "INS"
+  - "ANM"
+  - "ANVISA"
+  - "DIGEMID"
 
   # Africa
-  - "DGDA"  # Bangladesh - Directorate General of Drug Administration
-  - "NREC"  # Bangladesh - National Research Ethics Committee
-  - "ACOREP"  # DRC - Agence Congolaise de Régulation Pharmaceutique
-  - "DNPM"  # Guinea - Direction Nationale de la Pharmacie et du Médicament
-  - "CNERS"  # Guinea - Comité National d'Éthique pour la Recherche en Santé
-  - "PPB"  # Kenya - Pharmacy and Poisons Board
-  - "NACOSTI"  # Kenya - National Commission for Science, Technology and Innovation
-  - "LMHRA"  # Liberia - Liberia Medicines and Health Products Regulatory Authority
-  - "NREB"  # Liberia - National Research Ethics Board
-  - "PMRA"  # Malawi - Pharmacy, Medicines and Poisons Board Regulatory Authority
-  - "NHSRC"  # Malawi - National Health Sciences Research Committee
-  - "COMREC"  # Malawi - College of Medicine Research and Ethics Committee
-  - "DPM"  # Mali - Direction de la Pharmacie et du Médicament
-  - "CIESS_USTTB"  # Mali - CIESS/USTTB Ethics Committee
-  - "PBSL"  # Sierra Leone - Pharmacy Board of Sierra Leone
-  - "SLESRC"  # Sierra Leone - Sierra Leone Ethics and Scientific Review Committee
-  - "TMDA"  # Tanzania - Tanzania Medicines and Medical Devices Authority
-  - "NatHREC"  # Tanzania - National Health Research Ethics Committee
-  - "COSTECH"  # Tanzania - Tanzania Commission for Science and Technology
-  - "SAHPRA"  # South Africa - South African Health Products Regulatory Authority
-  - "NHREC"  # South Africa - National Health Research Ethics Council
-  - "NDA"  # Uganda - National Drug Authority
-  - "UNCST"  # Uganda - Uganda National Council for Science and Technology
-  - "UNHRO"  # Uganda - Uganda National Health Research Organization
-  - "MCAZ"  # Zimbabwe - Medicines Control Authority of Zimbabwe
-  - "RCZ"  # Zimbabwe - Research Council of Zimbabwe
-  - "NBA"  # Zimbabwe - National Biotechnology Authority
-  - "MRCZ"  # Zimbabwe - Medical Research Council of Zimbabwe
+  - "DGDA"
+  - "NREC"
+  - "ACOREP"
+  - "DNPM"
+  - "CNERS"
+  - "PPB"
+  - "NACOSTI"
+  - "LMHRA"
+  - "NREB"
+  - "PMRA"
+  - "NHSRC"
+  - "COMREC"
+  - "DPM"
+  - "CIESS_USTTB"
+  - "PBSL"
+  - "SLESRC"
+  - "TMDA"
+  - "NatHREC"
+  - "COSTECH"
+  - "SAHPRA"
+  - "NHREC"
+  - "NDA"
+  - "UNCST"
+  - "UNHRO"
+  - "MCAZ"
+  - "RCZ"
+  - "NBA"
+  - "MRCZ"
 
 # ============================================================================
-# WORKFLOW TYPES
+# WORKFLOW TYPES (8 Complexity Levels)
 # ============================================================================
 
 workflow_types:
   parallel:
-    description: "Regulatory and ethics submissions can run simultaneously"
-    example: "US (FDA + IRB), Australia (TGA + HREC)"
-    typical_complexity: 1
-
-  sequential:
-    description: "Ethics must approve BEFORE regulatory submission"
-    example: "Bangladesh (NREC → DGDA), Guinea (CNERS → DNPM)"
-    typical_complexity: 2
-
-  flexible:
-    description: "Normally sequential, can switch to parallel for emergencies"
-    example: "Sierra Leone, South Africa"
-    typical_complexity: 2.5
-
-  concurrent_sequential:
-    description: "Concurrent submission allowed, but regulatory waits for ethics approval"
-    example: "India (DCGI + EC), Thailand (Thai FDA + EC)"
-    typical_complexity: 3
-
-  three_layer_sequential:
-    description: "Three separate approval layers in sequence"
-    example: "Kenya (EC → PPB → NACOSTI)"
-    typical_complexity: 4
-
-  four_layer_sequential:
-    description: "Four separate approval stages in sequence"
-    example: "Vietnam (CEBRGL → ASTT → NECBR → Minister)"
-    typical_complexity: 4.5
-
-  multi_body:
-    description: "Multiple regulatory bodies with hybrid workflows"
-    example: "Tanzania (TMDA + NatHREC + COSTECH), Zimbabwe (MCAZ + RCZ + NBA + MRCZ)"
-    typical_complexity: 5
+    description: "Regulatory and ethics submissions run simultaneously"
+    complexity: 1
+    examples: ["US (FDA + IRB)", "Australia (TGA + HREC)", "Canada (HC + REB)"]
+    typical_timeline_days: 30
 
   parallel_integrated:
     description: "Parallel with coordinated/integrated review process"
-    example: "UK (MHRA + REC via IRAS combined review)"
-    typical_complexity: 1
+    complexity: 1
+    examples: ["UK (MHRA + REC via IRAS combined review)"]
+    typical_timeline_days: 30
+    unique_features: ["Single application", "Coordinated review", "Joint RFIs"]
 
-# ============================================================================
-# VERSION HISTORY
-# ============================================================================
+  sequential:
+    description: "Ethics must approve BEFORE regulatory submission"
+    complexity: 2
+    examples: ["Bangladesh (NREC → DGDA)", "Guinea (CNERS → DNPM)", "Mali", "Mexico", "Peru"]
+    typical_timeline_days: 60
 
-version_history:
-  "1.0":
-    date: "2024-01-01"
-    description: "Initial ontology with 24 canonical tasks, US/EU-centric"
-    tasks: 24
-    authorities: 5
+  flexible:
+    description: "Normally sequential, can switch to parallel for emergencies"
+    complexity: 2.5
+    examples: ["Sierra Leone", "South Africa"]
+    typical_timeline_days: "10-120"
 
-  "3.0":
-    date: "2026-01-16"
-    description: "International regulatory variations for 22 countries with comprehensive workflow definitions"
-    tasks: 30
-    authorities: 57
-    countries: 22
-    workflow_types: 8
-    improvements:
-      - "Added country_variations to REG-001 and REG-002"
-      - "Added 6 new international regulatory tasks (REG-INT-001 through REG-INT-006)"
-      - "Documented 22 countries with complete regulatory workflows"
-      - "Added 57 regulatory authorities and ethics committees"
-      - "Defined 8 workflow complexity types (parallel to 4-layer sequential)"
-      - "Timeline range: 5 days (emergency) to 120+ days (standard reviews)"
-      - "Expected ML confidence improvement: 40% → 75-90% for international trials"
+  concurrent_sequential:
+    description: "Concurrent submission, but regulatory waits for ethics approval"
+    complexity: 3
+    examples: ["India (DCGI + EC)", "Thailand (Thai FDA + EC)", "DRC", "Liberia"]
+    typical_timeline_days: 45
+
+  concurrent_sequential_multibody:
+    description: "Concurrent with multi-body oversight coordination"
+    complexity: 3
+    examples: ["Uganda (NDA + UNCST + UNHRO)"]
+    typical_timeline_days: 60
+
+  three_layer_sequential:
+    description: "Three separate approval layers in sequence"
+    complexity: 4
+    examples: ["Kenya (EC → PPB → NACOSTI)"]
+    typical_timeline_days: 60
+
+  four_layer_sequential:
+    description: "Four separate approval stages in sequence (most complex sequential)"
+    complexity: 4.5
+    examples: ["Vietnam (CEBRGL → ASTT → NECBR → Minister)"]
+    typical_timeline_days: 60
+
+  three_body_hybrid:
+    description: "Three-body system with hybrid concurrent/sequential workflow"
+    complexity: 5
+    examples: ["Tanzania (TMDA || NatHREC → COSTECH)"]
+    typical_timeline_days: 90
+
+  four_body_parallel:
+    description: "Four regulatory bodies with encouraged parallel submissions"
+    complexity: 5
+    examples: ["Zimbabwe (MCAZ + RCZ + NBA + MRCZ)"]
+    typical_timeline_days: 60
