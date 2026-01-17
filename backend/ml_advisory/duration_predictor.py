@@ -85,8 +85,16 @@ class DurationPredictor:
         if not self.workflow_matcher:
             return None
 
-        # Extract country code from task name
-        country_code = self.workflow_matcher.extract_country_code(task.name)
+        # PRIORITY 1: Use explicit country field if provided (v3.0 country configuration)
+        country_code = task.country
+
+        # If country is a full name (not a code), convert to code
+        if country_code and len(country_code) > 2:
+            country_code = self.workflow_matcher.get_country_code_from_name(country_code)
+
+        # FALLBACK: Extract country code from task name (legacy support)
+        if not country_code:
+            country_code = self.workflow_matcher.extract_country_code(task.name)
 
         # Get task duration prediction from workflow matcher
         workflow_prediction = self.workflow_matcher.get_task_duration(

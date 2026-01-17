@@ -2,12 +2,13 @@
 Configuration Endpoints
 
 Provides access to configuration data including authorities,
-task ontology, checklists, and validation rules
+task ontology, checklists, validation rules, and country workflows
 """
 
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any, Optional
 from backend.config import load_config, reload_config
+from backend.ml_advisory.workflow_matcher import WorkflowMatcher
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -31,6 +32,33 @@ class TaskSummary(BaseModel):
     typical_duration_days: int
     is_mandatory: bool = False
     has_authority_specific: bool = False
+
+
+class CountrySummary(BaseModel):
+    """Summary information about a country's regulatory workflow"""
+    code: str  # ISO country code (e.g., "US", "KE")
+    name: str  # Full country name (e.g., "United States", "Kenya")
+    workflow_type: str
+    complexity_level: float
+    total_timeline_days: Optional[int] = None
+
+    # Regulatory Authority
+    regulatory_authority_code: str
+    regulatory_authority_name: str
+
+    # Ethics Authority
+    ethics_authority_code: str
+    ethics_authority_name: str
+
+    # Additional authorities (for multi-body systems)
+    additional_authorities: Optional[List[Dict[str, str]]] = None
+
+    # Pathway options
+    has_emergency_pathway: bool = False
+    has_fast_track: bool = False
+
+    # Workflow description
+    workflow_description: Optional[str] = None
 
 
 @router.get("/config/authorities", response_model=List[AuthoritySummary])
@@ -89,6 +117,147 @@ async def get_authorities():
         raise HTTPException(
             status_code=500,
             detail=f"Failed to load authorities: {str(e)}"
+        )
+
+
+def _get_authority_full_name(auth_code: str, workflow: Dict) -> str:
+    """Extract full authority name from workflow data"""
+    # Check in regulatory_authority
+    if workflow.get('regulatory_authority', {}).get('code') == auth_code:
+        return workflow['regulatory_authority'].get('name', auth_code)
+
+    # Check in ethics_authority
+    if workflow.get('ethics_authority', {}).get('code') == auth_code:
+        return workflow['ethics_authority'].get('name', auth_code)
+
+    # Check in workflow_steps for additional authorities
+    for step in workflow.get('workflow_steps', []):
+        if step.get('name') and auth_code in step.get('authorities', []):
+            # Extract name from step description if possible
+            return step.get('name', auth_code).replace('Layer - ', '').replace(' Approval', '')
+
+    return auth_code
+
+
+def _build_workflow_description(workflow: Dict) -> str:
+    """Build human-readable workflow description"""
+    workflow_type = workflow.get('workflow_type', '')
+    reg_code = workflow.get('regulatory_authority', {}).get('code', '')
+    eth_code = workflow.get('ethics_authority', {}).get('code', '')
+
+    descriptions = {
+        'parallel': f'Parallel: {reg_code} and {eth_code} can run simultaneously',
+        'parallel_integrated': f'Integrated: {reg_code} and {eth_code} via single application (e.g., IRAS)',
+        'sequential': f'Sequential: {eth_code} must approve BEFORE {reg_code} submission',
+        'flexible': f'Flexible: Normally sequential, can switch to parallel for emergencies',
+        'concurrent_sequential': f'Concurrent: Submit to both, but {reg_code} waits for {eth_code} approval',
+        'three_layer_sequential': f'3-Layer: {eth_code} → {reg_code} → Additional Authority',
+        'four_layer_sequential': f'4-Layer: Multiple sequential approvals required',
+        'three_body_hybrid': f'3-Body: {reg_code} + {eth_code} + Third Authority (hybrid workflow)',
+        'four_body_parallel': f'4-Body: Multiple authorities, parallel submissions encouraged',
+        'concurrent_sequential_multibody': f'Multi-body: Concurrent submission with coordination'
+    }
+
+    return descriptions.get(workflow_type, f'{workflow_type.replace("_", " ").title()} workflow')
+
+
+@router.get("/config/countries", response_model=List[CountrySummary])
+async def get_countries():
+    """
+    Get list of supported countries for study configuration
+
+    Returns summary information for all 23+ documented countries including:
+    - Country code (ISO 3166-1 alpha-2, e.g., 'US', 'KE', 'VN')
+    - Country name
+    - Regulatory workflow type (parallel, sequential, multi-body, etc.)
+    - Workflow complexity level (1-5)
+    - Estimated total timeline
+    - Regulatory and ethics authorities
+    - Available expedited pathways
+
+    This endpoint is used by the desktop add-in to populate the Study
+    Configuration dialog where PMs select which countries are involved in
+    their multi-country trial.
+
+    Example Response:
+        ```json
+        [
+            {
+                "code": "KE",
+                "name": "Kenya",
+                "workflow_type": "three_layer_sequential",
+                "complexity_level": 4,
+                "total_timeline_days": 60,
+                "regulatory_authority_code": "PPB",
+                "ethics_authority_code": "EC",
+                "has_emergency_pathway": false,
+                "has_fast_track": false
+            },
+            {
+                "code": "VN",
+                "name": "Vietnam",
+                "workflow_type": "four_layer_sequential",
+                "complexity_level": 4.5,
+                "total_timeline_days": 60,
+                "regulatory_authority_code": "MOH_ASTT",
+                "ethics_authority_code": "CEBRGL",
+                "has_emergency_pathway": true,
+                "has_fast_track": false
+            }
+        ]
+        ```
+    """
+    try:
+        # Initialize workflow matcher to access country data
+        matcher = WorkflowMatcher()
+
+        countries = []
+        for workflow in matcher.workflows:
+            # Check for emergency and fast-track pathways
+            reg_auth = workflow.get('regulatory_authority', {})
+            eth_auth = workflow.get('ethics_authority', {})
+            has_emergency = bool(reg_auth.get('emergency_review_days'))
+            has_fast_track = bool(reg_auth.get('fast_track_days'))
+
+            # Collect additional authorities (for multi-body systems)
+            additional_auths = []
+            for step in workflow.get('workflow_steps', []):
+                for auth_code in step.get('authorities', []):
+                    if auth_code not in [reg_auth.get('code'), eth_auth.get('code')]:
+                        # This is an additional authority
+                        additional_auths.append({
+                            'code': auth_code,
+                            'name': _get_authority_full_name(auth_code, workflow)
+                        })
+
+            # Build workflow description
+            workflow_desc = _build_workflow_description(workflow)
+
+            countries.append(CountrySummary(
+                code=workflow['country_code'],
+                name=workflow['country_name'],
+                workflow_type=workflow['workflow_type'],
+                complexity_level=workflow['complexity_level'],
+                total_timeline_days=workflow.get('total_timeline_days'),
+                regulatory_authority_code=reg_auth.get('code', 'N/A'),
+                regulatory_authority_name=reg_auth.get('name', 'Unknown'),
+                ethics_authority_code=eth_auth.get('code', 'N/A'),
+                ethics_authority_name=eth_auth.get('name', 'Unknown'),
+                additional_authorities=additional_auths if additional_auths else None,
+                has_emergency_pathway=has_emergency,
+                has_fast_track=has_fast_track,
+                workflow_description=workflow_desc
+            ))
+
+        # Sort by country name for easy selection in UI
+        countries.sort(key=lambda x: x.name)
+
+        return countries
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to load countries: {str(e)}"
         )
 
 

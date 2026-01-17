@@ -95,6 +95,7 @@ class Task(BaseModel):
     category: TaskCategory = Field(..., description="Task category")
     phase: StudyPhase = Field(..., description="Study phase")
     authority: RegulatoryAuthority = Field(..., description="Regulatory authority")
+    country: Optional[str] = Field(None, description="Country code (ISO 3166-1 alpha-2, e.g., 'US', 'KE', 'VN') for country-specific regulatory workflows")
     therapeutic_area: Optional[str] = Field(None, description="Therapeutic area (e.g., Oncology, Cardiology)")
 
     # Validation fields
