@@ -7,7 +7,8 @@ and registers all API routes.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api import health, validate, config, analytics, advisory, teams
+from backend.api import health, validate, config, analytics, advisory, teams, feedback
+from backend.database import init_db
 import logging
 
 # Configure logging
@@ -42,18 +43,28 @@ app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
 app.include_router(advisory.router, prefix="/api/v1", tags=["advisory"])
 app.include_router(teams.router, prefix="/api/v1", tags=["teams"])
+app.include_router(feedback.router, prefix="/api/v1", tags=["feedback"])
 
 
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup"""
     logger.info("🚀 Ilana PM Intelligence API starting up...")
+
+    # Initialize feedback database
+    try:
+        init_db()
+        logger.info("💾 Feedback database initialized")
+    except Exception as e:
+        logger.warning(f"⚠️  Database initialization skipped (already exists): {e}")
+
     logger.info("📍 API documentation available at: /docs")
     logger.info("✅ Validation endpoints: /api/v1/validate")
     logger.info("📊 Analytics endpoints: /api/v1/analytics/*")
     logger.info("🤖 ML Advisory endpoints: /api/v1/advisory/*")
     logger.info("⚙️  Configuration endpoints: /api/v1/config/*")
     logger.info("📢 Teams integration: /api/v1/teams/*")
+    logger.info("📝 Feedback endpoints: /api/v1/feedback/*")
     logger.info("❤️  Health check: /api/v1/health")
 
 
