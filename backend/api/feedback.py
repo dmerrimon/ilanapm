@@ -15,6 +15,7 @@ from backend.models.feedback import (
     AccuracyReport
 )
 from backend.database import get_db_connection
+from pydantic import BaseModel
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -475,6 +476,208 @@ async def get_accuracy_report() -> AccuracyReport:
     except Exception as e:
         logger.error(f"Failed to generate accuracy report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate accuracy report: {str(e)}")
+
+
+class AccuracyTrends(BaseModel):
+    """ML Accuracy Dashboard - Trends over time"""
+    overall_trend: dict
+    last_7_days: dict
+    last_30_days: dict
+    last_90_days: dict
+    improvement: dict
+    monthly_breakdown: List[dict]
+
+
+@router.get("/feedback/accuracy-trends", response_model=AccuracyTrends)
+async def get_accuracy_trends() -> AccuracyTrends:
+    """
+    Get ML accuracy trends over time for dashboard
+
+    Shows how prediction accuracy is improving/declining over different time periods.
+    Useful for ML Accuracy Dashboard UI.
+
+    Returns:
+        AccuracyTrends with:
+        - overall_trend: All-time accuracy stats
+        - last_7_days: Recent week performance
+        - last_30_days: Last month performance
+        - last_90_days: Last quarter performance
+        - improvement: Change from previous period
+        - monthly_breakdown: Month-by-month accuracy
+
+    Example Response:
+        ```json
+        {
+            "overall_trend": {
+                "total": 150,
+                "accurate": 112,
+                "accuracy_rate": 74.7,
+                "avg_error_days": 12.3
+            },
+            "last_30_days": {
+                "total": 45,
+                "accurate": 38,
+                "accuracy_rate": 84.4,
+                "avg_error_days": 8.1
+            },
+            "improvement": {
+                "accuracy_change_pct": +9.7,
+                "trending": "improving"
+            },
+            "monthly_breakdown": [
+                {"month": "2026-01", "accuracy_rate": 84.4, "total": 45},
+                {"month": "2025-12", "accuracy_rate": 71.2, "total": 62}
+            ]
+        }
+        ```
+    """
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+
+            # Overall trend (all time)
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
+                    AVG(ABS(variance_days)) as avg_error_days,
+                    AVG(ABS(variance_percent)) as avg_error_percent
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+            """)
+            overall = cursor.fetchone()
+
+            overall_trend = {
+                "total": overall['total'],
+                "accurate": overall['accurate'],
+                "accuracy_rate": round((overall['accurate'] / overall['total']) * 100, 1) if overall['total'] > 0 else 0.0,
+                "avg_error_days": round(overall['avg_error_days'], 1) if overall['avg_error_days'] else 0.0
+            }
+
+            # Last 7 days
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
+                    AVG(ABS(variance_days)) as avg_error_days
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+                AND recorded_at >= datetime('now', '-7 days')
+            """)
+            last_7 = cursor.fetchone()
+
+            last_7_days = {
+                "total": last_7['total'],
+                "accurate": last_7['accurate'],
+                "accuracy_rate": round((last_7['accurate'] / last_7['total']) * 100, 1) if last_7['total'] > 0 else 0.0,
+                "avg_error_days": round(last_7['avg_error_days'], 1) if last_7['avg_error_days'] else 0.0
+            }
+
+            # Last 30 days
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
+                    AVG(ABS(variance_days)) as avg_error_days
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+                AND recorded_at >= datetime('now', '-30 days')
+            """)
+            last_30 = cursor.fetchone()
+
+            last_30_days = {
+                "total": last_30['total'],
+                "accurate": last_30['accurate'],
+                "accuracy_rate": round((last_30['accurate'] / last_30['total']) * 100, 1) if last_30['total'] > 0 else 0.0,
+                "avg_error_days": round(last_30['avg_error_days'], 1) if last_30['avg_error_days'] else 0.0
+            }
+
+            # Last 90 days
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
+                    AVG(ABS(variance_days)) as avg_error_days
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+                AND recorded_at >= datetime('now', '-90 days')
+            """)
+            last_90 = cursor.fetchone()
+
+            last_90_days = {
+                "total": last_90['total'],
+                "accurate": last_90['accurate'],
+                "accuracy_rate": round((last_90['accurate'] / last_90['total']) * 100, 1) if last_90['total'] > 0 else 0.0,
+                "avg_error_days": round(last_90['avg_error_days'], 1) if last_90['avg_error_days'] else 0.0
+            }
+
+            # Previous 30 days (for comparison)
+            cursor.execute("""
+                SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+                AND recorded_at >= datetime('now', '-60 days')
+                AND recorded_at < datetime('now', '-30 days')
+            """)
+            prev_30 = cursor.fetchone()
+
+            prev_30_rate = round((prev_30['accurate'] / prev_30['total']) * 100, 1) if prev_30['total'] > 0 else 0.0
+
+            # Calculate improvement
+            accuracy_change = last_30_days['accuracy_rate'] - prev_30_rate if prev_30['total'] > 0 else 0.0
+            trending = "improving" if accuracy_change > 2 else ("declining" if accuracy_change < -2 else "stable")
+
+            improvement = {
+                "accuracy_change_pct": round(accuracy_change, 1),
+                "trending": trending,
+                "previous_period_rate": prev_30_rate,
+                "current_period_rate": last_30_days['accuracy_rate']
+            }
+
+            # Monthly breakdown (last 6 months)
+            cursor.execute("""
+                SELECT
+                    strftime('%Y-%m', recorded_at) as month,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
+                    AVG(ABS(variance_days)) as avg_error_days
+                FROM task_outcomes
+                WHERE predicted_duration_days IS NOT NULL
+                AND recorded_at >= datetime('now', '-6 months')
+                GROUP BY strftime('%Y-%m', recorded_at)
+                ORDER BY month DESC
+            """)
+            monthly_breakdown = [
+                {
+                    "month": row['month'],
+                    "total": row['total'],
+                    "accurate": row['accurate'],
+                    "accuracy_rate": round((row['accurate'] / row['total']) * 100, 1) if row['total'] > 0 else 0.0,
+                    "avg_error_days": round(row['avg_error_days'], 1) if row['avg_error_days'] else 0.0
+                }
+                for row in cursor.fetchall()
+            ]
+
+        logger.info(
+            f"Accuracy trends generated: overall={overall_trend['accuracy_rate']}%, "
+            f"last_30d={last_30_days['accuracy_rate']}%, "
+            f"trend={trending}"
+        )
+
+        return AccuracyTrends(
+            overall_trend=overall_trend,
+            last_7_days=last_7_days,
+            last_30_days=last_30_days,
+            last_90_days=last_90_days,
+            improvement=improvement,
+            monthly_breakdown=monthly_breakdown
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to generate accuracy trends: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate accuracy trends: {str(e)}")
 
 
 __all__ = ["router"]
