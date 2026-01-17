@@ -12,37 +12,68 @@ namespace IlanaPM.AddIn
 
         public void DisplayAdvisory(Models.TimelineAdvisory advisory)
         {
+            int predictionCount = advisory.duration_predictions?.predictions?.Count ?? 0;
+            int highRiskCount = advisory.risk_analysis?.high_risk_tasks?.Count ?? 0;
+
             lblSummary.Text = string.Format("Analyzed {0} tasks | High Risk Tasks: {1}",
-                advisory.duration_predictions.Count,
-                advisory.high_risk_tasks.Count);
+                predictionCount,
+                highRiskCount);
 
             var sb = new System.Text.StringBuilder();
 
-            // Duration Predictions
-            sb.AppendLine("═══ DURATION PREDICTIONS ═══\r\n");
-            foreach (var pred in advisory.duration_predictions)
+            // Summary Statistics
+            if (advisory.summary_statistics != null)
             {
-                sb.AppendLine(string.Format("Task: {0}", pred.task_name));
-                sb.AppendLine(string.Format("Predicted: {0} days", pred.prediction.predicted_duration_days));
-                sb.AppendLine(string.Format("Range: {0}-{1} days",
-                    pred.prediction.confidence_interval.lower,
-                    pred.prediction.confidence_interval.upper));
-                sb.AppendLine(string.Format("Confidence: {0:F0}%", pred.prediction.confidence_score * 100));
-                sb.AppendLine(string.Format("Explanation: {0}", pred.prediction.explanation));
+                sb.AppendLine("═══ SUMMARY ═══" + Environment.NewLine);
+                sb.AppendLine(string.Format("Total Tasks: {0}", advisory.summary_statistics.total_tasks));
+                sb.AppendLine(string.Format("Avg Predicted Duration: {0} days", advisory.summary_statistics.avg_predicted_duration));
+                sb.AppendLine(string.Format("Avg Risk Score: {0}/100", advisory.summary_statistics.avg_risk_score));
+                sb.AppendLine(string.Format("High Risk Tasks: {0}", advisory.summary_statistics.high_risk_count));
+                sb.AppendLine(string.Format("Critical Risk Tasks: {0}", advisory.summary_statistics.critical_risk_count));
+                sb.AppendLine(string.Format("Aggressive Durations: {0}", advisory.summary_statistics.aggressive_duration_count));
                 sb.AppendLine();
             }
 
-            // High Risk Tasks
-            if (advisory.high_risk_tasks.Count > 0)
+            // Recommendations
+            if (advisory.recommendations != null && advisory.recommendations.Count > 0)
             {
-                sb.AppendLine("\r\n═══ HIGH RISK TASKS ═══\r\n");
-                foreach (var task in advisory.high_risk_tasks)
+                sb.AppendLine("═══ RECOMMENDATIONS ═══" + Environment.NewLine);
+                foreach (var rec in advisory.recommendations)
+                {
+                    sb.AppendLine("• " + rec);
+                }
+                sb.AppendLine();
+            }
+
+            // Duration Predictions
+            if (advisory.duration_predictions != null && advisory.duration_predictions.predictions != null)
+            {
+                sb.AppendLine("═══ DURATION PREDICTIONS ═══" + Environment.NewLine);
+                foreach (var pred in advisory.duration_predictions.predictions)
+                {
+                    sb.AppendLine(string.Format("Task: {0}", pred.task_name));
+                    sb.AppendLine(string.Format("  Current: {0} days", pred.current_duration));
+                    sb.AppendLine(string.Format("  Predicted: {0} days", pred.prediction.predicted_duration_days));
+                    sb.AppendLine(string.Format("  Range: {0}-{1} days",
+                        pred.prediction.confidence_interval.lower,
+                        pred.prediction.confidence_interval.upper));
+                    sb.AppendLine(string.Format("  Confidence: {0:F0}%", pred.prediction.confidence_score * 100));
+                    sb.AppendLine(string.Format("  {0}", pred.prediction.explanation));
+                    sb.AppendLine();
+                }
+            }
+
+            // High Risk Tasks
+            if (advisory.risk_analysis != null && advisory.risk_analysis.high_risk_tasks != null && advisory.risk_analysis.high_risk_tasks.Count > 0)
+            {
+                sb.AppendLine("═══ HIGH RISK TASKS ═══" + Environment.NewLine);
+                foreach (var task in advisory.risk_analysis.high_risk_tasks)
                 {
                     sb.AppendLine(string.Format("⚠️  {0} (Risk Score: {1}/100)", task.task_name, task.risk_score));
-                    sb.AppendLine("Risk Factors:");
+                    sb.AppendLine("  Risk Factors:");
                     foreach (var factor in task.risk_factors)
                     {
-                        sb.AppendLine(string.Format("  • {0}", factor));
+                        sb.AppendLine(string.Format("    • {0}", factor));
                     }
                     sb.AppendLine();
                 }

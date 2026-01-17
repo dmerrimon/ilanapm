@@ -78,17 +78,64 @@ namespace IlanaPM.AddIn
         }
 
         // ML ADVISORY BUTTON                                                                                                                                                                                     
-        private void btnMLAdvisory_Click(object sender, RibbonControlEventArgs e)
+        private async void btnMLAdvisory_Click(object sender, RibbonControlEventArgs e)
         {
-            MessageBox.Show(
-                "ML Advisory feature is being configured." + Environment.NewLine + Environment.NewLine +
-                "This feature will provide:" + Environment.NewLine +
-                "- Duration predictions for tasks" + Environment.NewLine +
-                "- Risk scoring and analysis" + Environment.NewLine +
-                "- Recommendations based on historical data",
-                "ML Advisory",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            try
+            {
+                var extractor = new Services.ProjectDataExtractor();
+                var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
+
+                var apiClient = new Services.ApiClient();
+                var advisory = await apiClient.GetTimelineAdvisoryAsync(timeline);
+
+                // Write ML results back to custom fields
+                var writer = new Services.ProjectDataWriter();
+
+                // Write duration predictions
+                if (advisory.duration_predictions != null && advisory.duration_predictions.predictions != null)
+                {
+                    foreach (var pred in advisory.duration_predictions.predictions)
+                    {
+                        writer.WriteMLAdvisory(
+                            Globals.ThisAddIn.Application,
+                            pred.task_id,
+                            pred.prediction,
+                            null
+                        );
+                    }
+                }
+
+                // Write risk scores
+                if (advisory.risk_analysis != null && advisory.risk_analysis.risk_scores != null)
+                {
+                    foreach (var risk in advisory.risk_analysis.risk_scores)
+                    {
+                        writer.WriteMLAdvisory(
+                            Globals.ThisAddIn.Application,
+                            risk.task_id,
+                            null,
+                            risk.risk
+                        );
+                    }
+                }
+
+                // Show ML Advisory form
+                MLAdvisoryForm advisoryForm = new MLAdvisoryForm();
+                advisoryForm.DisplayAdvisory(advisory);
+                advisoryForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                string detailedError = "Error: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
+                }
+                MessageBox.Show(detailedError, "ML Advisory Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         // EXPORT TO TEAMS BUTTON                                                                                                                                                                                 
