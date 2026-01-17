@@ -18,12 +18,12 @@ class TaskCompletionFeedback(BaseModel):
     category: Optional[str] = Field(None, description="Task category (Regulatory, Operational, etc.)")
 
     # Prediction data (what ML predicted)
-    predicted_duration_days: Optional[int] = Field(None, description="What the ML model predicted")
-    predicted_confidence: Optional[float] = Field(None, description="Confidence score (0-1)")
+    predicted_duration_days: Optional[int] = Field(None, ge=0, description="What the ML model predicted (must be >= 0)")
+    predicted_confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="Confidence score (0-1)")
     model_version: Optional[str] = Field(None, description="Which model made the prediction")
 
     # Actual outcome (what really happened)
-    actual_duration_days: int = Field(..., description="Actual duration from MS Project")
+    actual_duration_days: int = Field(..., ge=0, description="Actual duration from MS Project (must be >= 0)")
     actual_start_date: Optional[str] = Field(None, description="Actual start date (YYYY-MM-DD)")
     actual_end_date: Optional[str] = Field(None, description="Actual end date (YYYY-MM-DD)")
 

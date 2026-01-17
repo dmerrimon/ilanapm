@@ -31,11 +31,21 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
         variance_percent = None
         was_accurate = None
 
-        if feedback.predicted_duration_days is not None:
+        if feedback.predicted_duration_days is not None and feedback.predicted_duration_days > 0:
             variance_days = feedback.actual_duration_days - feedback.predicted_duration_days
             variance_percent = (variance_days / feedback.predicted_duration_days) * 100
             # Consider accurate if within ±20% threshold
             was_accurate = abs(variance_percent) <= 20.0
+        elif feedback.predicted_duration_days == 0 and feedback.actual_duration_days == 0:
+            # Both predicted and actual are 0 - perfectly accurate instant task
+            variance_days = 0
+            variance_percent = 0.0
+            was_accurate = True
+        elif feedback.predicted_duration_days == 0:
+            # Predicted 0 but actual > 0 - undefined percent variance, use absolute variance
+            variance_days = feedback.actual_duration_days
+            variance_percent = None  # Cannot calculate percentage
+            was_accurate = False  # Predicted instant but took time
 
         # Insert into database
         with get_db_connection() as conn:
@@ -81,7 +91,7 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                 "predicted_days": feedback.predicted_duration_days,
                 "actual_days": feedback.actual_duration_days,
                 "variance_days": variance_days,
-                "variance_percent": round(variance_percent, 1),
+                "variance_percent": round(variance_percent, 1) if variance_percent is not None else None,
                 "was_accurate": was_accurate,
                 "threshold": "±20%"
             }
@@ -125,10 +135,20 @@ async def record_multiple_completions(
                 variance_percent = None
                 was_accurate = None
 
-                if feedback.predicted_duration_days is not None:
+                if feedback.predicted_duration_days is not None and feedback.predicted_duration_days > 0:
                     variance_days = feedback.actual_duration_days - feedback.predicted_duration_days
                     variance_percent = (variance_days / feedback.predicted_duration_days) * 100
                     was_accurate = abs(variance_percent) <= 20.0
+                elif feedback.predicted_duration_days == 0 and feedback.actual_duration_days == 0:
+                    # Both predicted and actual are 0 - perfectly accurate instant task
+                    variance_days = 0
+                    variance_percent = 0.0
+                    was_accurate = True
+                elif feedback.predicted_duration_days == 0:
+                    # Predicted 0 but actual > 0 - undefined percent variance
+                    variance_days = feedback.actual_duration_days
+                    variance_percent = None
+                    was_accurate = False
 
                 cursor.execute("""
                     INSERT INTO task_outcomes (
