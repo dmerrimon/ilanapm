@@ -13,8 +13,8 @@ class TaskCompletionFeedback(BaseModel):
     """Feedback when a task is completed"""
 
     # Task identification
-    task_id: str = Field(..., description="Task ID from MS Project")
-    task_name: str = Field(..., description="Task name")
+    task_id: str = Field(..., min_length=1, description="Task ID from MS Project (cannot be empty)")
+    task_name: str = Field(..., min_length=1, description="Task name (cannot be empty)")
     category: Optional[str] = Field(None, description="Task category (Regulatory, Operational, etc.)")
 
     # Prediction data (what ML predicted)
