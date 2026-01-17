@@ -1,0 +1,749 @@
+# Authorities Configuration for Clinical Trial Ontology v3.0
+# Central registry of regulatory authorities and ethics committees
+# Version: 3.0
+# Last Updated: 2026-01-16
+
+authorities:
+  # ===========================================================================
+  # UNITED STATES
+  # ===========================================================================
+  - code: FDA
+    name: "U.S. Food and Drug Administration"
+    country: US
+    country_name: "United States"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "FDA tends to have longer review times, especially for novel therapies; 30-day safety review hold period after IND submission"
+
+  - code: IRB
+    name: "Institutional Review Board"
+    country: US
+    country_name: "United States"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: 30
+    review_time_multiplier: 1.0
+    notes: "Decentralized ethics review, site-specific; varies by institution"
+
+  # ===========================================================================
+  # AUSTRALIA
+  # ===========================================================================
+  - code: TGA
+    name: "Therapeutic Goods Administration"
+    country: AU
+    country_name: "Australia"
+    authority_type: "regulatory"
+    review_time_multiplier: 0.95
+    typical_review_days: 30
+    ctn_days: 0  # Clinical Trial Notification - instant
+    cta_days: 30  # Clinical Trial Approval
+    cta_days_max: 50
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Two pathways: CTN (instant acknowledgement) or CTA (30-50 days)"
+
+  - code: HREC
+    name: "Human Research Ethics Committee"
+    country: AU
+    country_name: "Australia"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: 30
+    review_time_multiplier: 1.0
+    notes: "Human research ethics committees; NMA (National Mutual Acceptance) for multicenter trials"
+
+  # ===========================================================================
+  # BANGLADESH
+  # ===========================================================================
+  - code: DGDA
+    name: "Directorate General of Drug Administration"
+    country: BD
+    country_name: "Bangladesh"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days: 60
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "60 working days review; requires NREC approval before submission"
+
+  - code: NREC
+    name: "National Research Ethics Committee"
+    country: BD
+    country_name: "Bangladesh"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "National ethics committee; must approve before DGDA submission; monthly meetings; two-tier ethics system with Institutional ECs"
+
+  # ===========================================================================
+  # CANADA
+  # ===========================================================================
+  - code: HC
+    name: "Health Canada"
+    country: CA
+    country_name: "Canada"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.1
+    typical_review_days: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "30-day review; CTSI form per site required; 2-day sponsor response window"
+
+  - code: REB
+    name: "Research Ethics Board"
+    country: CA
+    country_name: "Canada"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "Decentralized research ethics boards; timelines vary by institution"
+
+  # ===========================================================================
+  # CHINA
+  # ===========================================================================
+  - code: NMPA
+    name: "National Medical Products Administration"
+    country: CN
+    country_name: "China"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days: 60
+    emergency_review_days: 3  # 72 hours
+    auto_approval_days: 60
+    notes: "Automatic approval if no response in 60 days; dual pathways (standard 60 days, HGR 110-120 days)"
+
+  - code: NHC
+    name: "National Health Commission"
+    country: CN
+    country_name: "China"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.5
+    typical_review_days: null  # Part of HGR pathway
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Required for human genetic resources trials; part of 3-layer HGR pathway (NMPA → NHC → EC)"
+
+  - code: SEC
+    name: "Scientific Ethics Committee"
+    country: CN
+    country_name: "China"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: 30
+    review_time_multiplier: 1.0
+    expert_panels: 550
+    notes: "Scientific ethics committees with 550 experts; parallel with NMPA for standard trials; sequential for HGR trials"
+
+  # ===========================================================================
+  # DEMOCRATIC REPUBLIC OF THE CONGO
+  # ===========================================================================
+  - code: ACOREP
+    name: "Autorité de Contrôle et de Régulation Pharmaceutique"
+    country: CD
+    country_name: "Democratic Republic of the Congo"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: 45
+    typical_review_days_max: 60
+    emergency_review_days: 3  # 72 hours
+    auto_approval_days: null
+    notes: "Concurrent submission allowed but can only approve after EC approval; 4 national languages for ICF required"
+
+  - code: EC_DRC
+    name: "Ethics Committee (DRC)"
+    country: CD
+    country_name: "Democratic Republic of the Congo"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "Must approve before ACOREP can finalize; Nagoya Protocol compliance required"
+
+  # ===========================================================================
+  # GUINEA
+  # ===========================================================================
+  - code: DNPM
+    name: "Direction Nationale de la Pharmacie et du Médicament"
+    country: GN
+    country_name: "Guinea"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.0
+    typical_review_days: 14
+    emergency_review_days: 2  # 48 hours - fastest documented
+    auto_approval_days: null
+    notes: "48-hour emergency response (fastest documented); sequential after CNERS; French language required"
+
+  - code: CNERS
+    name: "Comité National d'Ethique pour la Recherche en Santé"
+    country: GN
+    country_name: "Guinea"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: 60
+    review_time_multiplier: 1.0
+    meeting_frequency: "monthly"  # Last Thursday
+    notes: "National ethics committee; monthly meetings (last Thursday); must approve before DNPM; explicit prohibition on parallel submission"
+
+  # ===========================================================================
+  # INDIA
+  # ===========================================================================
+  - code: DCGI
+    name: "Drugs Controller General of India"
+    country: IN
+    country_name: "India"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.5
+    typical_review_days: 90  # New drug/IND
+    domestic_drug_days: 30
+    emergency_review_days: null
+    auto_approval_days: 90
+    notes: "90-day automatic approval; 30 days for India-developed drugs; must confirm EC approvals before final authorization; academic trial exemption (EC only)"
+
+  - code: EC_India
+    name: "Ethics Committee (India)"
+    country: IN
+    country_name: "India"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "Decentralized EC system; parallel submission with DCGI allowed; DCGI confirms EC approvals; free for government-funded trials"
+
+  # ===========================================================================
+  # KENYA
+  # ===========================================================================
+  - code: PPB
+    name: "Pharmacy and Poisons Board"
+    country: KE
+    country_name: "Kenya"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.1
+    typical_review_days: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Second layer in 3-layer sequential (EC → PPB → NACOSTI); dual CT registration required (PPB + Pan African)"
+
+  - code: NACOSTI
+    name: "National Commission for Science, Technology and Innovation"
+    country: KE
+    country_name: "Kenya"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.1
+    typical_review_days: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Third layer in 3-layer sequential; county-level notifications required; fee differentiation (EAC vs Africa vs Non-African)"
+
+  - code: EC_Kenya
+    name: "Ethics Committee (Kenya)"
+    country: KE
+    country_name: "Kenya"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    accreditation_validity: 3  # 3-year accreditation
+    notes: "First layer in 3-layer sequential; 3-year EC accreditation required"
+
+  # ===========================================================================
+  # LIBERIA
+  # ===========================================================================
+  - code: LMHRA
+    name: "Liberia Medicines and Health Products Regulatory Authority"
+    country: LR
+    country_name: "Liberia"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: 45
+    typical_review_days_max: 60
+    emergency_review_days: 10
+    auto_approval_days: null
+    notes: "Concurrent submission but waits for NREB approval; HIGHEST FEES ($25K-$32K for Phase I industry)"
+
+  - code: NREB
+    name: "National Research Ethics Board"
+    country: LR
+    country_name: "Liberia"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    meeting_frequency: "bi-monthly"
+    board_size: 21
+    notes: "21-member national board; bi-monthly meetings; emergency 10-day review; parallel submission with LMHRA allowed"
+
+  # ===========================================================================
+  # MALAWI
+  # ===========================================================================
+  - code: PMRA
+    name: "Pharmacy, Medicines and Poisons Regulatory Authority"
+    country: MW
+    country_name: "Malawi"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: null  # Variable
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Sequential after EC; REIMS portal for electronic submissions; GCP inspections during trials"
+
+  - code: NHSRC
+    name: "National Health Sciences Research Committee"
+    country: MW
+    country_name: "Malawi"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "NCST-approved EC; 5% total budget application fee; $2,200 annual renewal"
+
+  - code: COMREC
+    name: "College of Medicine Research Ethics Committee"
+    country: MW
+    country_name: "Malawi"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "NCST-approved EC alternative to NHSRC"
+
+  # ===========================================================================
+  # MALI
+  # ===========================================================================
+  - code: DPM
+    name: "Direction de la Pharmacie et du Médicament"
+    country: ML
+    country_name: "Mali"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.0
+    typical_review_days: 15
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "15-day DPM evaluation target; sequential after EC; French language requirement; MSDS parent ministry oversight"
+
+  - code: CIESS_USTTB
+    name: "CIESS/USTTB Ethics Committee"
+    country: ML
+    country_name: "Mali"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    notes: "Primary EC for clinical research; six-EC system in country; French language required"
+
+  # ===========================================================================
+  # MEXICO
+  # ===========================================================================
+  - code: COFEPRIS
+    name: "Comisión Federal para la Protección contra Riesgos Sanitarios"
+    country: MX
+    country_name: "Mexico"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.1
+    typical_review_days: 30
+    fra_reliance_days: 45
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "FRA reliance model (EMA, FDA, MHRA, Health Canada for Phase III); DIGIPRiS electronic platform; ICH member; UHAP optional pre-assessment ($3,000, 30 days)"
+
+  - code: REC_Mexico
+    name: "Comités de Ética en Investigación (Research Ethics Committees)"
+    country: MX
+    country_name: "Mexico"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: 30  # Recommended
+    review_time_multiplier: 1.0
+    notes: "Decentralized REC system; RECs funded by institutions (no applicant fees); RNEC v2.0 registry"
+
+  # ===========================================================================
+  # PERU
+  # ===========================================================================
+  - code: INS
+    name: "Instituto Nacional de Salud"
+    country: PE
+    country_name: "Peru"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.1
+    typical_review_days: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    anm_binding_opinion: true
+    notes: "ANM binding technical opinion included in 30-day timeline; REPEC v2 registry; MPV virtual platform; in-country sponsor required"
+
+  - code: ANM
+    name: "Agencia Nacional de Medicamentos"
+    country: PE
+    country_name: "Peru"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Included in INS 30-day timeline
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Binding technical opinion on IP safety/quality; opinion included in INS 30-day review"
+
+  - code: EC_Peru
+    name: "INS-accredited Ethics Committee"
+    country: PE
+    country_name: "Peru"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable
+    review_time_multiplier: 1.0
+    ins_accreditation_required: true
+    notes: "INS accreditation required; must approve before INS submission; minor changes vs amendments distinction"
+
+  # ===========================================================================
+  # SIERRA LEONE
+  # ===========================================================================
+  - code: PBSL
+    name: "Pharmacy Board of Sierra Leone"
+    country: SL
+    country_name: "Sierra Leone"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days_device: 40
+    typical_review_days_pharma: 50
+    typical_review_days_biologics: 60
+    typical_review_days_gmo: 120
+    expedited_review_days_min: 10
+    expedited_review_days_max: 20
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "FLEXIBLE workflow; HIGHEST timeline variability by product type (40-120 days); FRA reliance (ICH, AVAREF); PACTR registration required; 15 hard copies + 1 soft copy"
+
+  - code: SLESRC
+    name: "Sierra Leone Ethics and Scientific Review Committee"
+    country: SL
+    country_name: "Sierra Leone"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: null  # No specified timeline
+    review_time_multiplier: 1.0
+    notes: "National EC; normally sequential before PBSL, can switch to parallel for emergencies; annual renewal required ($100)"
+
+  # ===========================================================================
+  # TANZANIA
+  # ===========================================================================
+  - code: TMDA
+    name: "Tanzania Medicines and Medical Devices Authority"
+    country: TZ
+    country_name: "Tanzania"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days: 60
+    fast_track_days: 30
+    fast_track_fee_multiplier: 2
+    emergency_review_days: 5  # Public health events
+    auto_approval_days: null
+    notes: "3-body system (TMDA + NatHREC + COSTECH); REIMS/NHRMIS portals; ICH E6(R2); fast-track (30 days for 2x fee); needs NatHREC acknowledgement"
+
+  - code: NatHREC
+    name: "National Health Research Ethics Committee"
+    country: TZ
+    country_name: "Tanzania"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: 30
+    typical_review_days_max: 30
+    review_time_multiplier: 1.0
+    notes: "National EC; concurrent with TMDA (acknowledgement required); TMDA finalizes only after NatHREC approval; institutional EC + national dual review for trials"
+
+  - code: COSTECH
+    name: "Tanzania Commission for Science and Technology"
+    country: TZ
+    country_name: "Tanzania"
+    authority_type: "research_oversight"
+    review_frequency: "every 2 months"
+    typical_review_days: 60  # Maximum 2 months
+    review_time_multiplier: 1.0
+    notes: "Third body in ONLY mandatory 3-body system; research clearance required after TMDA + NatHREC approval; reviews every 2 months"
+
+  # ===========================================================================
+  # SOUTH AFRICA
+  # ===========================================================================
+  - code: SAHPRA
+    name: "South African Health Products Regulatory Authority"
+    country: ZA
+    country_name: "South Africa"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days_screening: 21  # 3 weeks
+    typical_review_days_ctc: 70  # 10 weeks
+    total_review_days: 91  # ~13 weeks
+    emergency_review_days: null  # Rapid review available
+    auto_approval_days: null
+    notes: "Most mature African regulatory system; SANCTR registry; reliance model for medicines; capacity building requirements; reciprocal recognition between ECs"
+
+  - code: NHREC
+    name: "National Health Research Ethics Council"
+    country: ZA
+    country_name: "South Africa"
+    authority_type: "ethics_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Oversight body
+    notes: "EC oversight body; registration/accreditation required; G-EthicsHR-ZAF recommends sequential when EC lacks capacity"
+
+  - code: EC_SouthAfrica
+    name: "Registered Research Ethics Committee"
+    country: ZA
+    country_name: "South Africa"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: null  # Variable, defined in SOPs
+    review_time_multiplier: 1.0
+    nhrec_oversight: true
+    registration_required: true
+    accreditation_required: true
+    notes: "Multiple registered ECs; NHREC oversight; parallel with SAHPRA (default) or sequential when EC lacks scientific capacity; joint reviews for multicenter"
+
+  # ===========================================================================
+  # THAILAND
+  # ===========================================================================
+  - code: ThaiFDA
+    name: "Thai Food and Drug Administration"
+    country: TH
+    country_name: "Thailand"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: 60
+    express_review_days: 10
+    final_review_days: 15  # After EC approval
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "Skynet E-Submission; E-Consult pre-submission; concurrent with EC but needs EC approval for finalization; express channel (10 days); ICH E6(R2)"
+
+  - code: ECMOPH
+    name: "Ethics Committee, Ministry of Public Health"
+    country: TH
+    country_name: "Thailand"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days_min: 60  # 2 months
+    typical_review_days_max: 90  # 3 months
+    review_time_multiplier: 1.0
+    meeting_frequency: "regular"
+    accreditation_validity: 2  # 2 years
+    can_review_any_site: true
+    notes: "Central EC can review all studies regardless of site; 2-year accreditation; concurrent with Thai FDA"
+
+  - code: CREC
+    name: "Chulalongkorn University Research Ethics Committee"
+    country: TH
+    country_name: "Thailand"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days_expedited: 10
+    review_time_multiplier: 1.0
+    can_review_any_site: true
+    notes: "Alternative central EC; expedited review (10+ days); can review all studies regardless of site"
+
+  # ===========================================================================
+  # UGANDA
+  # ===========================================================================
+  - code: NDA
+    name: "National Drug Authority"
+    country: UG
+    country_name: "Uganda"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days: 60
+    fast_track_days_min: 15
+    fast_track_days_max: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    stop_clock: true
+    annual_renewal_required: true
+    notes: "3-body oversight (NDA + UNCST + UNHRO); NRIMS/iRIMS platforms; stop-clock mechanism; annual renewal ($500); HIGHEST NDA fees ($5,000-$10,000)"
+
+  - code: UNCST
+    name: "Uganda National Council for Science and Technology"
+    country: UG
+    country_name: "Uganda"
+    authority_type: "research_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days: 10
+    typical_review_days_max: 14
+    permit_required: true
+    security_clearance: true
+    accreditation_required: true
+    accreditation_validity: 3  # 3-year terms
+    notes: "Research permit required; EC accreditation required (3-year terms); security clearance from Office of President; collaborates with UNHRO"
+
+  - code: UNHRO
+    name: "Uganda National Health Research Organization"
+    country: UG
+    country_name: "Uganda"
+    authority_type: "research_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Collaborates with UNCST
+    notes: "Collaborates with UNCST on scientific/ethical review; part of 3-body oversight"
+
+  - code: EC_Uganda
+    name: "Ethics Committee (Uganda)"
+    country: UG
+    country_name: "Uganda"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: 60
+    review_time_multiplier: 1.0
+    uncst_accreditation_required: true
+    notes: "UNCST accreditation required; joint EC reviews allowed for multicenter; must approve before NDA submission (or in parallel but NDA won't finalize)"
+
+  # ===========================================================================
+  # UNITED KINGDOM
+  # ===========================================================================
+  - code: MHRA
+    name: "Medicines and Healthcare products Regulatory Agency"
+    country: GB
+    country_name: "United Kingdom"
+    authority_type: "regulatory"
+    review_time_multiplier: 0.9
+    typical_review_days: 30
+    notification_scheme_days: 14  # Phase 3/4 only
+    emergency_review_days: null
+    auto_approval_days: 30
+    notes: "IRAS combined review; automatic authorization if no response in 30 days; notification scheme (14 days for Phase 3/4); fast-track for global trials/Phase 1"
+
+  - code: REC
+    name: "Research Ethics Committee"
+    country: GB
+    country_name: "United Kingdom"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: 60
+    gene_therapy_days: 90
+    specialist_consultation_days: 180
+    review_time_multiplier: 1.0
+    notes: "IRAS integrated review with MHRA; 60 days final opinion (90 gene therapy, 180 specialist); ONLY country with NO EC FEES (£0)"
+
+  - code: UKECA
+    name: "UK Ethics Committee Authority"
+    country: GB
+    country_name: "United Kingdom"
+    authority_type: "ethics_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Oversight body
+    notes: "Statutory EC oversight body; HRA accreditation program; ICH E6(R2) compliance since 2016"
+
+  - code: HRA
+    name: "Health Research Authority"
+    country: GB
+    country_name: "United Kingdom"
+    authority_type: "research_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Part of integrated IRAS review
+    notes: "EC accreditation program; coordinates IRAS combined review with MHRA and RECs"
+
+  - code: GTAC
+    name: "Gene Therapy Advisory Committee"
+    country: GB
+    country_name: "United Kingdom"
+    authority_type: "specialist_review"
+    review_time_multiplier: 1.0
+    typical_review_days: 90
+    notes: "Required for gene therapy trials; 90-day review timeline"
+
+  # ===========================================================================
+  # VIETNAM
+  # ===========================================================================
+  - code: CEBRGL
+    name: "CEBRGL (Local/Institutional Ethics Committee)"
+    country: VN
+    country_name: "Vietnam"
+    authority_type: "ethics"
+    is_national: false
+    typical_review_days: 30
+    review_time_multiplier: 1.0
+    notes: "First layer in 4-layer sequential; institutional/local EC; must approve before ASTT submission (no parallel allowed)"
+
+  - code: MOH_ASTT
+    name: "Ministry of Health - Agency of Science Technology and Training"
+    country: VN
+    country_name: "Vietnam"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.3
+    typical_review_days: 25  # Combined with NECBR
+    emergency_review_days: 5  # Ministerial approval
+    auto_approval_days: null
+    notes: "Second layer; technical review; new Circular No. 50/2025/TT-BYT effective Feb 27, 2026; explicit prohibition on parallel with CEBRGL"
+
+  - code: NECBR
+    name: "National Ethics Committee in Biomedical Research"
+    country: VN
+    country_name: "Vietnam"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days: 25  # Combined with ASTT
+    review_time_multiplier: 1.0
+    notes: "Third layer; national EC; concurrent with ASTT after CEBRGL approval"
+
+  - code: Minister_VN
+    name: "Minister of Health (Vietnam)"
+    country: VN
+    country_name: "Vietnam"
+    authority_type: "ministerial"
+    review_time_multiplier: 1.0
+    typical_review_days: 5
+    emergency_review_days: 5
+    notes: "Fourth layer - final ministerial approval; MOST COMPLEX SEQUENTIAL SYSTEM (4 layers total)"
+
+  # ===========================================================================
+  # ZIMBABWE
+  # ===========================================================================
+  - code: MCAZ
+    name: "Medicines Control Authority of Zimbabwe"
+    country: ZW
+    country_name: "Zimbabwe"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.2
+    typical_review_days: 60
+    expedited_review_days_min: 15
+    expedited_review_days_max: 30
+    emergency_review_days: null
+    auto_approval_days: null
+    notes: "4-body system (MCAZ + RCZ + NBA + MRCZ); parallel submissions encouraged; reliance model (WHO, stringent authorities); AVAREF joint review"
+
+  - code: RCZ
+    name: "Research Council of Zimbabwe"
+    country: ZW
+    country_name: "Zimbabwe"
+    authority_type: "research_oversight"
+    review_time_multiplier: 1.0
+    typical_review_days_min: 42  # 6 weeks
+    typical_review_days_max: 56  # 8 weeks
+    notes: "Part of 4-body system; parallel with MCAZ/MRCZ; foreign researcher permits required"
+
+  - code: NBA
+    name: "National Biotechnology Authority"
+    country: ZW
+    country_name: "Zimbabwe"
+    authority_type: "regulatory"
+    review_time_multiplier: 1.0
+    typical_review_days: null  # Variable
+    notes: "Required for relevant trials; part of 4-body system; parallel submissions"
+
+  - code: MRCZ
+    name: "Medical Research Council of Zimbabwe"
+    country: ZW
+    country_name: "Zimbabwe"
+    authority_type: "ethics"
+    is_national: true
+    typical_review_days_min: 28  # 4 weeks
+    typical_review_days_max: 42  # 6 weeks
+    review_time_multiplier: 1.0
+    notes: "National EC; 4-body system; parallel with MCAZ/RCZ; expedited review available (15-30 days)"
+
+  # ===========================================================================
+  # SUMMARY STATISTICS
+  # ===========================================================================
+  # Total authorities: 57
+  # Countries covered: 22
+  # Regulatory authorities: 31
+  # Ethics committees/boards: 21
+  # Oversight/research bodies: 5
+  # ===========================================================================

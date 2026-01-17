@@ -3,6 +3,8 @@ Configuration Management
 
 Loads and manages YAML configuration files for the rules engine.
 Supports hot-reloading without server restart.
+
+Version 3.0: Enhanced to load international regulatory workflows and authorities
 """
 
 import yaml
@@ -18,26 +20,45 @@ class ConfigLoader:
     """
     Configuration loader for YAML files
 
-    Loads all configuration files from the config-templates directory
+    Loads all configuration files from the backend/config directory
+    (Task Ontology v3.0 with international regulatory workflows)
     and provides a unified interface for accessing configuration data.
     """
 
-    def __init__(self, config_dir: str = "config-templates"):
+    def __init__(self, config_dir: str = None):
         """
         Initialize configuration loader
 
         Args:
-            config_dir: Directory containing YAML configuration files
+            config_dir: Directory containing YAML configuration files.
+                       If None, uses backend/config for v3.0 files,
+                       falls back to config-templates if not found.
         """
-        self.config_dir = Path(config_dir)
+        if config_dir is None:
+            # Try v3.0 config directory first
+            v3_config_dir = Path(__file__).parent / "config"
+            if v3_config_dir.exists():
+                self.config_dir = v3_config_dir
+                logger.info(f"Using Task Ontology v3.0 config directory: {v3_config_dir}")
+            else:
+                # Fallback to config-templates
+                self.config_dir = Path("config-templates")
+                logger.warning(f"v3.0 config directory not found, using fallback: {self.config_dir}")
+        else:
+            self.config_dir = Path(config_dir)
+
         self.config_cache = {}
         self._load_all_configs()
 
     def _load_all_configs(self):
         """Load all YAML configuration files"""
+        # Task Ontology v3.0 configuration files
         config_files = {
+            'task_ontology': 'task_ontology.yaml',  # v3.0 with international variations
+            'regulatory_workflows': 'regulatory_workflows.yaml',  # NEW in v3.0
+            'authorities': 'authorities.yaml',  # NEW in v3.0
+            # Legacy config files (for backward compatibility)
             'authority_timelines': 'authority_timelines.yaml',
-            'task_ontology': 'task_ontology.yaml',
             'checklists': 'checklists.yaml',
             'duration_bounds': 'duration_bounds.yaml',
             'operational_sequences': 'operational_sequences.yaml',
@@ -63,16 +84,33 @@ class ConfigLoader:
         Get merged configuration dictionary
 
         Returns:
-            Dictionary with all configuration data merged into a single structure
+            Dictionary with all configuration data merged into a single structure.
+            v3.0: Includes regulatory_workflows and authorities from Task Ontology v3.0
         """
-        return {
-            'authorities': self.config_cache.get('authority_timelines', {}).get('authorities', {}),
-            'task_ontology': self.config_cache.get('task_ontology', {}).get('tasks', []),
+        # Load v3.0 configuration data
+        task_ontology_data = self.config_cache.get('task_ontology', {})
+        regulatory_workflows_data = self.config_cache.get('regulatory_workflows', {})
+        authorities_data = self.config_cache.get('authorities', {})
+
+        config = {
+            # v3.0 configuration
+            'task_ontology': task_ontology_data.get('tasks', []),
+            'regulatory_workflows': regulatory_workflows_data.get('regulatory_workflows', []),
+            'authorities': authorities_data.get('authorities', []),
+
+            # Legacy configuration (for backward compatibility)
+            'authority_timelines': self.config_cache.get('authority_timelines', {}).get('authorities', {}),
             'checklists': self.config_cache.get('checklists', {}).get('checklists', {}),
             'duration_bounds': self.config_cache.get('duration_bounds', {}).get('duration_rules', []),
             'operational_sequences': self.config_cache.get('operational_sequences', {}).get('sequences', []),
-            'parallelization_rules': self.config_cache.get('parallelization_rules', {}).get('rules', [])
+            'parallelization_rules': self.config_cache.get('parallelization_rules', {}).get('rules', []),
+
+            # Metadata
+            'ontology_version': task_ontology_data.get('version', 'unknown'),
+            'config_dir': str(self.config_dir)
         }
+
+        return config
 
     def reload(self):
         """Reload all configuration files (for hot-reload)"""

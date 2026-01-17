@@ -1,0 +1,1442 @@
+# Regulatory Workflows for Clinical Trial Ontology v3.0
+# Comprehensive definitions for 22 countries covering regulatory approval workflows
+# Version: 3.0
+# Last Updated: 2026-01-16
+
+regulatory_workflows:
+  # ===========================================================================
+  # LEVEL 1 - PARALLEL WORKFLOWS (4 countries)
+  # Regulatory and Ethics reviews occur simultaneously
+  # ===========================================================================
+
+  - country_code: US
+    country_name: "United States"
+    workflow_type: "parallel"
+    complexity_level: 1
+    regulatory_authority:
+      code: FDA
+      name: "U.S. Food and Drug Administration"
+      review_days: 30
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: IRB
+      name: "Institutional Review Board"
+      review_days: 30
+      is_national: false
+      meeting_frequency: "varies"
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission"
+        description: "Submit to FDA and IRB simultaneously"
+        authorities: ["FDA", "IRB"]
+        can_run_parallel: true
+      - step: 2
+        name: "Concurrent Review"
+        description: "Both authorities review independently"
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "Both approvals required before start"
+        gates: ["FDA_approval", "IRB_approval"]
+    total_timeline_days: 30
+    fees:
+      - amount: 0
+        currency: "USD"
+        payer: "varies"
+        notes: "No FDA fees for IND, IRB fees vary by institution"
+    unique_features:
+      - "Standard baseline for Western countries"
+      - "30-day safety review hold period after IND submission"
+      - "Decentralized IRB system"
+    references:
+      - "https://www.fda.gov/regulatory-information"
+
+  - country_code: AU
+    country_name: "Australia"
+    workflow_type: "parallel"
+    complexity_level: 1
+    regulatory_authority:
+      code: TGA
+      name: "Therapeutic Goods Administration"
+      review_days: 30
+      auto_approval: false
+      emergency_review_days: null
+      notification_days: 0  # CTN instant acknowledgement
+    ethics_authority:
+      code: HREC
+      name: "Human Research Ethics Committee"
+      review_days: 30
+      is_national: false
+      meeting_frequency: "monthly"
+    workflow_steps:
+      - step: 1
+        name: "CTN/CTA Choice"
+        description: "Choose between Clinical Trial Notification (instant) or Clinical Trial Approval (30-50 days)"
+        authorities: ["TGA"]
+        can_run_parallel: true
+      - step: 2
+        name: "Parallel Review"
+        description: "TGA and HREC review concurrently"
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "Both approvals required"
+        gates: ["TGA_approval", "HREC_approval"]
+    total_timeline_days: 30
+    fees:
+      - amount: 0
+        currency: "AUD"
+        payer: "unknown"
+    unique_features:
+      - "CTN (Clinical Trial Notification) pathway - instant acknowledgement"
+      - "CTA (Clinical Trial Approval) pathway - 30-50 days"
+      - "NMA (National Mutual Acceptance) for multicenter trials"
+    references:
+      - "https://www.tga.gov.au/"
+
+  - country_code: CA
+    country_name: "Canada"
+    workflow_type: "parallel"
+    complexity_level: 1
+    regulatory_authority:
+      code: HC
+      name: "Health Canada"
+      review_days: 30
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: REB
+      name: "Research Ethics Board"
+      review_days: null  # Variable
+      is_national: false
+      meeting_frequency: "varies"
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission"
+        description: "Submit to Health Canada and REB simultaneously"
+        authorities: ["HC", "REB"]
+        can_run_parallel: true
+      - step: 2
+        name: "Concurrent Review"
+        description: "HC reviews within 30 days, REB timeline varies"
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "Both approvals required"
+        gates: ["HC_approval", "REB_approval"]
+    total_timeline_days: 30
+    fees:
+      - amount: 0
+        currency: "CAD"
+        payer: "unknown"
+    unique_features:
+      - "CTSI (Clinical Trial Site Information) form required per site"
+      - "QIU (Qualified Investigator Undertaking) form"
+      - "2-day sponsor response window for clarifications"
+    references:
+      - "https://www.canada.ca/en/health-canada.html"
+
+  - country_code: GB
+    country_name: "United Kingdom"
+    workflow_type: "parallel_integrated"
+    complexity_level: 1
+    regulatory_authority:
+      code: MHRA
+      name: "Medicines and Healthcare products Regulatory Agency"
+      review_days: 30
+      auto_approval: true
+      auto_approval_days: 30
+      emergency_review_days: null
+      notification_days: 14  # For Phase 3/4 notification scheme
+    ethics_authority:
+      code: REC
+      name: "Research Ethics Committee"
+      review_days: 60
+      final_opinion_days: 60
+      gene_therapy_days: 90
+      specialist_consultation_days: 180
+      is_national: true
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "IRAS Combined Application"
+        description: "Single application submitted to both MHRA and REC via IRAS system"
+        authorities: ["MHRA", "REC"]
+        can_run_parallel: true
+      - step: 2
+        name: "Coordinated Parallel Review"
+        description: "MHRA and REC review in parallel with joint RFIs"
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "Single UK decision covering all 4 nations"
+        gates: ["MHRA_approval", "REC_approval"]
+    total_timeline_days: 30
+    fees:
+      - amount: 0
+        currency: "GBP"
+        payer: "EC"
+        notes: "ONLY country with NO EC FEES (£0)"
+      - amount: 343
+        currency: "GBP"
+        payer: "MHRA"
+        notes: "Minimum MHRA fee"
+      - amount: 4656
+        currency: "GBP"
+        payer: "MHRA"
+        notes: "Maximum MHRA fee (~$5,900)"
+    unique_features:
+      - "MOST INTEGRATED SYSTEM - IRAS combined review"
+      - "Single application, coordinated parallel review, joint RFIs"
+      - "Single UK decision covering England/Wales/Scotland/Northern Ireland"
+      - "Notification scheme for Phase 3/4 trials (14 days)"
+      - "Automatic authorization if no MHRA response in 30 days"
+      - "Fast-track option for global trials and Phase 1"
+      - "UKECA statutory EC oversight"
+      - "HRA accreditation program"
+      - "ICH E6(R2) compliance since 2016"
+      - "ONLY country with NO EC FEES (£0)"
+      - "Gene therapy requires GTAC review (90 days)"
+    references:
+      - "https://www.hra.nhs.uk/"
+      - "https://www.gov.uk/government/organisations/medicines-and-healthcare-products-regulatory-agency"
+
+  # ===========================================================================
+  # LEVEL 2 - SEQUENTIAL WORKFLOWS (7 countries)
+  # Ethics BEFORE Regulatory (strictly sequential)
+  # ===========================================================================
+
+  - country_code: BD
+    country_name: "Bangladesh"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: DGDA
+      name: "Directorate General of Drug Administration"
+      review_days: 60
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: NREC
+      name: "National Research Ethics Committee"
+      review_days: null  # Variable
+      is_national: true
+      meeting_frequency: "monthly"
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to NREC for ethics approval"
+        authorities: ["NREC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to DGDA only after NREC approval"
+        authorities: ["DGDA"]
+        can_run_parallel: false
+        gates: ["NREC_approval"]
+        estimated_days: 60
+      - step: 3
+        name: "Final Approval"
+        description: "DGDA approval completes process"
+        gates: ["DGDA_approval"]
+    total_timeline_days: 60  # Plus EC time
+    fees:
+      - amount: 0
+        currency: "BDT"
+        payer: "unknown"
+    unique_features:
+      - "Two-tier ethics (Institutional EC vs NREC)"
+      - "Ethics BEFORE regulatory (strictly sequential)"
+      - "NREC is national committee"
+    references:
+      - "http://www.dgda.gov.bd/"
+
+  - country_code: GN
+    country_name: "Guinea"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: DNPM
+      name: "Direction Nationale de la Pharmacie et du Médicament"
+      review_days: 14
+      auto_approval: false
+      emergency_review_days: 2  # 48-hour emergency response
+    ethics_authority:
+      code: CNERS
+      name: "Comité National d'Ethique pour la Recherche en Santé"
+      review_days: 60
+      is_national: true
+      meeting_frequency: "monthly"  # Last Thursday of each month
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to CNERS for ethics approval"
+        authorities: ["CNERS"]
+        can_run_parallel: false
+        gates: []
+        estimated_days: 60
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to DNPM only after CNERS approval"
+        authorities: ["DNPM"]
+        can_run_parallel: false
+        gates: ["CNERS_approval"]
+        estimated_days: 14
+      - step: 3
+        name: "Final Approval"
+        description: "DNPM approval completes process"
+        gates: ["DNPM_approval"]
+    total_timeline_days: 74  # 60 + 14 days
+    fees:
+      - amount: 0
+        currency: "GNF"
+        payer: "unknown"
+        notes: "Doctoral students may receive discounts"
+    unique_features:
+      - "48-hour emergency response (fastest documented)"
+      - "Monthly EC meetings (last Thursday)"
+      - "Explicit prohibition on parallel submission"
+      - "French language requirement"
+    references:
+      - "http://www.cners-guinee.org/"
+
+  - country_code: MW
+    country_name: "Malawi"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: PMRA
+      name: "Pharmacy, Medicines and Poisons Regulatory Authority"
+      review_days: null  # Variable
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: NHSRC
+      name: "National Health Sciences Research Committee"
+      review_days: null  # Variable
+      is_national: true
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to NHSRC or COMREC for ethics approval"
+        authorities: ["NHSRC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to PMRA only after EC approval"
+        authorities: ["PMRA"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+      - step: 3
+        name: "Final Approval"
+        description: "PMRA approval completes process"
+        gates: ["PMRA_approval"]
+    total_timeline_days: null  # Variable
+    fees:
+      - amount: 0
+        currency: "MWK"
+        payer: "application"
+        notes: "5% of total trial budget as application fee"
+      - amount: 2200
+        currency: "USD"
+        payer: "annual_renewal"
+    unique_features:
+      - "Two NCST-approved ECs (NHSRC and COMREC)"
+      - "5% total budget application fee (unique model)"
+      - "$2,200 annual renewal fee"
+      - "REIMS portal for electronic submissions"
+      - "GCP inspections during trials"
+      - "NCST (National Commission for Science and Technology) oversight"
+    references:
+      - "https://www.pharmreg.mw/"
+
+  - country_code: ML
+    country_name: "Mali"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: DPM
+      name: "Direction de la Pharmacie et du Médicament"
+      review_days: 15
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: CIESS_USTTB
+      name: "CIESS/USTTB Ethics Committee"
+      review_days: null  # Variable
+      is_national: false  # Primary EC but not national
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to CIESS/USTTB or other approved EC"
+        authorities: ["CIESS_USTTB"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to DPM only after EC approval"
+        authorities: ["DPM"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+        estimated_days: 15
+      - step: 3
+        name: "Final Approval"
+        description: "DPM approval completes process"
+        gates: ["DPM_approval"]
+    total_timeline_days: 15  # Plus EC time
+    fees:
+      - amount: 0
+        currency: "XOF"
+        payer: "unknown"
+    unique_features:
+      - "CIESS/USTTB is primary EC for clinical research"
+      - "French language requirement"
+      - "MSDS (Ministry of Health) parent ministry oversight"
+      - "15-day DPM evaluation target"
+      - "Six-EC system in country"
+    references:
+      - "http://www.sante.gov.ml/"
+
+  - country_code: MX
+    country_name: "Mexico"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: COFEPRIS
+      name: "Comisión Federal para la Protección contra Riesgos Sanitarios"
+      review_days: 30
+      fra_reliance_days: 45  # For FRA reliance pathway
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: REC
+      name: "Comités de Ética en Investigación (Research Ethics Committees)"
+      review_days: 30  # Recommended
+      is_national: false
+      meeting_frequency: "varies"
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to institution's REC for approval"
+        authorities: ["REC"]
+        can_run_parallel: false
+        gates: []
+        estimated_days: 30
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to COFEPRIS only after REC approval"
+        authorities: ["COFEPRIS"]
+        can_run_parallel: false
+        gates: ["REC_approval"]
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "COFEPRIS approval completes process"
+        gates: ["COFEPRIS_approval"]
+    total_timeline_days: 60  # 30 + 30 days
+    fees:
+      - amount: 0
+        currency: "MXN"
+        payer: "REC"
+        notes: "RECs funded by institutions (no fees to applicants)"
+      - amount: 3000
+        currency: "USD"
+        payer: "UHAP"
+        notes: "Optional third-party pre-assessment (30 days)"
+    unique_features:
+      - "FRA reliance model (EMA, FDA, MHRA, Health Canada for Phase III)"
+      - "UHAP optional third-party pre-assessment (30 days, $3,000)"
+      - "DIGIPRiS electronic platform"
+      - "RNEC v2.0 registry for RECs"
+      - "RECs funded by institutions (no applicant fees)"
+      - "ICH member country"
+      - "Decentralized REC system"
+    references:
+      - "https://www.gob.mx/cofepris"
+
+  - country_code: PE
+    country_name: "Peru"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: INS
+      name: "Instituto Nacional de Salud"
+      review_days: 30
+      auto_approval: false
+      emergency_review_days: null
+      anm_binding_opinion: true  # ANM binding opinion included in 30-day timeline
+    ethics_authority:
+      code: EC
+      name: "INS-accredited Ethics Committee"
+      review_days: null  # Variable
+      is_national: false
+      meeting_frequency: "varies"
+      ins_accreditation_required: true
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to INS-accredited EC for approval"
+        authorities: ["EC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review with ANM Opinion"
+        description: "Submit to INS only after EC approval; includes ANM binding technical opinion"
+        authorities: ["INS", "ANM"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+        estimated_days: 30
+      - step: 3
+        name: "Final Approval"
+        description: "INS approval completes process (includes ANM opinion)"
+        gates: ["INS_approval", "ANM_opinion"]
+    total_timeline_days: 30  # Plus EC time, ANM opinion included in 30-day INS timeline
+    fees:
+      - amount: 0
+        currency: "PEN"
+        payer: "unknown"
+    unique_features:
+      - "ANM (Agencia Nacional de Medicamentos) binding technical opinion on IP safety/quality"
+      - "ANM opinion included in 30-day timeline"
+      - "REPEC v2 registry for ECs"
+      - "MPV virtual submission platform"
+      - "Minor changes vs amendments distinction"
+      - "In-country sponsor representation required"
+      - "EC accreditation only for clinical trials"
+    references:
+      - "https://www.ins.gob.pe/"
+
+  - country_code: MW
+    country_name: "Malawi"
+    workflow_type: "sequential"
+    complexity_level: 2
+    regulatory_authority:
+      code: PMRA
+      name: "Pharmacy, Medicines and Poisons Regulatory Authority"
+      review_days: null  # Variable
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: NHSRC
+      name: "National Health Sciences Research Committee"
+      review_days: null  # Variable
+      is_national: true
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "Ethics Committee Review"
+        description: "Submit to NHSRC or COMREC for ethics approval"
+        authorities: ["NHSRC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review"
+        description: "Submit to PMRA only after EC approval"
+        authorities: ["PMRA"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+      - step: 3
+        name: "Final Approval"
+        description: "PMRA approval completes process"
+        gates: ["PMRA_approval"]
+    total_timeline_days: null  # Variable
+    fees:
+      - amount: 0
+        currency: "MWK"
+        payer: "application"
+        notes: "5% of total trial budget as application fee"
+      - amount: 2200
+        currency: "USD"
+        payer: "annual_renewal"
+    unique_features:
+      - "Two NCST-approved ECs (NHSRC and COMREC)"
+      - "5% total budget application fee"
+      - "$2,200 annual renewal"
+      - "REIMS portal for electronic submissions"
+      - "GCP inspections during trials"
+    references:
+      - "https://www.pharmreg.mw/"
+
+  # ===========================================================================
+  # LEVEL 2.5 - FLEXIBLE WORKFLOWS (2 countries)
+  # Can switch between sequential and parallel based on conditions
+  # ===========================================================================
+
+  - country_code: SL
+    country_name: "Sierra Leone"
+    workflow_type: "flexible"
+    complexity_level: 2.5
+    regulatory_authority:
+      code: PBSL
+      name: "Pharmacy Board of Sierra Leone"
+      review_days_device: 40
+      review_days_pharma: 50
+      review_days_biologics: 60
+      review_days_gmo: 120
+      expedited_review_days: 10  # Minimum
+      expedited_review_days_max: 20  # Maximum
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: SLESRC
+      name: "Sierra Leone Ethics and Scientific Review Committee"
+      review_days: null  # No specified timeline
+      is_national: true
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "Default Sequential Submission"
+        description: "Normally submit to SLESRC for ethics approval first"
+        authorities: ["SLESRC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Regulatory Review (or Parallel for Emergencies)"
+        description: "Submit to PBSL after SLESRC, OR IN PARALLEL for public health emergencies or as PBSL deems fit"
+        authorities: ["PBSL"]
+        can_run_parallel: true  # Flexible based on emergency status
+        gates: ["SLESRC_approval"]  # Required for sequential
+        estimated_days: 50  # Pharma baseline
+      - step: 3
+        name: "Final Approval"
+        description: "PBSL approval completes process"
+        gates: ["PBSL_approval"]
+    total_timeline_days: 50  # Plus EC time for sequential, varies for parallel
+    fees:
+      - amount: 6500
+        currency: "USD"
+        payer: "industry_min"
+      - amount: 7000
+        currency: "USD"
+        payer: "industry_max"
+      - amount: 100
+        currency: "USD"
+        payer: "annual_renewal"
+    unique_features:
+      - "FLEXIBLE workflow (sequential OR parallel)"
+      - "Default sequential, switches to parallel for public health emergencies or at PBSL discretion"
+      - "HIGHEST timeline variability by product type (40-120 days)"
+      - "FRA reliance (ICH members, AVAREF)"
+      - "PACTR registration required"
+      - "15 hard copies + 1 soft copy required"
+      - "Annual renewal required ($100)"
+      - "Moderately high fees ($6,500-$7,000 for industry)"
+      - "Expedited review available (10-20 working days)"
+    references:
+      - "http://www.mohs.gov.sl/"
+
+  - country_code: ZA
+    country_name: "South Africa"
+    workflow_type: "flexible"
+    complexity_level: 2.5
+    regulatory_authority:
+      code: SAHPRA
+      name: "South African Health Products Regulatory Authority"
+      review_days_screening: 21  # ~3 weeks
+      review_days_ctc: 70  # ~10 weeks
+      total_review_days: 91  # ~13 weeks combined
+      auto_approval: false
+      emergency_review_days: null  # Rapid review available
+    ethics_authority:
+      code: EC
+      name: "Registered Research Ethics Committee"
+      review_days: null  # Variable, defined in EC SOPs
+      is_national: false  # Multiple registered ECs
+      meeting_frequency: "varies"
+      nhrec_oversight: true
+      registration_required: true
+      accreditation_required: true
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission (Default)"
+        description: "Submit to SAHPRA and EC in parallel (default approach)"
+        authorities: ["SAHPRA", "EC"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "Sequential Option (Recommended When EC Lacks Capacity)"
+        description: "If EC lacks scientific review capacity, submit SAHPRA first, then EC"
+        authorities: ["SAHPRA", "EC"]
+        can_run_parallel: false  # Sequential when EC lacks capacity
+        gates: ["SAHPRA_scientific_review"]
+        estimated_days: 91
+      - step: 3
+        name: "Final Approval"
+        description: "Both approvals required"
+        gates: ["SAHPRA_approval", "EC_approval"]
+    total_timeline_days: 91  # ~13 weeks
+    fees:
+      - amount: 33700
+        currency: "ZAR"
+        payer: "SAHPRA"
+        notes: "~$1,800 USD for clinical trial application"
+    unique_features:
+      - "Most mature African regulatory system"
+      - "NHREC oversight with EC registration/accreditation"
+      - "SANCTR registry for clinical trials"
+      - "Reliance model for medicine registration"
+      - "Capacity building requirements"
+      - "Moderate fees (R33,700 ~$1,800)"
+      - "Reciprocal recognition between registered ECs allowed"
+      - "Joint reviews for multicenter trials"
+      - "Rapid review for emergencies"
+      - "G-EthicsHR-ZAF recommends sequential when EC lacks scientific capacity"
+    references:
+      - "https://www.sahpra.org.za/"
+
+  # ===========================================================================
+  # LEVEL 3 - CONCURRENT SUBMISSION, SEQUENTIAL APPROVAL (6 countries)
+  # Submit to both, but regulatory waits for ethics approval
+  # ===========================================================================
+
+  - country_code: CD
+    country_name: "Democratic Republic of the Congo"
+    workflow_type: "concurrent_sequential"
+    complexity_level: 3
+    regulatory_authority:
+      code: ACOREP
+      name: "Autorité de Contrôle et de Régulation Pharmaceutique"
+      review_days: 45  # After EC approval
+      review_days_max: 60
+      auto_approval: false
+      emergency_review_days: 3  # 72 hours
+    ethics_authority:
+      code: EC
+      name: "Ethics Committee"
+      review_days: null  # Variable
+      is_national: false
+      meeting_frequency: "regular"
+    workflow_steps:
+      - step: 1
+        name: "Concurrent Submission"
+        description: "Submit to both EC and ACOREP simultaneously"
+        authorities: ["EC", "ACOREP"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "EC Review"
+        description: "EC reviews and approves"
+        authorities: ["EC"]
+        gates: []
+      - step: 3
+        name: "ACOREP Review After EC Approval"
+        description: "ACOREP can only approve after EC approval received"
+        authorities: ["ACOREP"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+        estimated_days: 45
+      - step: 4
+        name: "Final Approval"
+        description: "ACOREP approval completes process"
+        gates: ["ACOREP_approval"]
+    total_timeline_days: 45  # Plus EC time
+    fees:
+      - amount: 0
+        currency: "CDF"
+        payer: "local"
+        notes: "Fees differentiate between local and non-resident sponsors"
+    unique_features:
+      - "Concurrent submission allowed"
+      - "EC must approve before ACOREP can approve"
+      - "4 national languages for informed consent forms"
+      - "Nagoya Protocol compliance required"
+      - "72-hour emergency review"
+    references:
+      - "http://www.rdc-sante.cd/"
+
+  - country_code: CN
+    country_name: "China"
+    workflow_type: "dual_pathway"
+    complexity_level: 3
+    regulatory_authority:
+      code: NMPA
+      name: "National Medical Products Administration"
+      review_days: 60
+      auto_approval: true
+      auto_approval_days: 60
+      emergency_review_days: 3  # 72 hours
+      hgr_pathway: true  # Human genetic resources pathway
+    ethics_authority:
+      code: EC
+      name: "Ethics Committee"
+      review_days: 30
+      is_national: false
+      meeting_frequency: "regular"
+      sec_panels: 550  # Scientific ethics committees with 550 experts
+    workflow_steps:
+      - step: 1
+        name: "Standard Pathway - Parallel Submission"
+        description: "For standard trials: submit to NMPA and EC in parallel"
+        authorities: ["NMPA", "EC"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "Standard Pathway - Concurrent Review"
+        description: "NMPA (60 days) and EC (30 days) review concurrently"
+        estimated_days: 60
+      - step: 3
+        name: "HGR Pathway - Sequential Submission"
+        description: "For human genetic resources trials: NMPA → NHC → EC (sequential)"
+        authorities: ["NMPA", "NHC", "EC"]
+        can_run_parallel: false
+        gates: ["NMPA_approval", "NHC_approval"]
+        estimated_days: 120
+      - step: 4
+        name: "Final Approval"
+        description: "All required approvals received"
+        gates: ["NMPA_approval", "EC_approval"]  # Plus NHC for HGR
+    total_timeline_days: 60  # Standard pathway, 110-120 for HGR
+    fees:
+      - amount: 0
+        currency: "CNY"
+        payer: "unknown"
+    unique_features:
+      - "DUAL PATHWAYS: Standard (parallel) and HGR (3-layer sequential)"
+      - "Automatic approval if no NMPA response in 60 days"
+      - "550-expert SEC panels for scientific ethics review"
+      - "3-layer approval for genetic resources trials (NMPA → NHC → EC)"
+      - "72-hour emergency review"
+      - "NHC (National Health Commission) review for HGR trials"
+    references:
+      - "https://www.nmpa.gov.cn/"
+
+  - country_code: IN
+    country_name: "India"
+    workflow_type: "concurrent_sequential"
+    complexity_level: 3
+    regulatory_authority:
+      code: DCGI
+      name: "Drugs Controller General of India"
+      review_days_new_drug: 90
+      review_days_domestic: 30
+      auto_approval: true
+      auto_approval_days: 90
+      emergency_review_days: null
+    ethics_authority:
+      code: EC
+      name: "Ethics Committee"
+      review_days: null  # Variable
+      is_national: false  # Decentralized system
+      meeting_frequency: "varies"
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission"
+        description: "Submit to DCGI and EC in parallel"
+        authorities: ["DCGI", "EC"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "EC Review and DCGI Initial Review"
+        description: "Both review concurrently"
+        estimated_days: 90
+      - step: 3
+        name: "DCGI Confirms EC Approvals"
+        description: "DCGI must confirm EC approvals before final authorization"
+        authorities: ["DCGI"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+      - step: 4
+        name: "Final Approval"
+        description: "DCGI approval after confirming EC approval"
+        gates: ["DCGI_approval"]
+    total_timeline_days: 90  # For new drug/IND, 30 for domestic
+    fees:
+      - amount: 3570
+        currency: "USD"
+        payer: "Phase_I"
+      - amount: 2380
+        currency: "USD"
+        payer: "Phase_II_IV"
+      - amount: 0
+        currency: "USD"
+        payer: "government_funded"
+        notes: "Free for government-funded trials"
+    unique_features:
+      - "90-day automatic approval if no DCGI response"
+      - "Academic trial exemption (EC only, no regulatory review)"
+      - "Decentralized EC system"
+      - "Local trial waivers for drugs approved in US/UK/JP/AU/CA/EU"
+      - "30-day review for India-developed drugs"
+      - "Free for government-funded trials"
+      - "Fee differentiation by phase"
+    references:
+      - "https://cdsco.gov.in/"
+
+  - country_code: LR
+    country_name: "Liberia"
+    workflow_type: "concurrent_sequential"
+    complexity_level: 3
+    regulatory_authority:
+      code: LMHRA
+      name: "Liberia Medicines and Health Products Regulatory Authority"
+      review_days: 45  # Minimum for pharma/bio
+      review_days_max: 60
+      auto_approval: false
+      emergency_review_days: 10
+    ethics_authority:
+      code: NREB
+      name: "National Research Ethics Board"
+      review_days: null  # Variable
+      is_national: true
+      meeting_frequency: "bi-monthly"
+      board_size: 21
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission"
+        description: "Submit to both NREB and LMHRA simultaneously"
+        authorities: ["NREB", "LMHRA"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "NREB Review"
+        description: "NREB reviews and approves (bi-monthly meetings)"
+        authorities: ["NREB"]
+        gates: []
+      - step: 3
+        name: "LMHRA Review After NREB Approval"
+        description: "LMHRA waits for NREB approval before finalizing"
+        authorities: ["LMHRA"]
+        can_run_parallel: false
+        gates: ["NREB_approval"]
+        estimated_days: 45
+      - step: 4
+        name: "Final Approval"
+        description: "LMHRA approval completes process"
+        gates: ["LMHRA_approval"]
+    total_timeline_days: 45  # Plus NREB time
+    fees:
+      - amount: 25000
+        currency: "USD"
+        payer: "Phase_I_industry_min"
+      - amount: 32000
+        currency: "USD"
+        payer: "Phase_I_industry_max"
+        notes: "HIGHEST FEES documented ($25K-$32K for Phase I industry trials)"
+    unique_features:
+      - "HIGHEST FEES ($25K-$32K for Phase I industry)"
+      - "Bi-monthly NREB meetings"
+      - "21-member NREB"
+      - "Emergency 10-day review"
+      - "Like DRC/India - submit to both, but regulatory waits for ethics"
+    references:
+      - "http://www.lmhra.gov.lr/"
+
+  - country_code: TH
+    country_name: "Thailand"
+    workflow_type: "concurrent_sequential"
+    complexity_level: 3
+    regulatory_authority:
+      code: ThaiFDA
+      name: "Thai Food and Drug Administration"
+      review_days: 60
+      express_review_days: 10
+      final_review_days: 15  # After EC approval
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: ECMOPH
+      name: "Ethics Committee, Ministry of Public Health"
+      review_days_min: 60  # 2 months minimum
+      review_days_max: 90  # 3 months maximum
+      is_national: true
+      meeting_frequency: "regular"
+      accreditation_validity: 2  # 2-year accreditation
+    ethics_authority_alt:
+      code: CREC
+      name: "Chulalongkorn University Research Ethics Committee"
+      review_days_expedited: 10
+      is_national: false
+      can_review_any_site: true
+    workflow_steps:
+      - step: 1
+        name: "EC Review First (Preferred)"
+        description: "Submit to Thai FDA AFTER all sites approved by EC"
+        authorities: ["ECMOPH"]
+        can_run_parallel: false
+        gates: []
+        estimated_days: 75  # 2-3 months
+      - step: 2
+        name: "Parallel Option (Allowed)"
+        description: "OR submit to Thai FDA IN PARALLEL pending at least one EC review"
+        authorities: ["ThaiFDA", "ECMOPH"]
+        can_run_parallel: true
+        gates: []
+      - step: 3
+        name: "Thai FDA Review"
+        description: "Thai FDA reviews for 60 days (or 10 days express)"
+        authorities: ["ThaiFDA"]
+        estimated_days: 60
+      - step: 4
+        name: "Final Review After EC Approval"
+        description: "Thai FDA final review (15 days) after EC approval received"
+        authorities: ["ThaiFDA"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+        estimated_days: 15
+      - step: 5
+        name: "Final Approval"
+        description: "Thai FDA approval completes process"
+        gates: ["ThaiFDA_approval"]
+    total_timeline_days: 75  # 60 + 15 days (plus EC time if parallel)
+    fees:
+      - amount: 120
+        currency: "USD"
+        payer: "ThaiFDA_min"
+      - amount: 150
+        currency: "USD"
+        payer: "ThaiFDA_max"
+      - amount: 750
+        currency: "USD"
+        payer: "CREC_EC_min"
+      - amount: 1500
+        currency: "USD"
+        payer: "CREC_EC_max"
+        notes: "Based on funding source"
+    unique_features:
+      - "Skynet E-Submission System"
+      - "E-Consult pre-submission permission"
+      - "Two central ECs (ECMOPH and CREC) can review all studies regardless of site"
+      - "EC accreditation required (2-year validity)"
+      - "Express channel for public health emergencies (10 days)"
+      - "ICH E6(R2) compliance required"
+      - "Moderate fees (Thai FDA ~$120-$150, EC $750-$1,500)"
+      - "15-day final review after EC approval received"
+    references:
+      - "https://www.fda.moph.go.th/"
+
+  - country_code: UG
+    country_name: "Uganda"
+    workflow_type: "concurrent_sequential_multibody"
+    complexity_level: 3
+    regulatory_authority:
+      code: NDA
+      name: "National Drug Authority"
+      review_days: 60
+      fast_track_days: 15
+      fast_track_days_max: 30
+      auto_approval: false
+      emergency_review_days: null
+      stop_clock: true  # Stop-clock mechanism during review
+      annual_renewal_required: true
+    ethics_authority:
+      code: EC
+      name: "Ethics Committee"
+      review_days: 60
+      is_national: false
+      meeting_frequency: "varies"
+      uncst_accreditation_required: true
+      accreditation_validity: 3  # 3-year terms
+    additional_bodies:
+      - code: UNCST
+        name: "Uganda National Council for Science and Technology"
+        review_days: 10
+        review_days_max: 14
+        is_required: true
+        permit_required: true
+        security_clearance: true  # From Office of President
+      - code: UNHRO
+        name: "Uganda National Health Research Organization"
+        role: "Collaborates with UNCST on scientific/ethical review"
+        is_required: false
+    workflow_steps:
+      - step: 1
+        name: "EC and UNCST Permit (Parallel or Sequential)"
+        description: "Obtain EC approval and UNCST research permit (UNHRO collaborates with UNCST)"
+        authorities: ["EC", "UNCST", "UNHRO"]
+        can_run_parallel: true
+        gates: []
+        estimated_days: 60  # EC + 10-14 UNCST
+      - step: 2
+        name: "NDA Submission"
+        description: "Submit to NDA AFTER EC approval + UNCST permit, OR IN PARALLEL (but NDA won't finalize until EC clearance)"
+        authorities: ["NDA"]
+        can_run_parallel: true
+        gates: ["EC_approval", "UNCST_permit"]
+        estimated_days: 60
+      - step: 3
+        name: "Final Approval"
+        description: "NDA approval completes process"
+        gates: ["NDA_approval"]
+    total_timeline_days: 130  # 60 EC + 10-14 UNCST + 60 NDA (can overlap)
+    fees:
+      - amount: 5000
+        currency: "USD"
+        payer: "NDA_min"
+      - amount: 10000
+        currency: "USD"
+        payer: "NDA_max"
+        notes: "HIGHEST NDA fees documented ($5,000-$10,000)"
+      - amount: 300
+        currency: "USD"
+        payer: "UNCST"
+      - amount: 500
+        currency: "USD"
+        payer: "NDA_annual_renewal"
+    unique_features:
+      - "Three-body oversight (NDA + UNCST + UNHRO)"
+      - "NRIMS/iRIMS electronic platforms"
+      - "UNCST accreditation required for all ECs (3-year membership terms)"
+      - "Joint EC reviews allowed for multicenter trials"
+      - "Security clearance from Office of President via UNCST"
+      - "Fast-track for public health emergencies (15-30 days)"
+      - "Stop-clock mechanism during NDA review"
+      - "Moderately high fees (NDA $5,000-$10,000, UNCST $300)"
+      - "Annual NDA renewal required ($500)"
+    references:
+      - "https://www.nda.or.ug/"
+
+  # ===========================================================================
+  # LEVEL 4 - THREE-LAYER SEQUENTIAL (2 countries)
+  # Three separate approval stages (most complex traditional sequential)
+  # ===========================================================================
+
+  - country_code: KE
+    country_name: "Kenya"
+    workflow_type: "three_layer_sequential"
+    complexity_level: 4
+    regulatory_authority:
+      code: PPB
+      name: "Pharmacy and Poisons Board"
+      review_days: 30
+      auto_approval: false
+      emergency_review_days: null
+      second_layer: true
+    ethics_authority:
+      code: EC
+      name: "Ethics Committee"
+      review_days: null  # Variable
+      is_national: false
+      meeting_frequency: "varies"
+      accreditation_validity: 3  # 3-year accreditation
+      first_layer: true
+    additional_bodies:
+      - code: NACOSTI
+        name: "National Commission for Science, Technology and Innovation"
+        review_days: 30
+        is_required: true
+        third_layer: true
+        fee_structure:
+          eac: 0  # East African Community
+          africa: "varies"
+          non_african: "varies"
+    workflow_steps:
+      - step: 1
+        name: "First Layer - EC Approval"
+        description: "Submit to institutional or national EC for approval"
+        authorities: ["EC"]
+        can_run_parallel: false
+        gates: []
+      - step: 2
+        name: "Second Layer - PPB Approval"
+        description: "Submit to PPB only after EC approval"
+        authorities: ["PPB"]
+        can_run_parallel: false
+        gates: ["EC_approval"]
+        estimated_days: 30
+      - step: 3
+        name: "Third Layer - NACOSTI Approval"
+        description: "Submit to NACOSTI only after PPB approval"
+        authorities: ["NACOSTI"]
+        can_run_parallel: false
+        gates: ["PPB_approval"]
+        estimated_days: 30
+      - step: 4
+        name: "Additional Requirements"
+        description: "Dual CT registration (PPB + Pan African), county notifications"
+        authorities: ["PPB", "PanAfrican", "Counties"]
+        gates: ["NACOSTI_approval"]
+      - step: 5
+        name: "Final Approval"
+        description: "All three layers approved"
+        gates: ["EC_approval", "PPB_approval", "NACOSTI_approval"]
+    total_timeline_days: 60  # 30 PPB + 30 NACOSTI (plus EC time)
+    fees:
+      - amount: 0
+        currency: "USD"
+        payer: "NACOSTI_EAC"
+        notes: "EAC (East African Community) researchers"
+      - amount: 0
+        currency: "USD"
+        payer: "student"
+        notes: "Students/post-docs/institutions may have different fees"
+    unique_features:
+      - "THREE-LAYER SEQUENTIAL (EC → PPB → NACOSTI)"
+      - "Most complex traditional 3-layer approval system"
+      - "Dual CT registration (PPB + Pan African Clinical Trials Registry)"
+      - "County-level notifications required"
+      - "3-year EC accreditation"
+      - "Fee differentiation: EAC vs Africa vs Non-African"
+      - "Student/post-doc/institution fee variations"
+    references:
+      - "https://www.pharmacyboardkenya.org/"
+      - "https://www.nacosti.go.ke/"
+
+  # ===========================================================================
+  # LEVEL 4.5 - FOUR-LAYER SEQUENTIAL (1 country)
+  # Four separate approval stages (most complex sequential system)
+  # ===========================================================================
+
+  - country_code: VN
+    country_name: "Vietnam"
+    workflow_type: "four_layer_sequential"
+    complexity_level: 4.5
+    regulatory_authority:
+      code: MOH_ASTT
+      name: "Ministry of Health - Agency of Science Technology and Training"
+      review_days: 25  # ASTT + NECBR combined
+      auto_approval: false
+      emergency_review_days: 5  # Ministerial approval
+      second_layer: true
+    ethics_authority:
+      code: CEBRGL
+      name: "CEBRGL (Local/Institutional Ethics Committee)"
+      review_days: 30
+      is_national: false
+      meeting_frequency: "varies"
+      first_layer: true
+    additional_bodies:
+      - code: NECBR
+        name: "National Ethics Committee in Biomedical Research"
+        review_days: 25  # Combined with ASTT
+        is_national: true
+        is_required: true
+        third_layer: true
+      - code: Minister
+        name: "Minister of Health"
+        review_days: 5
+        is_required: true
+        fourth_layer: true
+        final_approval: true
+    workflow_steps:
+      - step: 1
+        name: "First Layer - CEBRGL Approval"
+        description: "Submit to local/institutional EC (CEBRGL)"
+        authorities: ["CEBRGL"]
+        can_run_parallel: false
+        gates: []
+        estimated_days: 30
+      - step: 2
+        name: "Second Layer - ASTT Technical Review"
+        description: "Submit to ASTT only after CEBRGL approval (no parallel allowed)"
+        authorities: ["MOH_ASTT"]
+        can_run_parallel: false
+        gates: ["CEBRGL_approval"]
+        estimated_days: 25
+      - step: 3
+        name: "Third Layer - NECBR National EC Review"
+        description: "NECBR national ethics review (concurrent with ASTT)"
+        authorities: ["NECBR"]
+        can_run_parallel: false  # No parallel between CEBRGL and ASTT
+        gates: ["CEBRGL_approval"]
+        estimated_days: 25
+      - step: 4
+        name: "Fourth Layer - Ministerial Approval"
+        description: "Minister of Health final approval"
+        authorities: ["Minister"]
+        can_run_parallel: false
+        gates: ["MOH_ASTT_approval", "NECBR_approval"]
+        estimated_days: 5
+      - step: 5
+        name: "Final Approval"
+        description: "All four layers approved"
+        gates: ["CEBRGL_approval", "MOH_ASTT_approval", "NECBR_approval", "Minister_approval"]
+    total_timeline_days: 60  # 30 + 25 + 5 days
+    fees:
+      - amount: 1000
+        currency: "USD"
+        payer: "NECBR_CEBRGL_min"
+      - amount: 2000
+        currency: "USD"
+        payer: "NECBR_CEBRGL_max"
+    unique_features:
+      - "MOST COMPLEX SEQUENTIAL SYSTEM - Four separate layers"
+      - "New Circular No. 50/2025/TT-BYT effective February 27, 2026"
+      - "Two-tier EC system (CEBRGL local/institutional + NECBR national)"
+      - "ASTT (Agency of Science Technology and Training) technical review required"
+      - "Final ministerial approval (5 days)"
+      - "Explicit prohibition on parallel submission between institutional EC and regulatory authority"
+      - "Moderate fees (NECBR/CEBRGL $1,000-$2,000)"
+    references:
+      - "https://moh.gov.vn/"
+
+  # ===========================================================================
+  # LEVEL 5 - MULTI-BODY SYSTEMS (3 countries)
+  # Three or more bodies with hybrid/complex workflows
+  # ===========================================================================
+
+  - country_code: TZ
+    country_name: "Tanzania"
+    workflow_type: "three_body_hybrid"
+    complexity_level: 5
+    regulatory_authority:
+      code: TMDA
+      name: "Tanzania Medicines and Medical Devices Authority"
+      review_days: 60
+      fast_track_days: 30
+      fast_track_fee_multiplier: 2
+      auto_approval: false
+      emergency_review_days: 5  # Public health events
+    ethics_authority:
+      code: NatHREC
+      name: "National Health Research Ethics Committee"
+      review_days: 30
+      review_days_max: 30
+      is_national: true
+      meeting_frequency: "regular"
+      acknowledgement_required: true  # TMDA needs NatHREC acknowledgement
+    additional_bodies:
+      - code: COSTECH
+        name: "Tanzania Commission for Science and Technology"
+        review_frequency: "every 2 months"
+        is_required: true
+        research_clearance: true
+        third_body: true
+    workflow_steps:
+      - step: 1
+        name: "Concurrent Submission with Acknowledgement"
+        description: "Submit to TMDA and NatHREC concurrently (TMDA needs NatHREC acknowledgement of receipt)"
+        authorities: ["TMDA", "NatHREC"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "Parallel Review"
+        description: "TMDA (60 days) and NatHREC (≤30 days) review in parallel"
+        authorities: ["TMDA", "NatHREC"]
+        estimated_days: 60
+      - step: 3
+        name: "Sequential Finalization"
+        description: "TMDA final approval only after NatHREC approval received"
+        authorities: ["TMDA"]
+        can_run_parallel: false
+        gates: ["NatHREC_approval"]
+      - step: 4
+        name: "COSTECH Research Clearance"
+        description: "COSTECH research clearance required (reviews every 2 months)"
+        authorities: ["COSTECH"]
+        can_run_parallel: false
+        gates: ["TMDA_approval", "NatHREC_approval"]
+        estimated_days: 60  # Maximum 2 months
+      - step: 5
+        name: "Final Approval"
+        description: "All three bodies approved"
+        gates: ["TMDA_approval", "NatHREC_approval", "COSTECH_clearance"]
+    total_timeline_days: 150  # 60 TMDA + 30 NatHREC + 60 COSTECH (some overlap)
+    fees:
+      - amount: 3000
+        currency: "USD"
+        payer: "TMDA"
+      - amount: 2625
+        currency: "USD"
+        payer: "NatHREC_international"
+      - amount: 50
+        currency: "USD"
+        payer: "COSTECH_application"
+      - amount: 300
+        currency: "USD"
+        payer: "COSTECH_clearance"
+    unique_features:
+      - "ONLY country with mandatory 3-body approval (TMDA + NatHREC + COSTECH)"
+      - "Most complex multi-body system"
+      - "Concurrent submission with acknowledgement requirement"
+      - "TMDA needs NatHREC acknowledgement of receipt"
+      - "TMDA final approval only after NatHREC approval"
+      - "COSTECH research clearance required (reviews every 2 months)"
+      - "REIMS/NHRMIS electronic portals"
+      - "ICH E6(R2) adopted"
+      - "Fast-track option (30 days for double fee)"
+      - "Moderately low fees ($3,000 TMDA, $2,625 NatHREC international, $50+$300 COSTECH)"
+      - "Institutional EC + national NatHREC dual review for clinical trials"
+      - "Emergency pathway (5 days for public health events)"
+    references:
+      - "https://www.tmda.go.tz/"
+
+  - country_code: ZW
+    country_name: "Zimbabwe"
+    workflow_type: "four_body_parallel"
+    complexity_level: 5
+    regulatory_authority:
+      code: MCAZ
+      name: "Medicines Control Authority of Zimbabwe"
+      review_days: 60
+      expedited_review_days: 15
+      expedited_review_days_max: 30
+      auto_approval: false
+      emergency_review_days: null
+    ethics_authority:
+      code: MRCZ
+      name: "Medical Research Council of Zimbabwe"
+      review_days: 28  # 4-6 weeks
+      review_days_max: 42
+      is_national: true
+      meeting_frequency: "regular"
+    additional_bodies:
+      - code: RCZ
+        name: "Research Council of Zimbabwe"
+        review_days: 42  # 6-8 weeks
+        review_days_max: 56
+        is_required: true
+        parallel_submission: true
+      - code: NBA
+        name: "National Biotechnology Authority"
+        review_days: null  # Variable
+        is_required: false  # For relevant trials
+        parallel_submission: true
+    workflow_steps:
+      - step: 1
+        name: "Parallel Submission to All Bodies"
+        description: "Submit to MCAZ, RCZ, NBA (if applicable), and MRCZ in parallel - encouraged approach"
+        authorities: ["MCAZ", "RCZ", "NBA", "MRCZ"]
+        can_run_parallel: true
+        gates: []
+      - step: 2
+        name: "Concurrent Review"
+        description: "All bodies review in parallel: MCAZ (60 days), MRCZ (4-6 weeks), RCZ (6-8 weeks)"
+        authorities: ["MCAZ", "RCZ", "MRCZ"]
+        estimated_days: 60
+      - step: 3
+        name: "Final Approval"
+        description: "All required bodies must approve"
+        gates: ["MCAZ_approval", "RCZ_approval", "MRCZ_approval"]  # Plus NBA if applicable
+    total_timeline_days: 60  # Maximum among parallel reviews
+    fees:
+      - amount: 2000
+        currency: "USD"
+        payer: "MCAZ_local_min"
+      - amount: 5000
+        currency: "USD"
+        payer: "MCAZ_local_max"
+      - amount: 3000
+        currency: "USD"
+        payer: "MCAZ_foreign_Phase_I"
+      - amount: 4000
+        currency: "USD"
+        payer: "MCAZ_foreign_Phase_II"
+      - amount: 5000
+        currency: "USD"
+        payer: "MCAZ_foreign_Phase_III_IV"
+      - amount: 500
+        currency: "USD"
+        payer: "RCZ"
+      - amount: 500
+        currency: "USD"
+        payer: "MRCZ_min"
+      - amount: 1000
+        currency: "USD"
+        payer: "MRCZ_max"
+    unique_features:
+      - "Multi-body oversight (MCAZ + RCZ + NBA + MRCZ) - 4 bodies"
+      - "Parallel submissions encouraged for efficiency"
+      - "Reliance model (WHO prequalification, stringent regulatory authorities)"
+      - "AVAREF joint review option"
+      - "Foreign researcher permits required"
+      - "Expedited review available (15-30 days)"
+      - "Moderate to high fees (MCAZ $2,000-$5,000 local, $3,000-$5,000 foreign by phase)"
+      - "Fee differentiation by sponsor location and phase"
+      - "RCZ $500, MRCZ $500-$1,000"
+    references:
+      - "https://www.mcaz.co.zw/"

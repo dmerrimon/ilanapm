@@ -3,12 +3,15 @@ ML Advisory Endpoints
 
 Provides ML-powered advisory services including duration prediction
 and risk scoring for clinical trial timelines.
+
+Version 3.0: Enhanced with international regulatory workflow recommendations
 """
 
 from fastapi import APIRouter, HTTPException
-from typing import Dict, Any
+from typing import Dict, Any, Set
 from backend.models.timeline import Timeline, Task
 from backend.ml_advisory import DurationPredictor, RiskScorer
+from backend.ml_advisory.workflow_matcher import WorkflowMatcher
 from backend.config import load_config
 
 router = APIRouter()
@@ -17,6 +20,13 @@ router = APIRouter()
 config = load_config()
 duration_predictor = DurationPredictor(config)
 risk_scorer = RiskScorer(config)
+
+# Initialize workflow matcher for country-specific recommendations
+try:
+    workflow_matcher = WorkflowMatcher()
+except Exception as e:
+    print(f"Warning: Could not load WorkflowMatcher: {e}")
+    workflow_matcher = None
 
 
 @router.post("/advisory/duration")
@@ -196,13 +206,25 @@ async def analyze_timeline(timeline: Timeline):
             timeline
         )
         
-        # Generate recommendations
+        # Extract countries from timeline for workflow recommendations
+        countries_in_timeline = set()
+        if workflow_matcher:
+            for task in timeline.tasks:
+                country_code = workflow_matcher.extract_country_code(task.name)
+                if country_code:
+                    countries_in_timeline.add(country_code)
+
+        # Generate recommendations (includes country-specific workflow recommendations)
         recommendations = _generate_timeline_recommendations(
             duration_analysis,
             risk_analysis,
-            timeline
+            timeline,
+            countries_in_timeline
         )
-        
+
+        # Determine model version
+        model_version = duration_analysis.get('model_version', 'heuristic-v1')
+
         return {
             "study_name": timeline.study_name,
             "phase": timeline.phase.value,
@@ -211,7 +233,7 @@ async def analyze_timeline(timeline: Timeline):
             "risk_analysis": risk_analysis,
             "summary_statistics": summary,
             "recommendations": recommendations,
-            "model_version": "heuristic-v1"
+            "model_version": model_version
         }
     
     except Exception as e:
@@ -262,11 +284,30 @@ def _calculate_summary_statistics(
 def _generate_timeline_recommendations(
     duration_analysis: Dict,
     risk_analysis: Dict,
-    timeline: Timeline
+    timeline: Timeline,
+    countries: Set[str] = None
 ) -> list[str]:
-    """Generate timeline-wide recommendations"""
+    """
+    Generate timeline-wide recommendations
+
+    Args:
+        duration_analysis: Duration prediction results
+        risk_analysis: Risk assessment results
+        timeline: Timeline object
+        countries: Set of country codes found in timeline tasks
+
+    Returns:
+        List of recommendation strings
+    """
     recommendations = []
-    
+
+    # PRIORITY 1: Country-specific workflow recommendations
+    if countries and workflow_matcher:
+        for country_code in sorted(countries):
+            country_recs = workflow_matcher.get_workflow_recommendations(country_code)
+            # Add country-specific recommendations (limit to avoid overwhelming)
+            recommendations.extend(country_recs[:3])  # Top 3 per country
+
     # Risk-based recommendations
     high_risk_count = len(risk_analysis.get('high_risk_tasks', []))
     if high_risk_count > 0:
