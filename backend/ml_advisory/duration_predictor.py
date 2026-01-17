@@ -113,6 +113,12 @@ class DurationPredictor:
         if predicted_days is None:
             return None
 
+        # Apply authority multiplier to workflow-based predictions
+        if task.authority:
+            multiplier = self._get_authority_multiplier(task.authority.value)
+            if multiplier != 1.0:
+                predicted_days = int(predicted_days * multiplier)
+
         # Calculate confidence interval
         min_days = int(predicted_days * 0.8)
         max_days = int(predicted_days * 1.3)
@@ -152,6 +158,20 @@ class DurationPredictor:
         if workflow_prediction.get('workflow_type'):
             workflow_type = workflow_prediction['workflow_type'].replace('_', ' ').title()
             explanation_parts.append(f"({workflow_type})")
+
+        # Add authority multiplier info if applied
+        if task.authority:
+            multiplier = self._get_authority_multiplier(task.authority.value)
+            if multiplier != 1.0:
+                multiplier_pct = int((multiplier - 1.0) * 100)
+                if multiplier > 1.0:
+                    explanation_parts.append(
+                        f"with {task.authority.value} adjustment (+{multiplier_pct}% longer review times)"
+                    )
+                else:
+                    explanation_parts.append(
+                        f"with {task.authority.value} adjustment ({multiplier_pct}% faster review times)"
+                    )
 
         if workflow_prediction.get('notes'):
             explanation_parts.append(f"{workflow_prediction['notes']}")
@@ -268,14 +288,33 @@ class DurationPredictor:
         
         return len(intersection) / len(union) if union else 0.0
     
+    def _get_authority_multiplier(self, authority_value: str) -> float:
+        """
+        Get review time multiplier for an authority
+
+        Args:
+            authority_value: Authority code (e.g., "FDA", "EMA", "PPB")
+
+        Returns:
+            Multiplier (default 1.0 if not found)
+        """
+        if not self.authorities:
+            return 1.0
+
+        for auth in self.authorities:
+            if auth.get('code') == authority_value:
+                return auth.get('review_time_multiplier', 1.0)
+
+        return 1.0
+
     def _predict_from_canonical(self, task: Task, canonical: Dict) -> Dict:
         """
         Predict duration from canonical task
-        
+
         Args:
             task: Task to predict for
             canonical: Canonical task data
-            
+
         Returns:
             Prediction dictionary
         """
@@ -283,21 +322,28 @@ class DurationPredictor:
         typical_days = canonical.get('typical_duration_days', task.duration_days)
         min_days = canonical.get('min_duration_days', int(typical_days * 0.7))
         max_days = canonical.get('max_duration_days', int(typical_days * 1.5))
-        
-        # Apply authority-specific adjustments
+
+        # Apply authority-specific adjustments from ontology
         authority_adjustments = canonical.get('authority_specific', {})
         if task.authority.value in authority_adjustments:
             auth_data = authority_adjustments[task.authority.value]
             typical_days = auth_data.get('duration_days', typical_days)
-            
+
             # Adjust bounds proportionally
             adjustment_ratio = typical_days / canonical.get('typical_duration_days', typical_days)
             min_days = int(min_days * adjustment_ratio)
             max_days = int(max_days * adjustment_ratio)
+        else:
+            # Apply global authority multiplier (FDA 1.2x, PMDA 1.5x, etc.)
+            multiplier = self._get_authority_multiplier(task.authority.value)
+            if multiplier != 1.0:
+                typical_days = int(typical_days * multiplier)
+                min_days = int(min_days * multiplier)
+                max_days = int(max_days * multiplier)
         
         # Calculate confidence based on match quality
         confidence = 0.85  # High confidence for canonical match
-        
+
         # Build comparable tasks list
         comparable_tasks = [{
             "name": canonical['name'],
@@ -305,7 +351,7 @@ class DurationPredictor:
             "category": canonical['category'],
             "authority": task.authority.value
         }]
-        
+
         # Check if current duration is reasonable
         duration_variance = "reasonable"
         if task.duration_days < min_days:
@@ -314,13 +360,30 @@ class DurationPredictor:
         elif task.duration_days > max_days:
             duration_variance = "conservative (above maximum)"
             confidence *= 0.95
-        
-        explanation = (
-            f"Based on historical data for {canonical['name']} "
-            f"({task.authority.value}). "
+
+        # Build explanation with authority multiplier info
+        multiplier = self._get_authority_multiplier(task.authority.value)
+        explanation_parts = [
+            f"Based on historical data for {canonical['name']} ({task.authority.value})."
+        ]
+
+        if multiplier != 1.0:
+            multiplier_pct = int((multiplier - 1.0) * 100)
+            if multiplier > 1.0:
+                explanation_parts.append(
+                    f"Applied {task.authority.value} timing adjustment (+{multiplier_pct}% longer review times)."
+                )
+            else:
+                explanation_parts.append(
+                    f"Applied {task.authority.value} timing adjustment ({multiplier_pct}% faster review times)."
+                )
+
+        explanation_parts.append(
             f"Typical duration: {typical_days} days. "
             f"Your duration of {task.duration_days} days is {duration_variance}."
         )
+
+        explanation = " ".join(explanation_parts)
         
         return {
             "predicted_duration_days": typical_days,
