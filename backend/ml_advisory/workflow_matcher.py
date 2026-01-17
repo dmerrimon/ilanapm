@@ -53,6 +53,24 @@ class WorkflowMatcher:
         """
         return self.country_workflows.get(country_code)
 
+    def get_country_code_from_name(self, country_name: str) -> Optional[str]:
+        """
+        Get country code from full country name
+
+        Args:
+            country_name: Full country name (e.g., "United States", "Kenya", "Vietnam")
+
+        Returns:
+            Country code (e.g., "US", "KE", "VN") or None if not found
+        """
+        country_name_lower = country_name.lower().strip()
+
+        for workflow in self.workflows:
+            if workflow['country_name'].lower() == country_name_lower:
+                return workflow['country_code']
+
+        return None
+
     def get_authority(self, authority_code: str) -> Optional[Dict]:
         """
         Get authority information by code
@@ -199,7 +217,8 @@ class WorkflowMatcher:
         if country_code and 'country_variations' in canonical:
             variation = canonical['country_variations'].get(country_code)
             if variation:
-                duration_days = variation.get('duration_days', canonical['typical_duration_days'])
+                # Handle null/None values by falling back to canonical duration
+                duration_days = variation.get('duration_days') or canonical['typical_duration_days']
 
                 return {
                     'task_id': canonical['id'],
@@ -228,7 +247,7 @@ class WorkflowMatcher:
                     return {
                         'task_id': canonical['id'],
                         'task_name': canonical['name'],
-                        'duration_days': auth_info.get('review_days', canonical['typical_duration_days']),
+                        'duration_days': auth_info.get('review_days') or canonical['typical_duration_days'],
                         'authority_code': auth_info['code'],
                         'authority_name': auth_info['name'],
                         'workflow_type': workflow['workflow_type'],
@@ -241,7 +260,7 @@ class WorkflowMatcher:
 
                 elif is_regulatory and 'regulatory_authority' in workflow:
                     auth_info = workflow['regulatory_authority']
-                    duration = auth_info.get('review_days', canonical['typical_duration_days'])
+                    duration = auth_info.get('review_days') or canonical['typical_duration_days']
 
                     # Check for fast-track or emergency options
                     if auth_info.get('emergency_review_days'):
