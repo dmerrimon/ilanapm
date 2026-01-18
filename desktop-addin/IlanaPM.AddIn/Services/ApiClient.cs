@@ -61,5 +61,36 @@ JsonConvert.DeserializeObject<Models.ValidationResult>(responseBody);
             HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/teams/notify", content);
             return response.IsSuccessStatusCode;
         }
+
+        public async Task<Models.AutoFixResult> AutoFixTimelineAsync(Models.Timeline timeline)
+        {
+            string jsonContent = JsonConvert.SerializeObject(timeline);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/validate/autofix", content);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.AutoFixResult>(responseBody);
+        }
+
+        public async Task<Models.CriticalPathResult> GetCriticalPathAsync(Models.Timeline timeline)
+        {
+            string jsonContent = JsonConvert.SerializeObject(timeline);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/analytics/critical-path", content);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.CriticalPathResult>(responseBody);
+        }
+
+        public async Task<Models.BaselineComparisonResult> CompareToBaselineAsync(Models.Timeline current, Models.Timeline baseline)
+        {
+            var request = new Models.BaselineComparisonRequest { current = current, baseline = baseline };
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/analytics/baseline-comparison", content);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.BaselineComparisonResult>(responseBody);
+        }
     }
 }
