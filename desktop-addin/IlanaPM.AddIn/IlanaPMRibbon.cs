@@ -282,11 +282,67 @@ namespace IlanaPM.AddIn
             }
         }
 
-        // SETTINGS BUTTON                                                                                                                                                                                        
+        // SETTINGS BUTTON
         private void btnSettings_Click(object sender, RibbonControlEventArgs e)
         {
             var settingsForm = new SettingsForm();
             settingsForm.ShowDialog();
+        }
+
+        // LOAD TEMPLATE BUTTON
+        private async void btnLoadTemplate_Click(object sender, RibbonControlEventArgs e)
+        {
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            try
+            {
+                // Show template loader form
+                var templateForm = new TemplateLoaderForm();
+
+                if (templateForm.ShowDialog() == DialogResult.OK)
+                {
+                    // Create template request
+                    var request = new Models.TemplateRequest
+                    {
+                        country_code = templateForm.SelectedCountryCode,
+                        study_phase = templateForm.SelectedPhase,
+                        therapeutic_area = templateForm.SelectedTherapeuticArea,
+                        include_optional = templateForm.IncludeOptional,
+                        include_emmes_timelines = templateForm.IncludeEmmes
+                    };
+
+                    // Call API to generate template
+                    var apiClient = new Services.ApiClient();
+                    var template = await apiClient.GenerateTemplateAsync(request);
+
+                    // Load template into MS Project
+                    var loader = new Services.TemplateLoader();
+                    loader.LoadTemplateIntoProject(template, Globals.ThisAddIn.Application);
+
+                    // Show success message
+                    MessageBox.Show(
+                        $"Template loaded successfully!\n\n" +
+                        $"Study: {template.study_name}\n" +
+                        $"Tasks: {template.tasks.Count}\n" +
+                        $"Dependencies: {template.dependencies.Count}\n" +
+                        $"Country: {templateForm.SelectedCountryCode}\n" +
+                        $"Phase: {templateForm.SelectedPhase}",
+                        "Template Loaded",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                }
+            }
+            catch (System.Exception ex)
+            {
+                string detailedError = "Error loading template: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
+                }
+                MessageBox.Show(detailedError, "Template Load Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

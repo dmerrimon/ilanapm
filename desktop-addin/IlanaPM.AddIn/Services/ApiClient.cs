@@ -92,5 +92,23 @@ JsonConvert.DeserializeObject<Models.ValidationResult>(responseBody);
             string responseBody = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<Models.BaselineComparisonResult>(responseBody);
         }
+
+        public async Task<Models.CountriesResponse> GetCountriesAsync()
+        {
+            HttpResponseMessage response = await httpClient.GetAsync(API_BASE_URL + "/api/v1/templates/countries");
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.CountriesResponse>(responseBody);
+        }
+
+        public async Task<Models.Timeline> GenerateTemplateAsync(Models.TemplateRequest request)
+        {
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/templates/generate", content);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.Timeline>(responseBody);
+        }
     }
 }
