@@ -918,6 +918,602 @@ tasks:
     prerequisites:
       - DATA-004
 
+  # ========================================================================
+  # INDUSTRY-STANDARD CRO STUDY STARTUP TASKS
+  # ========================================================================
+
+  - id: IND-010
+    name: "Data Collection Forms First Draft"
+    category: Operational
+    typical_duration_days: 28
+    description: "First draft of data collection forms after protocol Quality Crosswalk review"
+    is_mandatory: true
+    prerequisites:
+      - REG-001
+
+  - id: IND-011
+    name: "eCRF Instructions (MOP Appendix)"
+    category: Operational
+    typical_duration_days: 14
+    description: "Electronic Case Report Form instructions as appendix to Manual of Procedures"
+    is_mandatory: true
+    prerequisites:
+      - DATA-010
+
+  - id: IND-012
+    name: "MOP First Draft"
+    category: Operational
+    typical_duration_days: 28
+    description: "First draft of Manual of Procedures after protocol Quality Crosswalk review"
+    is_mandatory: true
+    prerequisites:
+      - REG-001
+
+  - id: IND-013
+    name: "DSMB/SMC Charter Review"
+    category: Safety
+    typical_duration_days: 7
+    description: "Review charter and expectations for DSMB/SMC report shell"
+    is_mandatory: false
+
+  - id: IND-014
+    name: "DSMB/SMC Report Shell Preparation"
+    category: Safety
+    typical_duration_days: 14
+    description: "Prepare Data Safety Monitoring Board/Safety Monitoring Committee report shell"
+    is_mandatory: false
+    prerequisites:
+      - IND-013
+
+  - id: IND-015
+    name: "Site Preparation Training"
+    category: Site
+    typical_duration_days: 28
+    description: "Training 4 weeks prior to site activation as needed"
+    is_mandatory: true
+
+  - id: IND-016
+    name: "Barcode Labels Ordering/Shipping"
+    category: Operational
+    typical_duration_days: 14
+    description: "Order and ship barcode labels 2 weeks prior to site activation"
+    is_mandatory: false
+
+  - id: IND-017
+    name: "Randomization Materials Preparation"
+    category: Pharmacy
+    typical_duration_days: 7
+    description: "Prepare and distribute randomization materials 1 week prior to site activation"
+    is_mandatory: true
+
+  - id: IND-018
+    name: "Data System Opens for Enrollment"
+    category: Data
+    typical_duration_days: 0
+    description: "Data system opens same day as site activation memo received"
+    is_mandatory: true
+    prerequisites:
+      - DATA-016
+
+  - id: IND-019
+    name: "Programmatic Queries Set-up"
+    category: Data
+    typical_duration_days: 30
+    description: "Set up programmatic queries 1 month after site activation"
+    is_mandatory: true
+    prerequisites:
+      - IND-018
+
+  - id: IND-020
+    name: "Website Initial Set-up"
+    category: Operational
+    typical_duration_days: 7
+    description: "Initial website setup (1 week to complete)"
+    is_mandatory: false
+
+  - id: IND-021
+    name: "Web Report Programming"
+    category: Data
+    typical_duration_days: 7
+    description: "Program web reports within 1 week of first subject enrolled"
+    is_mandatory: false
+
+  - id: IND-022
+    name: "Interim SAP (if required)"
+    category: Regulatory
+    typical_duration_days: 42
+    description: "Interim Statistical Analysis Plan if required for interim analyses (6 weeks after Protocol v1.0)"
+    is_mandatory: false
+
+  # ========================================================================
+  # CPM SITE ACTIVATION CHECKLIST - SITE TASKS
+  # ========================================================================
+
+  - id: SITE-010
+    name: "Site Essential Documents Collection and eTMF Upload"
+    category: Site
+    typical_duration_days: 14
+    description: "Collect site essential documents (including IRB approvals) and upload to eTMF or document control portal"
+    is_mandatory: true
+
+  - id: SITE-011
+    name: "Investigator Brochure/Package Insert Distributed"
+    category: Site
+    typical_duration_days: 1
+    description: "Distribute Investigator Brochure(s) or Package Insert to site"
+    is_mandatory: true
+
+  - id: SITE-012
+    name: "Final PSRL for Activation Purposes"
+    category: Site
+    typical_duration_days: 7
+    description: "Finalize Protocol Signature and Review Log for site activation"
+    is_mandatory: true
+
+  - id: SITE-013
+    name: "Site Staff HSP and GCP Training Received and Current"
+    category: Site
+    typical_duration_days: 14
+    description: "Ensure site staff Human Subjects Protection and Good Clinical Practice training is received and current (see PSRL for staff list)"
+    is_mandatory: true
+
+  - id: SITE-014
+    name: "PI Attestation of Site Staff Training"
+    category: Site
+    typical_duration_days: 1
+    description: "Principal Investigator attests that site staff training is received and current (see PSRL for staff list)"
+    is_mandatory: true
+    prerequisites:
+      - SITE-013
+
+  - id: SITE-015
+    name: "Individual Site Staff Training Documentation"
+    category: Site
+    typical_duration_days: 14
+    description: "Document individual site staff training completion"
+    is_mandatory: true
+
+  - id: SITE-016
+    name: "Clinical Quality Management Plan (CQMP) in Place"
+    category: Documents
+    typical_duration_days: 7
+    description: "Protocol-specific Clinical Quality Management Plan confirmed in place"
+    is_mandatory: true
+
+  - id: SITE-017
+    name: "Study Product Management Plan (SPMP) in Place"
+    category: Pharmacy
+    typical_duration_days: 7
+    description: "Protocol-specific Study Product Management Plan confirmed in place"
+    is_mandatory: true
+
+  - id: SITE-018
+    name: "Site Assessment Visit (SAV) Conducted"
+    category: Site
+    typical_duration_days: 1
+    description: "Conduct Site Assessment Visit as prerequisite for activation"
+    is_mandatory: true
+
+  - id: SITE-019
+    name: "Site Initiation Visit (SIV) Conducted"
+    category: Site
+    typical_duration_days: 1
+    description: "Conduct Site Initiation Visit as prerequisite for activation"
+    is_mandatory: true
+    prerequisites:
+      - SITE-018
+
+  - id: SITE-020
+    name: "SIV Refresher Training (if >30 days before activation)"
+    category: Site
+    typical_duration_days: 1
+    description: "SIV refresher training if more than 30 days before activated (if applicable)"
+    is_mandatory: false
+
+  - id: SITE-021
+    name: "Lab and Clinical Supplies Onsite"
+    category: Site
+    typical_duration_days: 7
+    description: "Confirm sites have necessary lab and clinical supplies onsite"
+    is_mandatory: true
+
+  - id: SITE-022
+    name: "Participant Reimbursement Mechanisms Available"
+    category: Site
+    typical_duration_days: 7
+    description: "Confirm sites have participant reimbursement cards or other compensation mechanisms available"
+    is_mandatory: true
+
+  - id: SITE-023
+    name: "Site Funding/Budget Confirmed"
+    category: Documents
+    typical_duration_days: 30
+    description: "Site funding and budget confirmed (varies by site)"
+    is_mandatory: true
+
+  - id: SITE-024
+    name: "No Outstanding Major Issues from SAV or SIV"
+    category: Site
+    typical_duration_days: 7
+    description: "Confirmation that no outstanding major issues remain from SAV or SIV"
+    is_mandatory: true
+    prerequisites:
+      - SITE-019
+
+  # ========================================================================
+  # CPM SITE ACTIVATION CHECKLIST - DATA MANAGEMENT TASKS
+  # ========================================================================
+
+  - id: DATA-010
+    name: "Manual of Procedures Available"
+    category: Data
+    typical_duration_days: 14
+    description: "Manual of Procedures with version and date (Draft acceptable for training; v1.0 needed for activation)"
+    is_mandatory: true
+    prerequisites:
+      - IND-012
+
+  - id: DATA-011
+    name: "SDCC Database Training Confirmation"
+    category: Data
+    typical_duration_days: 7
+    description: "Confirmation from Statistical and Data Coordinating Center that all required database training is complete"
+    is_mandatory: true
+
+  - id: DATA-012
+    name: "eCRFs Programmed for Direct Data Entry (DDE)"
+    category: Data
+    typical_duration_days: 42
+    description: "Electronic Case Report Forms are programmed and ready for Direct Data Entry"
+    is_mandatory: true
+    prerequisites:
+      - IND-010
+
+  - id: DATA-013
+    name: "Site PI Database Access and Delegation"
+    category: Data
+    typical_duration_days: 3
+    description: "Site PI has appropriate access in database and has delegated data entry capabilities to study staff"
+    is_mandatory: true
+
+  - id: DATA-014
+    name: "Paper DCFs/CRFs Accessible (Backup)"
+    category: Data
+    typical_duration_days: 7
+    description: "Paper Data Collection Forms/Case Report Forms accessible to sites as backups if using DDE"
+    is_mandatory: false
+
+  - id: DATA-015
+    name: "Data Management Training Completed"
+    category: Data
+    typical_duration_days: 7
+    description: "Data management training completed for site staff"
+    is_mandatory: true
+
+  - id: DATA-016
+    name: "Database Deployed"
+    category: Data
+    typical_duration_days: 1
+    description: "Clinical database deployed and ready for data entry"
+    is_mandatory: true
+    prerequisites:
+      - DATA-012
+
+  - id: DATA-017
+    name: "Draft Statistical Analysis Plan in Place"
+    category: Regulatory
+    typical_duration_days: 42
+    description: "Draft Statistical Analysis Plan or appropriate statistical section of protocol in place"
+    is_mandatory: true
+
+  # ========================================================================
+  # CPM SITE ACTIVATION CHECKLIST - PHARMACY TASKS
+  # ========================================================================
+
+  - id: PHARM-001
+    name: "Blinded/Unblinded Pharmacist List on PSRL with Training"
+    category: Pharmacy
+    typical_duration_days: 14
+    description: "List of blinded and unblinded site pharmacist(s) on PSRL with documented training (only applicable to interventional trials)"
+    is_mandatory: true
+    interventional_only: true
+
+  - id: PHARM-002
+    name: "Randomization Process and Unblinding Table at Site"
+    category: Pharmacy
+    typical_duration_days: 7
+    description: "Randomization process (codes) and unblinding table complete and at site as confirmed by Data Manager"
+    is_mandatory: true
+    interventional_only: true
+    prerequisites:
+      - IND-017
+
+  - id: PHARM-003
+    name: "Study Product Available for Distribution"
+    category: Pharmacy
+    typical_duration_days: 30
+    description: "Study product available for distribution to sites (location may vary per protocol)"
+    is_mandatory: true
+    interventional_only: true
+
+  # ========================================================================
+  # CPM SITE ACTIVATION CHECKLIST - LABORATORY TASKS
+  # ========================================================================
+
+  - id: LAB-001
+    name: "Lab Specimens/Assay Table & Central Assay Plan (CAP) Completed"
+    category: Laboratory
+    typical_duration_days: 21
+    description: "Laboratory Specimens/Assay table and Central Assay Plan completed"
+    is_mandatory: true
+
+  - id: LAB-002
+    name: "LDMS Installed and Equipment Tested"
+    category: Laboratory
+    typical_duration_days: 14
+    description: "Laboratory Data Management System installed and equipment tested for sample tracking"
+    is_mandatory: true
+
+  - id: LAB-003
+    name: "Lab Readiness Confirmation"
+    category: Laboratory
+    typical_duration_days: 7
+    description: "Confirmation of laboratory readiness for study operations"
+    is_mandatory: true
+    prerequisites:
+      - LAB-001
+      - LAB-002
+
+  # ========================================================================
+  # CPM SITE ACTIVATION CHECKLIST - DOCUMENTS & REGULATORY TASKS
+  # ========================================================================
+
+  - id: DOCS-001
+    name: "Clinical Trial Agreement (CTA) or MOU Executed"
+    category: Documents
+    typical_duration_days: 90
+    description: "Clinical Trial Agreement or Memorandum of Understanding executed (as applicable)"
+    is_mandatory: true
+
+  - id: DOCS-002
+    name: "Clinical Monitoring Plan in Place"
+    category: Documents
+    typical_duration_days: 14
+    description: "Clinical Monitoring Plan in place (CPM's verbal confirmation is acceptable)"
+    is_mandatory: true
+
+  - id: DOCS-003
+    name: "All Required Agreements in Place (MTAs, DTAs, etc.)"
+    category: Documents
+    typical_duration_days: 60
+    description: "Confirmation that all required agreements are in place (Material Transfer Agreements, Data Transfer Agreements, etc.)"
+    is_mandatory: true
+
+  - id: REG-010
+    name: "NLM Submission for ClinicalTrials.gov (NCT# assigned)"
+    category: Regulatory
+    typical_duration_days: 21
+    description: "National Library of Medicine submission for clinicaltrials.gov (NCT# assigned). Not required for activation; to be submitted no later than 21 days after enrollment of first subject (21 CFR 11.24)"
+    is_mandatory: true
+
+  - id: REG-011
+    name: "IND Submission to FDA (if applicable)"
+    category: Regulatory
+    typical_duration_days: 30
+    description: "If conducted under IND, date of initial submission to FDA documented"
+    is_mandatory: false
+
+  - id: REG-012
+    name: "IRB Continuing Review"
+    category: Regulatory
+    typical_duration_days: 365
+    description: "IRB Continuing Review (annual or as specified by IRB) - ongoing during study execution"
+    is_mandatory: true
+    recurring: true
+    recurrence_interval_days: 365
+
+  # ========================================================================
+  # SAFETY OVERSIGHT TASKS
+  # ========================================================================
+
+  - id: SAFETY-001
+    name: "DSMB/SMC Organizational Meeting Held"
+    category: Safety
+    typical_duration_days: 7
+    description: "Data Safety Monitoring Board/Safety Monitoring Committee organizational meeting held as prerequisite for activation"
+    is_mandatory: false
+    prerequisites:
+      - IND-014
+
+  # ========================================================================
+  # STUDY CLOSEOUT TASKS - ADDITIONAL CLOSEOUT MILESTONES
+  # ========================================================================
+
+  - id: CLOSE-010
+    name: "Serious Adverse Event Reconciliation"
+    category: Closeout
+    typical_duration_days: 21
+    description: "Serious Adverse Event reconciliation (3 weeks after data entry completion)"
+    is_mandatory: true
+
+  - id: CLOSE-011
+    name: "Final Monitoring Visit"
+    category: Closeout
+    typical_duration_days: 35
+    description: "Final monitoring visit (5 weeks after Last Patient Last Visit)"
+    is_mandatory: true
+    prerequisites:
+      - SITE-005
+
+  - id: DATA-020
+    name: "Resolution of Data Management Queries"
+    category: Data
+    typical_duration_days: 1
+    description: "Resolution of all data management queries (1 day after final monitoring visit)"
+    is_mandatory: true
+    prerequisites:
+      - CLOSE-011
+
+  # ========================================================================
+  # LABORATORY CLOSEOUT TASKS
+  # ========================================================================
+
+  - id: LAB-010
+    name: "Laboratory Assay Completion and Transfer"
+    category: Laboratory
+    typical_duration_days: 84
+    description: "Assay completion and transfer of laboratory data (12 weeks after last specimen collection time point)"
+    is_mandatory: true
+
+  - id: LAB-011
+    name: "QC of Laboratory Data"
+    category: Laboratory
+    typical_duration_days: 4
+    description: "Quality control of laboratory data (4 days after receipt of lab data)"
+    is_mandatory: true
+    prerequisites:
+      - LAB-010
+
+  - id: LAB-012
+    name: "Resolution of Laboratory Queries"
+    category: Laboratory
+    typical_duration_days: 7
+    description: "Resolution of laboratory queries (1 week after distribution)"
+    is_mandatory: true
+    prerequisites:
+      - LAB-011
+
+  - id: LAB-013
+    name: "Laboratory Database Lock"
+    category: Laboratory
+    typical_duration_days: 1
+    description: "Laboratory database lock (1 day after resolution of lab queries)"
+    is_mandatory: true
+    prerequisites:
+      - LAB-012
+
+  # ========================================================================
+  # CSR PREPARATION AND REVIEW WORKFLOW
+  # ========================================================================
+
+  - id: REG-020
+    name: "Preparation of Draft CSR (including TFLs)"
+    category: Regulatory
+    typical_duration_days: 84
+    description: "Preparation of draft Clinical Study Report including Tables, Figures, and Listings (12 weeks after clinical AND lab database lock)"
+    is_mandatory: true
+    prerequisites:
+      - DATA-001
+      - LAB-013
+
+  - id: SAFETY-010
+    name: "Pharmacovigilance Provides SAE Narratives"
+    category: Safety
+    typical_duration_days: 30
+    description: "Pharmacovigilance provides Serious Adverse Event narratives (30 days after clinical database lock)"
+    is_mandatory: true
+    prerequisites:
+      - DATA-001
+
+  - id: REG-021
+    name: "Distribute Draft CSR to PI"
+    category: Regulatory
+    typical_duration_days: 1
+    description: "Distribute draft Clinical Study Report to Principal Investigator (1 day after CSR preparation complete)"
+    is_mandatory: true
+    prerequisites:
+      - REG-020
+
+  - id: REG-022
+    name: "PI Reviews and Completes CSR Sections"
+    category: Regulatory
+    typical_duration_days: 35
+    description: "Principal Investigator reviews and completes designated sections of CSR (4-6 weeks average)"
+    is_mandatory: true
+    prerequisites:
+      - REG-021
+
+  - id: REG-023
+    name: "Incorporate PI Text and Comments"
+    category: Regulatory
+    typical_duration_days: 7
+    description: "Incorporate PI text and address PI comments (1 week after receiving draft from PI)"
+    is_mandatory: true
+    prerequisites:
+      - REG-022
+
+  - id: REG-024
+    name: "Distribute Draft CSR to Sponsor and PI for Review"
+    category: Regulatory
+    typical_duration_days: 1
+    description: "Distribute draft CSR to Sponsor and PI for review (1 day after draft complete)"
+    is_mandatory: true
+    prerequisites:
+      - REG-023
+
+  - id: REG-025
+    name: "Sponsor Reviews Draft CSR"
+    category: Regulatory
+    typical_duration_days: 28
+    description: "Sponsor reviews draft Clinical Study Report (4 weeks after distribution)"
+    is_mandatory: true
+    prerequisites:
+      - REG-024
+
+  - id: REG-026
+    name: "Incorporate Sponsor Comments"
+    category: Regulatory
+    typical_duration_days: 7
+    description: "Incorporate Sponsor comments and prepare final draft (1 week after receipt of comments)"
+    is_mandatory: true
+    prerequisites:
+      - REG-025
+
+  - id: REG-027
+    name: "Receive Sponsor and PI Approval to Finalize CSR"
+    category: Regulatory
+    typical_duration_days: 3
+    description: "Receive Sponsor and PI approval to finalize CSR (3 days after final draft distributed)"
+    is_mandatory: true
+    prerequisites:
+      - REG-026
+
+  - id: REG-028
+    name: "Prepare Approved CSR per Regulatory Requirements"
+    category: Regulatory
+    typical_duration_days: 3
+    description: "Prepare approved CSR in accordance with regulatory requirements (3 days after approval)"
+    is_mandatory: true
+    prerequisites:
+      - REG-027
+
+  - id: REG-029
+    name: "Lead PI Signs CSR Signature Page"
+    category: Regulatory
+    typical_duration_days: 3
+    description: "Lead Principal Investigator signs CSR signature page (3 days after notification)"
+    is_mandatory: true
+    prerequisites:
+      - REG-028
+
+  - id: REG-030
+    name: "Distribute Approved CSR"
+    category: Regulatory
+    typical_duration_days: 1
+    description: "Distribute approved Clinical Study Report (1 day after receipt of signature)"
+    is_mandatory: true
+    prerequisites:
+      - REG-029
+
+  - id: REG-031
+    name: "Regulatory Affairs Submits Final CSR to FDA"
+    category: Regulatory
+    typical_duration_days: 17
+    description: "Regulatory Affairs Specialist submits final CSR to FDA (2-3 weeks average)"
+    is_mandatory: true
+    prerequisites:
+      - REG-030
+
 # ============================================================================
 # VALIDATION RULES (Industry Reality Checks)
 # ============================================================================
