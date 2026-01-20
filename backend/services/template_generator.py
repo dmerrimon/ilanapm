@@ -416,7 +416,8 @@ class TemplateGenerator:
         tasks = []
 
         # Find operational tasks in ontology
-        operational_categories = ['Planning', 'Site Management', 'Data Management', 'Operational']
+        # Fixed: Use actual category names from task_ontology.yaml
+        operational_categories = ['Operational', 'Site', 'Data', 'Closeout']
         operational_task_defs = [
             t for t in self.tasks
             if t.get('category') in operational_categories
