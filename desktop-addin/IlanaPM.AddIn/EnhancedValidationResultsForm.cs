@@ -229,15 +229,26 @@ namespace IlanaPM.AddIn
 
                 foreach (var pred in advisory.duration_predictions.predictions)
                 {
+                    if (pred?.prediction == null) continue;
+
                     sb.AppendLine("──────────────────────────────────────────────────────────────────────");
                     sb.AppendLine($"Task: {pred.task_name} (ID: {pred.task_id})");
                     sb.AppendLine();
                     sb.AppendLine($"  Current Duration:    {pred.current_duration} days");
                     sb.AppendLine($"  Predicted Duration:  {pred.prediction.predicted_duration_days} days");
-                    sb.AppendLine($"  Confidence Range:    {pred.prediction.confidence_interval.lower}-{pred.prediction.confidence_interval.upper} days");
+
+                    if (pred.prediction.confidence_interval != null)
+                    {
+                        sb.AppendLine($"  Confidence Range:    {pred.prediction.confidence_interval.lower}-{pred.prediction.confidence_interval.upper} days");
+                    }
+
                     sb.AppendLine($"  Confidence Score:    {pred.prediction.confidence_score * 100:F1}%");
                     sb.AppendLine();
-                    sb.AppendLine($"  Explanation: {pred.prediction.explanation}");
+
+                    if (!string.IsNullOrEmpty(pred.prediction.explanation))
+                    {
+                        sb.AppendLine($"  Explanation: {pred.prediction.explanation}");
+                    }
                     sb.AppendLine();
                 }
             }
@@ -264,9 +275,9 @@ namespace IlanaPM.AddIn
                 sb.AppendLine();
 
                 // Group by risk level
-                var highRisk = advisory.risk_analysis.risk_scores.Where(r => r.risk.risk_level.ToLower() == "high").ToList();
-                var mediumRisk = advisory.risk_analysis.risk_scores.Where(r => r.risk.risk_level.ToLower() == "medium").ToList();
-                var lowRisk = advisory.risk_analysis.risk_scores.Where(r => r.risk.risk_level.ToLower() == "low").ToList();
+                var highRisk = advisory.risk_analysis.risk_scores.Where(r => r?.risk?.risk_level?.ToLower() == "high").ToList();
+                var mediumRisk = advisory.risk_analysis.risk_scores.Where(r => r?.risk?.risk_level?.ToLower() == "medium").ToList();
+                var lowRisk = advisory.risk_analysis.risk_scores.Where(r => r?.risk?.risk_level?.ToLower() == "low").ToList();
 
                 if (highRisk.Count > 0)
                 {
@@ -274,13 +285,20 @@ namespace IlanaPM.AddIn
                     sb.AppendLine();
                     foreach (var risk in highRisk)
                     {
+                        if (risk?.risk == null) continue;
+
                         sb.AppendLine($"▲ {risk.task_name} (ID: {risk.task_id})");
                         sb.AppendLine($"  Risk Score: {risk.risk.risk_score}/100");
-                        sb.AppendLine($"  Risk Factors:");
-                        foreach (var factor in risk.risk.risk_factors)
+
+                        if (risk.risk.risk_factors != null && risk.risk.risk_factors.Count > 0)
                         {
-                            sb.AppendLine($"    • {factor}");
+                            sb.AppendLine($"  Risk Factors:");
+                            foreach (var factor in risk.risk.risk_factors)
+                            {
+                                sb.AppendLine($"    • {factor}");
+                            }
                         }
+
                         if (risk.risk.mitigation_suggestions != null && risk.risk.mitigation_suggestions.Count > 0)
                         {
                             sb.AppendLine($"  Mitigation:");
@@ -299,9 +317,15 @@ namespace IlanaPM.AddIn
                     sb.AppendLine();
                     foreach (var risk in mediumRisk)
                     {
+                        if (risk?.risk == null) continue;
+
                         sb.AppendLine($"⚠ {risk.task_name} (ID: {risk.task_id})");
                         sb.AppendLine($"  Risk Score: {risk.risk.risk_score}/100");
-                        sb.AppendLine($"  Risk Factors: {string.Join(", ", risk.risk.risk_factors)}");
+
+                        if (risk.risk.risk_factors != null && risk.risk.risk_factors.Count > 0)
+                        {
+                            sb.AppendLine($"  Risk Factors: {string.Join(", ", risk.risk.risk_factors)}");
+                        }
                         sb.AppendLine();
                     }
                 }

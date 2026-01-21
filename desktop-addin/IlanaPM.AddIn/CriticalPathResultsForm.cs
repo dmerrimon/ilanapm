@@ -154,8 +154,8 @@ namespace IlanaPM.AddIn
                 sb.AppendLine();
 
                 // Calculate percentage of project on critical path
-                int totalTasks = timeline.tasks.Count;
-                double criticalPercentage = (double)criticalPath.task_count / totalTasks * 100;
+                int totalTasks = timeline.tasks?.Count ?? 0;
+                double criticalPercentage = totalTasks > 0 ? (double)criticalPath.task_count / totalTasks * 100 : 0;
 
                 sb.AppendLine("══════════════════════════════════════════════════════════════════════");
                 sb.AppendLine($"Critical Path Tasks: {criticalPath.task_count} of {totalTasks} ({criticalPercentage:F1}%)");
@@ -171,7 +171,7 @@ namespace IlanaPM.AddIn
                 else if (criticalPercentage < 20)
                 {
                     sb.AppendLine();
-                    sb.AppendLine("✓ Good schedule flexibility with {criticalPercentage:F1}% critical tasks.");
+                    sb.AppendLine($"✓ Good schedule flexibility with {criticalPercentage:F1}% critical tasks.");
                     sb.AppendLine("  Non-critical tasks have float and can absorb some delays.");
                 }
             }

@@ -174,19 +174,25 @@ namespace IlanaPM.AddIn.Services
                         if (task != null && pred.prediction != null)
                         {
                             // Write predicted duration as range
-                            string durationRange = string.Format("{0}-{1} days",
-                                pred.prediction.confidence_interval.lower,
-                                pred.prediction.confidence_interval.upper);
-                            SetTaskText(task, PjCustomField.pjCustomTaskText6, durationRange);
+                            if (pred.prediction.confidence_interval != null)
+                            {
+                                string durationRange = string.Format("{0}-{1} days",
+                                    pred.prediction.confidence_interval.lower,
+                                    pred.prediction.confidence_interval.upper);
+                                SetTaskText(task, PjCustomField.pjCustomTaskText6, durationRange);
+                            }
 
                             // Write confidence percentage
                             SetTaskNumber(task, PjCustomField.pjCustomTaskNumber3, (int)(pred.prediction.confidence_score * 100));
 
                             // Add ML prediction note
-                            string note = string.Format("[ML PREDICTION] {0}{1}{1}",
-                                pred.prediction.explanation,
-                                Environment.NewLine);
-                            AppendTaskNote(task, note);
+                            if (!string.IsNullOrEmpty(pred.prediction.explanation))
+                            {
+                                string note = string.Format("[ML PREDICTION] {0}{1}{1}",
+                                    pred.prediction.explanation,
+                                    Environment.NewLine);
+                                AppendTaskNote(task, note);
+                            }
                         }
                     }
                 }
