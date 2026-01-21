@@ -12,9 +12,9 @@ backend_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(backend_dir.parent))
 
 from backend.config import load_config, ConfigLoader
-from backend.ml_advisory.workflow_matcher import WorkflowMatcher
-from backend.ml_advisory.duration_predictor import DurationPredictor
-from backend.models.timeline import Task, TaskCategory, RegulatoryAuthority, StudyPhase
+from ml_advisory.workflow_matcher import WorkflowMatcher
+from ml_advisory.duration_predictor import DurationPredictor
+from models.timeline import Task, TaskCategory, RegulatoryAuthority, StudyPhase
 
 
 def test_yaml_loading():

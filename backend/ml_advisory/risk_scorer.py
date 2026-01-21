@@ -7,7 +7,7 @@ Phase 5: Trained ML models
 """
 
 from typing import Dict, List, Optional
-from backend.models.timeline import Task, Timeline, TaskCategory
+from models.timeline import Task, Timeline, TaskCategory
 
 
 class RiskScorer:

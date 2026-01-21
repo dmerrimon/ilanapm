@@ -7,8 +7,8 @@ checklist completion percentages are appropriate for the task status.
 
 from typing import List, Dict, Optional
 from .base_validator import BaseValidator
-from backend.models.timeline import Timeline, Task, TaskCategory
-from backend.models.validation import ValidationIssue, IssueSeverity, IssueCategory
+from models.timeline import Timeline, Task, TaskCategory
+from models.validation import ValidationIssue, IssueSeverity, IssueCategory
 
 
 class ChecklistCompletenessValidator(BaseValidator):

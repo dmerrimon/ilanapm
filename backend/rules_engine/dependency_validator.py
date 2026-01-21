@@ -9,8 +9,8 @@ orphaned tasks.
 from typing import List, Dict, Set
 import networkx as nx
 from .base_validator import BaseValidator
-from backend.models.timeline import Timeline, Task
-from backend.models.validation import ValidationIssue, IssueSeverity, IssueCategory
+from models.timeline import Timeline, Task
+from models.validation import ValidationIssue, IssueSeverity, IssueCategory
 
 
 class DependencyValidator(BaseValidator):

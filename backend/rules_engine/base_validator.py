@@ -6,8 +6,8 @@ Defines the interface that all validators must implement.
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
-from backend.models.timeline import Timeline, Task
-from backend.models.validation import ValidationIssue
+from models.timeline import Timeline, Task
+from models.validation import ValidationIssue
 
 
 class BaseValidator(ABC):

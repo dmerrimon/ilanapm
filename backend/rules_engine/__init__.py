@@ -6,8 +6,8 @@ regulatory requirements, operational best practices, and historical data.
 """
 
 from typing import List, Dict
-from backend.models.timeline import Timeline
-from backend.models.validation import ValidationIssue, ValidationResult, ValidationStatus
+from models.timeline import Timeline
+from models.validation import ValidationIssue, ValidationResult, ValidationStatus
 
 
 class RulesEngine:

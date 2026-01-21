@@ -8,8 +8,8 @@ must be executed before site initiation visits).
 
 from typing import List, Dict
 from .base_validator import BaseValidator
-from backend.models.timeline import Timeline, Task
-from backend.models.validation import ValidationIssue, IssueSeverity, IssueCategory
+from models.timeline import Timeline, Task
+from models.validation import ValidationIssue, IssueSeverity, IssueCategory
 
 
 class OperationalSequencesValidator(BaseValidator):

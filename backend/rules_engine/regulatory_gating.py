@@ -9,8 +9,8 @@ Supports 23 global regulatory authorities.
 
 from typing import List, Dict
 from .base_validator import BaseValidator
-from backend.models.timeline import Timeline, Task
-from backend.models.validation import ValidationIssue, IssueSeverity, IssueCategory
+from models.timeline import Timeline, Task
+from models.validation import ValidationIssue, IssueSeverity, IssueCategory
 
 
 class RegulatoryGatingValidator(BaseValidator):

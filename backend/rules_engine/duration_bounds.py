@@ -12,8 +12,8 @@ Supports authority-specific duration adjustments for 23 countries.
 
 from typing import List, Dict, Optional
 from .base_validator import BaseValidator
-from backend.models.timeline import Timeline, Task, TaskCategory
-from backend.models.validation import ValidationIssue, IssueSeverity, IssueCategory
+from models.timeline import Timeline, Task, TaskCategory
+from models.validation import ValidationIssue, IssueSeverity, IssueCategory
 
 
 class DurationBoundsValidator(BaseValidator):

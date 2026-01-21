@@ -10,7 +10,7 @@ Provides graph-based analysis of timeline dependencies including:
 
 import networkx as nx
 from typing import List, Tuple, Dict, Optional, Set
-from backend.models.timeline import Timeline, Task, Dependency
+from models.timeline import Timeline, Task, Dependency
 
 
 class DependencyGraph:

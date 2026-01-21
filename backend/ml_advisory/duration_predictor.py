@@ -7,8 +7,8 @@ Phase 5: Trained ML models
 """
 
 from typing import Dict, List, Optional
-from backend.models.timeline import Task, StudyPhase, RegulatoryAuthority, TaskCategory
-from backend.ml_advisory.workflow_matcher import WorkflowMatcher
+from models.timeline import Task, StudyPhase, RegulatoryAuthority, TaskCategory
+from ml_advisory.workflow_matcher import WorkflowMatcher
 
 
 class DurationPredictor:
