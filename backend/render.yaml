@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ilanapm-api
+    name: ilanapm
     runtime: python
     region: oregon
     plan: free
