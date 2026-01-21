@@ -1,8 +1,6 @@
 """
-Ilana PM Backend - Clinical Trial Timeline Intelligence
+Ilana PM Backend Package
 
-This package provides the core intelligence layer for validating and analyzing
-clinical trial timelines in Microsoft Project.
+This makes the backend directory a proper Python package
+that can be imported from the project root.
 """
-
-__version__ = "0.1.0"
