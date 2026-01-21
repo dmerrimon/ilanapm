@@ -9,13 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 
-# Handle both local dev (backend.* imports) and Azure deployment (direct imports)
-try:
-    from backend.api import health, validate, config, analytics, advisory, teams, feedback, templates
-    from backend.database import init_db
-except ModuleNotFoundError:
-    from api import health, validate, config, analytics, advisory, teams, feedback, templates
-    from database import init_db
+from backend.api import health, validate, config, analytics, advisory, teams, feedback, templates
+from backend.database import init_db
 
 # Configure logging
 logging.basicConfig(
