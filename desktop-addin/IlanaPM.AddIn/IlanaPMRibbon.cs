@@ -18,21 +18,32 @@ namespace IlanaPM.AddIn
 
             try
             {
-                // FIRST: Ensure custom fields exist                                                                                                                                                              
+                // FIRST: Ensure custom fields exist
                 EnsureCustomFields();
 
                 var extractor = new Services.ProjectDataExtractor();
                 var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
 
                 var apiClient = new Services.ApiClient();
-                var result = await apiClient.ValidateTimelineAsync(timeline);
 
-                // Write back to MS Project                                                                                                                                                                       
+                // PHASE 1.1: Call BOTH validation AND ML advisory APIs in parallel
+                var validationTask = apiClient.ValidateTimelineAsync(timeline);
+                var advisoryTask = apiClient.GetTimelineAdvisoryAsync(timeline);
+
+                // Wait for both to complete
+                await System.Threading.Tasks.Task.WhenAll(validationTask, advisoryTask);
+
+                var validationResult = await validationTask;
+                var advisoryResult = await advisoryTask;
+
+                // Write back to MS Project
                 var writer = new Services.ProjectDataWriter();
-                writer.WriteValidationResults(Globals.ThisAddIn.Application, result);
+                writer.WriteValidationResults(Globals.ThisAddIn.Application, validationResult);
+                writer.WriteMLAdvisoryResults(Globals.ThisAddIn.Application, advisoryResult);
 
-                ValidationResultsForm resultsForm = new ValidationResultsForm();
-                resultsForm.DisplayResults(result);
+                // Show enhanced results form with both validation and ML predictions
+                EnhancedValidationResultsForm resultsForm = new EnhancedValidationResultsForm();
+                resultsForm.DisplayResults(validationResult, advisoryResult, timeline);
                 resultsForm.ShowDialog();
             }
             catch (System.Exception ex)
@@ -77,153 +88,22 @@ namespace IlanaPM.AddIn
             }
         }
 
-        // ML ADVISORY BUTTON                                                                                                                                                                                     
-        private async void btnMLAdvisory_Click(object sender, RibbonControlEventArgs e)
-        {
-            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+        // PHASE 1.3: ML ADVISORY BUTTON - REMOVED
+        // ML Advisory functionality has been consolidated into the Validate button.
+        // The Validate button now calls both validation AND ML advisory APIs in parallel.
+        // Results are displayed in the EnhancedValidationResultsForm with 5 tabs:
+        //   1. Validation Issues
+        //   2. ML Duration Predictions
+        //   3. Risk Analysis
+        //   4. Country Recommendations
+        //   5. Auto-Fix Options
+        //
+        // This provides a unified view of both validation and ML insights.
 
-            try
-            {
-                var extractor = new Services.ProjectDataExtractor();
-                var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
-
-                var apiClient = new Services.ApiClient();
-                var advisory = await apiClient.GetTimelineAdvisoryAsync(timeline);
-
-                // Write ML results back to custom fields
-                var writer = new Services.ProjectDataWriter();
-
-                // Write duration predictions
-                if (advisory.duration_predictions != null && advisory.duration_predictions.predictions != null)
-                {
-                    foreach (var pred in advisory.duration_predictions.predictions)
-                    {
-                        writer.WriteMLAdvisory(
-                            Globals.ThisAddIn.Application,
-                            pred.task_id,
-                            pred.prediction,
-                            null
-                        );
-                    }
-                }
-
-                // Write risk scores
-                if (advisory.risk_analysis != null && advisory.risk_analysis.risk_scores != null)
-                {
-                    foreach (var risk in advisory.risk_analysis.risk_scores)
-                    {
-                        writer.WriteMLAdvisory(
-                            Globals.ThisAddIn.Application,
-                            risk.task_id,
-                            null,
-                            risk.risk
-                        );
-                    }
-                }
-
-                // Show ML Advisory form
-                MLAdvisoryForm advisoryForm = new MLAdvisoryForm();
-                advisoryForm.DisplayAdvisory(advisory);
-                advisoryForm.ShowDialog();
-            }
-            catch (System.Exception ex)
-            {
-                string detailedError = "Error: " + ex.Message;
-                if (ex.InnerException != null)
-                {
-                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
-                }
-                MessageBox.Show(detailedError, "ML Advisory Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        // EXPORT TO TEAMS BUTTON                                                                                                                                                                                 
-        private async void btnExportTeams_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                string webhookUrl = PromptForWebhookUrl();
-                if (string.IsNullOrEmpty(webhookUrl))
-                    return;
-
-                var extractor = new Services.ProjectDataExtractor();
-                var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
-
-                var apiClient = new Services.ApiClient();
-                var result = await apiClient.ValidateTimelineAsync(timeline);
-
-                var notification = new Models.TeamsNotificationRequest
-                {
-                    webhook_url = webhookUrl,
-                    study_name = timeline.study_name,
-                    validation_summary = new Models.ValidationSummary
-                    {
-                        status = result.status,
-                        error_count = result.error_count,
-                        warning_count = result.warning_count,
-                        total_tasks = result.total_tasks_analyzed
-                    },
-                    high_risk_tasks = new System.Collections.Generic.List<Models.HighRiskTaskSummary>()
-                };
-
-                foreach (var issue in result.issues)
-                {
-                    if (issue.severity == "error" && !string.IsNullOrEmpty(issue.task_id))
-                    {
-                        var task = timeline.tasks.Find(t => t.id == issue.task_id);
-                        if (task != null)
-                        {
-                            notification.high_risk_tasks.Add(new Models.HighRiskTaskSummary
-                            {
-                                name = task.name,
-                                risk_score = 90
-                            });
-                        }
-                    }
-                }
-
-                bool success = await apiClient.SendTeamsNotificationAsync(notification);
-
-                if (success)
-                {
-                    MessageBox.Show("Validation summary sent to Teams!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    MessageBox.Show("Failed to send to Teams. Check webhook URL.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "Teams Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private string PromptForWebhookUrl()
-        {
-            using (var form = new Form())
-            {
-                form.Text = "Teams Webhook URL";
-                form.Width = 500;
-                form.Height = 150;
-                form.StartPosition = FormStartPosition.CenterScreen;
-
-                var label = new Label { Text = "Enter Teams Incoming Webhook URL:", Left = 20, Top = 20, Width = 400 };
-                var textBox = new TextBox { Left = 20, Top = 50, Width = 440 };
-                var btnOk = new Button { Text = "OK", Left = 300, Top = 80, Width = 75, DialogResult = DialogResult.OK };
-                var btnCancel = new Button { Text = "Cancel", Left = 385, Top = 80, Width = 75, DialogResult = DialogResult.Cancel };
-
-                form.Controls.Add(label);
-                form.Controls.Add(textBox);
-                form.Controls.Add(btnOk);
-                form.Controls.Add(btnCancel);
-                form.AcceptButton = btnOk;
-                form.CancelButton = btnCancel;
-
-                return form.ShowDialog() == DialogResult.OK ? textBox.Text : null;
-            }
-        }
+        // PHASE 1.3: EXPORT TO TEAMS BUTTON - REMOVED
+        // Export to Teams functionality has been removed from the ribbon UI.
+        // Reason: Not core to PM workflow. Users can share validation results manually.
+        // The backend API endpoint remains available if needed in the future.
 
         // VIEW REPORT BUTTON                                                                                                                                                                                     
         private void btnViewReport_Click(object sender, RibbonControlEventArgs e)
@@ -302,13 +182,13 @@ namespace IlanaPM.AddIn
                 if (templateForm.ShowDialog() == DialogResult.OK)
                 {
                     // Create template request
+                    // Note: All 92 tasks from ontology are included by default
                     var request = new Models.TemplateRequest
                     {
                         country_code = templateForm.SelectedCountryCode,
                         study_phase = templateForm.SelectedPhase,
                         therapeutic_area = templateForm.SelectedTherapeuticArea,
-                        include_optional = templateForm.IncludeOptional,
-                        include_emmes_timelines = templateForm.IncludeEmmes
+                        include_optional = templateForm.IncludeOptional
                     };
 
                     // Call API to generate template
@@ -342,6 +222,96 @@ namespace IlanaPM.AddIn
                 }
                 MessageBox.Show(detailedError, "Template Load Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // PHASE 1.2: CRITICAL PATH BUTTON
+        private async void btnCriticalPath_Click(object sender, RibbonControlEventArgs e)
+        {
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            try
+            {
+                // Extract timeline from MS Project
+                var extractor = new Services.ProjectDataExtractor();
+                var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
+
+                // Call Critical Path API
+                var apiClient = new Services.ApiClient();
+                var criticalPath = await apiClient.GetCriticalPathAsync(timeline);
+
+                // Highlight critical path tasks in MS Project
+                HighlightCriticalPathTasks(criticalPath);
+
+                // Show critical path results form
+                CriticalPathResultsForm resultsForm = new CriticalPathResultsForm();
+                resultsForm.DisplayResults(criticalPath, timeline);
+                resultsForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                string detailedError = "Error analyzing critical path: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
+                }
+                MessageBox.Show(detailedError, "Critical Path Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void HighlightCriticalPathTasks(Models.CriticalPathResult criticalPath)
+        {
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                if (app.ActiveProject == null) return;
+
+                // Clear existing highlights
+                foreach (Microsoft.Office.Interop.MSProject.Task task in app.ActiveProject.Tasks)
+                {
+                    if (task != null)
+                    {
+                        task.Marked = false;
+                    }
+                }
+
+                // Highlight critical path tasks with yellow flag
+                if (criticalPath.tasks != null)
+                {
+                    foreach (var criticalTask in criticalPath.tasks)
+                    {
+                        if (int.TryParse(criticalTask.id, out int taskId))
+                        {
+                            foreach (Microsoft.Office.Interop.MSProject.Task task in app.ActiveProject.Tasks)
+                            {
+                                if (task != null && task.ID == taskId)
+                                {
+                                    task.Marked = true;  // Yellow flag marker
+
+                                    // Add critical path note
+                                    string note = string.Format(
+                                        "[CRITICAL PATH]{0}Earliest Start: Day {1}{0}Earliest Finish: Day {2}{0}Total Critical Path Duration: {3} days{0}{0}",
+                                        Environment.NewLine,
+                                        criticalTask.earliest_start,
+                                        criticalTask.earliest_finish,
+                                        criticalPath.total_duration
+                                    );
+
+                                    string existingNotes = task.Notes ?? "";
+                                    task.Notes = existingNotes + note;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Highlighted {criticalPath.task_count} critical path tasks");
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error highlighting critical path: " + ex.Message);
             }
         }
     }

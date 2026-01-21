@@ -155,7 +155,82 @@ namespace IlanaPM.AddIn.Services
             }
         }
 
-        // ADD WriteMLAdvisory HERE (INSIDE THE CLASS, BEFORE THE CLOSING BRACE)                                                                                                                                  
+        // PHASE 1.1: Write complete ML Advisory results to MS Project
+        public void WriteMLAdvisoryResults(Microsoft.Office.Interop.MSProject.Application projectApp, Models.TimelineAdvisory advisory)
+        {
+            if (projectApp.ActiveProject == null || advisory == null)
+                return;
+
+            Microsoft.Office.Interop.MSProject.Project activeProject = projectApp.ActiveProject;
+
+            try
+            {
+                // Write duration predictions
+                if (advisory.duration_predictions != null && advisory.duration_predictions.predictions != null)
+                {
+                    foreach (var pred in advisory.duration_predictions.predictions)
+                    {
+                        var task = FindTaskById(activeProject, pred.task_id);
+                        if (task != null && pred.prediction != null)
+                        {
+                            // Write predicted duration as range
+                            string durationRange = string.Format("{0}-{1} days",
+                                pred.prediction.confidence_interval.lower,
+                                pred.prediction.confidence_interval.upper);
+                            SetTaskText(task, PjCustomField.pjCustomTaskText6, durationRange);
+
+                            // Write confidence percentage
+                            SetTaskNumber(task, PjCustomField.pjCustomTaskNumber3, (int)(pred.prediction.confidence_score * 100));
+
+                            // Add ML prediction note
+                            string note = string.Format("[ML PREDICTION] {0}{1}{1}",
+                                pred.prediction.explanation,
+                                Environment.NewLine);
+                            AppendTaskNote(task, note);
+                        }
+                    }
+                }
+
+                // Write risk scores
+                if (advisory.risk_analysis != null && advisory.risk_analysis.risk_scores != null)
+                {
+                    foreach (var riskItem in advisory.risk_analysis.risk_scores)
+                    {
+                        var task = FindTaskById(activeProject, riskItem.task_id);
+                        if (task != null && riskItem.risk != null)
+                        {
+                            // Write risk score
+                            SetTaskNumber(task, PjCustomField.pjCustomTaskNumber2, riskItem.risk.risk_score);
+
+                            // Add risk analysis note
+                            if (riskItem.risk.risk_factors != null && riskItem.risk.risk_factors.Count > 0)
+                            {
+                                string riskFactors = string.Join(Environment.NewLine + "  • ", riskItem.risk.risk_factors);
+                                string note = string.Format("[RISK ANALYSIS - {0}]{1}  • {2}{1}{1}",
+                                    riskItem.risk.risk_level.ToUpper(),
+                                    Environment.NewLine,
+                                    riskFactors);
+                                AppendTaskNote(task, note);
+                            }
+
+                            // Highlight high-risk tasks
+                            if (riskItem.risk.risk_score >= 70)
+                            {
+                                task.Marked = true;
+                            }
+                        }
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine("ML Advisory results written successfully");
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error writing ML advisory results: " + ex.Message);
+            }
+        }
+
+        // ADD WriteMLAdvisory HERE (INSIDE THE CLASS, BEFORE THE CLOSING BRACE)
         public void WriteMLAdvisory(Microsoft.Office.Interop.MSProject.Application projectApp, string taskId, Models.DurationPrediction prediction, Models.RiskScore riskScore)
         {
             if (projectApp.ActiveProject == null)
@@ -168,7 +243,7 @@ namespace IlanaPM.AddIn.Services
             {
                 try
                 {
-                    // Write duration prediction                                                                                                                                                                  
+                    // Write duration prediction
                     if (prediction != null)
                     {
                         string durationRange = string.Format("{0}-{1} days",
@@ -181,7 +256,7 @@ namespace IlanaPM.AddIn.Services
                         AppendTaskNote(task, note);
                     }
 
-                    // Write risk score                                                                                                                                                                           
+                    // Write risk score
                     if (riskScore != null)
                     {
                         SetTaskNumber(task, Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber2, riskScore.risk_score);

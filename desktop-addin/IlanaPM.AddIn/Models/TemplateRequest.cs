@@ -2,6 +2,7 @@ namespace IlanaPM.AddIn.Models
 {
     /// <summary>
     /// Request model for POST /api/v1/templates/generate
+    /// Updated: Removed include_emmes_timelines - all 92 tasks now come from task_ontology.yaml
     /// </summary>
     public class TemplateRequest
     {
@@ -9,12 +10,10 @@ namespace IlanaPM.AddIn.Models
         public string study_phase { get; set; }
         public string therapeutic_area { get; set; }
         public bool include_optional { get; set; }
-        public bool include_emmes_timelines { get; set; }
 
         public TemplateRequest()
         {
             include_optional = true;
-            include_emmes_timelines = true;
         }
     }
 }

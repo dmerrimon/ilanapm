@@ -11,7 +11,6 @@ namespace IlanaPM.AddIn
         private ComboBox cboPhase;
         private ComboBox cboTherapeuticArea;
         private CheckBox chkIncludeOptional;
-        private CheckBox chkIncludeEmmes;
         private Button btnLoad;
         private Button btnCancel;
         private Label lblCountry;
@@ -25,7 +24,6 @@ namespace IlanaPM.AddIn
         public string SelectedPhase { get; private set; }
         public string SelectedTherapeuticArea { get; private set; }
         public bool IncludeOptional { get; private set; }
-        public bool IncludeEmmes { get; private set; }
 
         public TemplateLoaderForm()
         {
@@ -140,16 +138,8 @@ namespace IlanaPM.AddIn
             };
             this.Controls.Add(chkIncludeOptional);
 
-            // Include Emmes Timelines Checkbox
-            chkIncludeEmmes = new CheckBox
-            {
-                Text = "Include Emmes industry-standard timelines (9 tasks)",
-                Left = 150,
-                Top = 210,
-                Width = 300,
-                Checked = true
-            };
-            this.Controls.Add(chkIncludeEmmes);
+            // NOTE: All 92 tasks from task_ontology.yaml are now included by default
+            // Removed checkbox for "Include Emmes timelines" - no longer needed
 
             // Load Button
             btnLoad = new Button
@@ -243,7 +233,6 @@ namespace IlanaPM.AddIn
             SelectedPhase = cboPhase.SelectedItem.ToString();
             SelectedTherapeuticArea = cboTherapeuticArea.SelectedItem.ToString();
             IncludeOptional = chkIncludeOptional.Checked;
-            IncludeEmmes = chkIncludeEmmes.Checked;
 
             this.DialogResult = DialogResult.OK;
             this.Close();
