@@ -7,10 +7,10 @@ Provides timeline validation using the rules engine
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 from pydantic import BaseModel
-from backend.models.timeline import Timeline
-from backend.models.validation import ValidationResult
-from backend.rules_engine import RulesEngine
-from backend.config import load_config
+from models.timeline import Timeline
+from models.validation import ValidationResult
+from rules_engine import RulesEngine
+from config import load_config
 
 router = APIRouter()
 

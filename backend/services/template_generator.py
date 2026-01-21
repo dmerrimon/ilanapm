@@ -7,8 +7,8 @@ Generates country-specific clinical trial timeline templates by combining:
 - Emmes industry-standard timelines (study startup, closeout)
 """
 
-from backend.config import load_config
-from backend.models.timeline import Timeline, Task, Dependency
+from config import load_config
+from models.timeline import Timeline, Task, Dependency
 from typing import List, Dict, Optional
 import logging
 

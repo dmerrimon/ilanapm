@@ -9,12 +9,12 @@ from typing import List
 from datetime import datetime
 import logging
 
-from backend.models.feedback import (
+from models.feedback import (
     TaskCompletionFeedback,
     TaskCompletionResponse,
     AccuracyReport
 )
-from backend.database import get_db_connection
+from database import get_db_connection
 from pydantic import BaseModel
 
 router = APIRouter()

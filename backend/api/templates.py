@@ -7,8 +7,8 @@ Provides endpoints for generating country-specific clinical trial timeline templ
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional
-from backend.models.timeline import Timeline
-from backend.services.template_generator import TemplateGenerator
+from models.timeline import Timeline
+from services.template_generator import TemplateGenerator
 import logging
 
 logger = logging.getLogger(__name__)

@@ -10,8 +10,8 @@ Provides graph analytics for timelines including:
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
-from backend.models.timeline import Timeline
-from backend.graph_analytics import DependencyGraph
+from models.timeline import Timeline
+from graph_analytics import DependencyGraph
 
 router = APIRouter()
 

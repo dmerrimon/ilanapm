@@ -7,8 +7,8 @@ task ontology, checklists, validation rules, and country workflows
 
 from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any, Optional
-from backend.config import load_config, reload_config
-from backend.ml_advisory.workflow_matcher import WorkflowMatcher
+from config import load_config, reload_config
+from ml_advisory.workflow_matcher import WorkflowMatcher
 from pydantic import BaseModel
 
 router = APIRouter()

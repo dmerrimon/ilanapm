@@ -9,10 +9,10 @@ Version 3.0: Enhanced with international regulatory workflow recommendations
 
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, Set
-from backend.models.timeline import Timeline, Task
-from backend.ml_advisory import DurationPredictor, RiskScorer
-from backend.ml_advisory.workflow_matcher import WorkflowMatcher
-from backend.config import load_config
+from models.timeline import Timeline, Task
+from ml_advisory import DurationPredictor, RiskScorer
+from ml_advisory.workflow_matcher import WorkflowMatcher
+from config import load_config
 
 router = APIRouter()
 
@@ -350,7 +350,7 @@ def _generate_timeline_recommendations(
         )
     
     # Critical path recommendation
-    from backend.graph_analytics import DependencyGraph
+    from graph_analytics import DependencyGraph
     graph = DependencyGraph(timeline)
     cp = graph.get_critical_path()
     critical_count = cp.get('task_count', 0)
