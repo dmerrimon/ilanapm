@@ -38,10 +38,6 @@ class TemplateRequest(BaseModel):
         default=True,
         description="Include optional tasks in the template"
     )
-    include_emmes_timelines: bool = Field(
-        default=True,
-        description="Include Emmes industry-standard timelines (study startup, closeout)"
-    )
 
     class Config:
         schema_extra = {
@@ -49,8 +45,7 @@ class TemplateRequest(BaseModel):
                 "country_code": "KE",
                 "study_phase": "Phase III",
                 "therapeutic_area": "Infectious Disease",
-                "include_optional": True,
-                "include_emmes_timelines": True
+                "include_optional": True
             }
         }
 
@@ -62,8 +57,8 @@ async def generate_country_template(request: TemplateRequest) -> Timeline:
 
     Combines:
     - Country-specific regulatory workflows (from regulatory_workflows.yaml)
-    - Canonical tasks with country variations (from task_ontology.yaml)
-    - Emmes industry-standard timelines (study startup, closeout)
+    - All 92 tasks from task ontology with country variations (task_ontology.yaml)
+    - Industry-standard CRO timelines (study startup, site activation, closeout)
 
     **Example Usage:**
 
@@ -72,8 +67,7 @@ async def generate_country_template(request: TemplateRequest) -> Timeline:
       "country_code": "KE",
       "study_phase": "Phase III",
       "therapeutic_area": "Infectious Disease",
-      "include_optional": true,
-      "include_emmes_timelines": true
+      "include_optional": true
     }
     ```
 
@@ -109,8 +103,7 @@ async def generate_country_template(request: TemplateRequest) -> Timeline:
             country_code=request.country_code.upper(),
             study_phase=request.study_phase,
             therapeutic_area=request.therapeutic_area,
-            include_optional=request.include_optional,
-            include_emmes=request.include_emmes_timelines
+            include_optional=request.include_optional
         )
 
         logger.info(f"Template generated successfully: {len(timeline.tasks)} tasks, "

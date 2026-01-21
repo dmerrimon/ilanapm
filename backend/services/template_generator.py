@@ -32,8 +32,7 @@ class TemplateGenerator:
         country_code: str,
         study_phase: str,
         therapeutic_area: str,
-        include_optional: bool = True,
-        include_emmes: bool = True
+        include_optional: bool = True
     ) -> Timeline:
         """
         Generate country-specific timeline template
@@ -43,10 +42,10 @@ class TemplateGenerator:
             study_phase: Study phase ("Phase I", "Phase II", "Phase III", "Phase IV")
             therapeutic_area: Therapeutic area (e.g., "Oncology", "Infectious Disease")
             include_optional: Include optional tasks
-            include_emmes: Include Emmes industry-standard timelines
 
         Returns:
             Timeline object with country-specific tasks and dependencies
+            All 92 tasks from ontology are included based on category filters
 
         Example:
             >>> generator = TemplateGenerator()
@@ -61,6 +60,7 @@ class TemplateGenerator:
         regulatory_tasks = self._build_regulatory_tasks(workflow, study_phase, therapeutic_area)
 
         # Build operational tasks
+        # Fixed Bug #2: Removed redundant _build_emmes_tasks() - all 92 tasks now come from ontology
         operational_tasks = self._build_operational_tasks(
             study_phase,
             therapeutic_area,
@@ -72,23 +72,10 @@ class TemplateGenerator:
             )
         )
 
-        # Build Emmes standard tasks (if requested)
-        emmes_tasks = []
-        if include_emmes:
-            emmes_tasks = self._build_emmes_tasks(
-                study_phase,
-                therapeutic_area,
-                authority=self._map_authority(
-                    workflow['regulatory_authority']['code'],
-                    workflow['country_code'],
-                    workflow['country_name']
-                )
-            )
-
         # Combine all tasks
-        all_tasks = regulatory_tasks + operational_tasks + emmes_tasks
+        all_tasks = regulatory_tasks + operational_tasks
         logger.info(f"Generated {len(all_tasks)} tasks: {len(regulatory_tasks)} regulatory, " +
-                   f"{len(operational_tasks)} operational, {len(emmes_tasks)} Emmes")
+                   f"{len(operational_tasks)} operational (from ontology)")
 
         # Build dependencies
         dependencies = self._build_dependencies(all_tasks, workflow)
@@ -417,7 +404,9 @@ class TemplateGenerator:
 
         # Find operational tasks in ontology
         # Fixed: Use actual category names from task_ontology.yaml
-        operational_categories = ['Operational', 'Site', 'Data', 'Closeout']
+        # Includes ALL non-regulatory categories (92 tasks total)
+        operational_categories = ['Operational', 'Site', 'Data', 'Closeout',
+                                 'Pharmacy', 'Laboratory', 'Documents', 'Safety']
         operational_task_defs = [
             t for t in self.tasks
             if t.get('category') in operational_categories
