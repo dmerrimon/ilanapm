@@ -9,7 +9,7 @@ namespace IlanaPM.AddIn.Services
     public class ApiClient
     {
         private static readonly HttpClient httpClient = new HttpClient();
-        private const string API_BASE_URL = "https://ilanapm.azurewebsites.net";
+        private const string API_BASE_URL = "https://ilanapm.onrender.com";
 
         public async Task<Models.ValidationResult> ValidateTimelineAsync(Models.Timeline timeline)
         {
