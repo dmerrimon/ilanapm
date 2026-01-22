@@ -707,7 +707,7 @@ regulatory_workflows:
       emergency_review_days: 3  # 72 hours
     ethics_authority:
       code: EC
-      name: "Ethics Committee"
+      name: "Institutional Ethics Committee (EC)"
       review_days: null  # Variable
       is_national: false
       meeting_frequency: "regular"
@@ -763,7 +763,7 @@ regulatory_workflows:
       hgr_pathway: true  # Human genetic resources pathway
     ethics_authority:
       code: EC
-      name: "Ethics Committee"
+      name: "Institutional Ethics Committee (EC)"
       review_days: 30
       is_national: false
       meeting_frequency: "regular"
@@ -819,7 +819,7 @@ regulatory_workflows:
       emergency_review_days: null
     ethics_authority:
       code: EC
-      name: "Ethics Committee"
+      name: "Institutional Ethics Committee (EC)"
       review_days: null  # Variable
       is_national: false  # Decentralized system
       meeting_frequency: "varies"
@@ -1025,7 +1025,7 @@ regulatory_workflows:
       annual_renewal_required: true
     ethics_authority:
       code: EC
-      name: "Ethics Committee"
+      name: "Institutional Ethics Committee (EC)"
       review_days: 60
       is_national: false
       meeting_frequency: "varies"
@@ -1108,7 +1108,7 @@ regulatory_workflows:
       second_layer: true
     ethics_authority:
       code: EC
-      name: "Ethics Committee"
+      name: "Institutional Ethics Committee (EC)"
       review_days: null  # Variable
       is_national: false
       meeting_frequency: "varies"
