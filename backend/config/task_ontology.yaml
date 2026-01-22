@@ -1507,10 +1507,10 @@ tasks:
       - REG-029
 
   - id: REG-031
-    name: "Regulatory Affairs Submits Final CSR to FDA"
+    name: "Final CSR Submission to Regulatory Authority"
     category: Regulatory
     typical_duration_days: 17
-    description: "Regulatory Affairs Specialist submits final CSR to FDA (2-3 weeks average)"
+    description: "Regulatory Affairs Specialist submits final CSR to regulatory authority (FDA, EMA, PPB, etc.) - 2-3 weeks average"
     is_mandatory: true
     prerequisites:
       - REG-030
