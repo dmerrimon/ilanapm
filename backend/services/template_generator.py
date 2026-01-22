@@ -707,42 +707,90 @@ class TemplateGenerator:
 
         # Parallel workflows (e.g., US: FDA || IRB)
         # Both must complete - we'll link BOTH to operational tasks
-        # Return the regulatory authority as the "gate" (in practice, both are gates)
+        # For parallel workflows, use ontology-based regulatory tasks (REG-001, REG-002)
         elif workflow_type in ['parallel', 'parallel_integrated']:
-            # For parallel, we need BOTH approvals before operational tasks
-            # We'll return the regulatory authority ID, and later add EC too
-            reg_id = f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
-            ec_id = f"REG-{country_code}-EC" if f"REG-{country_code}-EC" in task_map else None
+            # Check for ontology regulatory tasks that represent final approval
+            # REG-001: IND/CTA Submission & Review (FDA-equivalent)
+            # REG-002: IRB/EC Approval (IRB-equivalent)
+            # REG-INT-003: Ministerial/Final Approval (if exists)
 
-            # Return whichever exists (prefer regulatory authority)
-            # Note: For true parallel, BOTH should be predecessors of operational tasks
-            # This is simplified - in production, you'd add both as prerequisites
-            return reg_id or ec_id
+            # Priority: Final approval > IND/CTA > IRB/EC
+            if 'REG-INT-003' in task_map:
+                return 'REG-INT-003'
+            elif 'REG-002' in task_map:
+                return 'REG-002'  # IRB/EC approval is typically the gate for enrollment
+            elif 'REG-001' in task_map:
+                return 'REG-001'
+
+            return None
 
         # Sequential workflows (e.g., Bangladesh: NREC → DGDA)
         # Final approval = regulatory authority (second layer)
         elif workflow_type == 'sequential':
-            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            final_id = f"REG-{country_code}-REG"
+            if final_id in task_map:
+                return final_id
+            # Fallback to ontology regulatory tasks
+            return self._get_ontology_regulatory_fallback(task_map)
 
         # Concurrent-sequential (e.g., DRC, India: Submit both, but regulatory waits for EC)
         # Final approval = regulatory authority (must approve after EC)
         elif workflow_type in ['concurrent_sequential', 'concurrent_sequential_multibody']:
-            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            final_id = f"REG-{country_code}-REG"
+            if final_id in task_map:
+                return final_id
+            return self._get_ontology_regulatory_fallback(task_map)
 
         # Flexible workflows (e.g., Sierra Leone: can be sequential OR parallel)
         # Assume sequential by default - regulatory authority is final
         elif workflow_type == 'flexible':
-            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            final_id = f"REG-{country_code}-REG"
+            if final_id in task_map:
+                return final_id
+            return self._get_ontology_regulatory_fallback(task_map)
 
         # Multi-body systems (e.g., Tanzania: TMDA + NatHREC + COSTECH)
         # Final approval = regulatory authority (TMDA in Tanzania)
         elif workflow_type in ['three_body_hybrid', 'four_body_parallel']:
-            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            final_id = f"REG-{country_code}-REG"
+            if final_id in task_map:
+                return final_id
+            return self._get_ontology_regulatory_fallback(task_map)
 
         # Dual pathway (China: standard vs HGR)
         # Assume standard pathway - regulatory authority
         elif workflow_type == 'dual_pathway':
-            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            final_id = f"REG-{country_code}-REG"
+            if final_id in task_map:
+                return final_id
+            return self._get_ontology_regulatory_fallback(task_map)
 
-        # Default fallback
+        # Default fallback - use ontology tasks
+        return self._get_ontology_regulatory_fallback(task_map)
+
+    def _get_ontology_regulatory_fallback(self, task_map: Dict) -> Optional[str]:
+        """
+        Fallback to ontology-based regulatory tasks when country-specific tasks don't exist
+
+        For countries using parallel or other workflows that don't create custom regulatory
+        tasks, we fall back to the ontology tasks.
+
+        Args:
+            task_map: Map of task IDs to Task objects
+
+        Returns:
+            Task ID of ontology regulatory task, or None
+        """
+        # Priority order:
+        # 1. Ministerial/Final Approval (highest authority)
+        # 2. IRB/EC Approval (required for patient protection)
+        # 3. IND/CTA Submission (regulatory submission)
+
+        if 'REG-INT-003' in task_map:
+            return 'REG-INT-003'  # Ministerial/Final Approval
+        elif 'REG-002' in task_map:
+            return 'REG-002'  # IRB/EC Approval
+        elif 'REG-001' in task_map:
+            return 'REG-001'  # IND/CTA Submission & Review
+
         return None
