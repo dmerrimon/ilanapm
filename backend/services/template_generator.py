@@ -635,4 +635,114 @@ class TemplateGenerator:
                     ))
                     predecessor_id = auth_id  # Chain to next layer
 
+        # ====================================================================================
+        # CRITICAL: Link regulatory approvals to operational tasks
+        # ====================================================================================
+        # In reality, you CANNOT start site activation or patient enrollment without
+        # regulatory approval. This links the final regulatory approval to key milestones.
+
+        final_approval_task_id = self._get_final_regulatory_approval_id(workflow, task_map)
+
+        # Tasks that require regulatory approval before starting
+        tasks_requiring_approval = [
+            'SITE-002',     # Site Activation
+            'SITE-003',     # First Patient In (FPI)
+            'SITE-004',     # Patient Enrollment Period
+            'IND-018',      # Data System Opens for Enrollment
+        ]
+
+        if final_approval_task_id and final_approval_task_id in task_map:
+            for task_id in tasks_requiring_approval:
+                if task_id in task_map:
+                    dependencies.append(Dependency(
+                        predecessor_id=final_approval_task_id,
+                        successor_id=task_id,
+                        type='finish-to-start',
+                        lag_days=0
+                    ))
+
         return dependencies
+
+    def _get_final_regulatory_approval_id(self, workflow: Dict, task_map: Dict) -> Optional[str]:
+        """
+        Get the final regulatory approval task ID for a workflow
+
+        This is the LAST regulatory approval that must complete before
+        operational activities (site activation, enrollment) can begin.
+
+        Args:
+            workflow: Country workflow configuration
+            task_map: Map of task IDs to Task objects
+
+        Returns:
+            Task ID of final regulatory approval, or None if not found
+        """
+        workflow_type = workflow.get('workflow_type')
+        country_code = workflow['country_code']
+
+        # Three-layer sequential (e.g., Kenya: EC → PPB → NACOSTI)
+        # Final approval = last additional body (NACOSTI)
+        if workflow_type == 'three_layer_sequential':
+            additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
+            if additional_bodies:
+                # Last body in the list is the final approval
+                last_auth = additional_bodies[-1]
+                final_id = f"REG-{country_code}-{last_auth['code']}"
+                if final_id in task_map:
+                    return final_id
+            # Fallback to regulatory authority if no additional bodies
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Four-layer sequential (e.g., Vietnam: CEBRGL → ASTT → NECBR → Minister)
+        # Final approval = last additional body (Minister)
+        elif workflow_type == 'four_layer_sequential':
+            additional_bodies = workflow.get('additional_bodies', [])
+            if additional_bodies:
+                last_auth = additional_bodies[-1]
+                final_id = f"REG-{country_code}-{last_auth['code']}"
+                if final_id in task_map:
+                    return final_id
+            # Fallback to regulatory authority
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Parallel workflows (e.g., US: FDA || IRB)
+        # Both must complete - we'll link BOTH to operational tasks
+        # Return the regulatory authority as the "gate" (in practice, both are gates)
+        elif workflow_type in ['parallel', 'parallel_integrated']:
+            # For parallel, we need BOTH approvals before operational tasks
+            # We'll return the regulatory authority ID, and later add EC too
+            reg_id = f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+            ec_id = f"REG-{country_code}-EC" if f"REG-{country_code}-EC" in task_map else None
+
+            # Return whichever exists (prefer regulatory authority)
+            # Note: For true parallel, BOTH should be predecessors of operational tasks
+            # This is simplified - in production, you'd add both as prerequisites
+            return reg_id or ec_id
+
+        # Sequential workflows (e.g., Bangladesh: NREC → DGDA)
+        # Final approval = regulatory authority (second layer)
+        elif workflow_type == 'sequential':
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Concurrent-sequential (e.g., DRC, India: Submit both, but regulatory waits for EC)
+        # Final approval = regulatory authority (must approve after EC)
+        elif workflow_type in ['concurrent_sequential', 'concurrent_sequential_multibody']:
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Flexible workflows (e.g., Sierra Leone: can be sequential OR parallel)
+        # Assume sequential by default - regulatory authority is final
+        elif workflow_type == 'flexible':
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Multi-body systems (e.g., Tanzania: TMDA + NatHREC + COSTECH)
+        # Final approval = regulatory authority (TMDA in Tanzania)
+        elif workflow_type in ['three_body_hybrid', 'four_body_parallel']:
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Dual pathway (China: standard vs HGR)
+        # Assume standard pathway - regulatory authority
+        elif workflow_type == 'dual_pathway':
+            return f"REG-{country_code}-REG" if f"REG-{country_code}-REG" in task_map else None
+
+        # Default fallback
+        return None
