@@ -59,8 +59,7 @@ class TemplateGenerator:
         # Build regulatory tasks (country-specific)
         regulatory_tasks = self._build_regulatory_tasks(workflow, study_phase, therapeutic_area)
 
-        # Build operational tasks
-        # Fixed Bug #2: Removed redundant _build_emmes_tasks() - all 92 tasks now come from ontology
+        # Build operational tasks from ontology (92 tasks)
         operational_tasks = self._build_operational_tasks(
             study_phase,
             therapeutic_area,
@@ -72,10 +71,24 @@ class TemplateGenerator:
             )
         )
 
+        # Build industry-standard milestone tasks (fills gaps in ontology)
+        # These provide key milestones for Protocol Development, Data Entry, Data Cleaning
+        # which are missing from the ontology
+        industry_tasks = self._build_industry_standard_tasks(
+            study_phase,
+            therapeutic_area,
+            authority=self._map_authority(
+                workflow['regulatory_authority']['code'],
+                workflow['country_code'],
+                workflow['country_name']
+            )
+        )
+
         # Combine all tasks
-        all_tasks = regulatory_tasks + operational_tasks
+        all_tasks = regulatory_tasks + operational_tasks + industry_tasks
         logger.info(f"Generated {len(all_tasks)} tasks: {len(regulatory_tasks)} regulatory, " +
-                   f"{len(operational_tasks)} operational (from ontology)")
+                   f"{len(operational_tasks)} operational (from ontology), " +
+                   f"{len(industry_tasks)} industry-standard milestones")
 
         # Build dependencies
         dependencies = self._build_dependencies(all_tasks, workflow)
@@ -431,21 +444,19 @@ class TemplateGenerator:
 
         return tasks
 
-    def _build_emmes_tasks(self, phase: str, therapeutic_area: str, authority: str = "FDA") -> List[Task]:
+    def _build_industry_standard_tasks(self, phase: str, therapeutic_area: str, authority: str = "FDA") -> List[Task]:
         """
-        Build Emmes industry-standard timeline tasks
+        Build industry-standard timeline tasks
 
-        Based on:
-        - Emmes Study Startup Overview Timeline v3.0
-        - Emmes Study Closeout Overview Timeline v3.0
+        Based on standard CRO timelines and CPM site activation checklists
         """
-        emmes_tasks = []
+        industry_tasks = []
 
         # ===== STUDY STARTUP TASKS =====
 
         # Protocol Development (~6 months)
-        emmes_tasks.append(Task(
-            id='EMMES-001',
+        industry_tasks.append(Task(
+            id='IND-100',
             name='Protocol Development',
             duration_days=180,
             category='Operational',
@@ -456,8 +467,8 @@ class TemplateGenerator:
         ))
 
         # Data Collection Forms (4 weeks after protocol)
-        emmes_tasks.append(Task(
-            id='EMMES-002',
+        industry_tasks.append(Task(
+            id='IND-101',
             name='Data Collection Forms Development',
             duration_days=28,
             category='Data',
@@ -468,8 +479,8 @@ class TemplateGenerator:
         ))
 
         # Manual of Procedures (2 weeks after protocol)
-        emmes_tasks.append(Task(
-            id='EMMES-003',
+        industry_tasks.append(Task(
+            id='IND-102',
             name='Manual of Procedures (MOP) v1.0',
             duration_days=14,
             category='Operational',
@@ -480,8 +491,8 @@ class TemplateGenerator:
         ))
 
         # Data System Configuration (6 weeks after final forms)
-        emmes_tasks.append(Task(
-            id='EMMES-004',
+        industry_tasks.append(Task(
+            id='IND-103',
             name='Data System Configuration',
             duration_days=42,
             category='Data',
@@ -492,8 +503,8 @@ class TemplateGenerator:
         ))
 
         # Site Training (before activation)
-        emmes_tasks.append(Task(
-            id='EMMES-005',
+        industry_tasks.append(Task(
+            id='IND-104',
             name='Site Training',
             duration_days=3,
             category='Site',
@@ -506,8 +517,8 @@ class TemplateGenerator:
         # ===== STUDY CLOSEOUT TASKS =====
 
         # Clinical Data Entry (4 days after LPLV)
-        emmes_tasks.append(Task(
-            id='EMMES-006',
+        industry_tasks.append(Task(
+            id='IND-105',
             name='Clinical Data Entry',
             duration_days=4,
             category='Data',
@@ -518,8 +529,8 @@ class TemplateGenerator:
         ))
 
         # Data Cleaning (2 weeks after entry)
-        emmes_tasks.append(Task(
-            id='EMMES-007',
+        industry_tasks.append(Task(
+            id='IND-106',
             name='Data Cleaning',
             duration_days=14,
             category='Data',
@@ -530,8 +541,8 @@ class TemplateGenerator:
         ))
 
         # Database Lock
-        emmes_tasks.append(Task(
-            id='EMMES-008',
+        industry_tasks.append(Task(
+            id='IND-107',
             name='Database Lock',
             duration_days=1,
             category='Data',
@@ -542,8 +553,8 @@ class TemplateGenerator:
         ))
 
         # Clinical Study Report (8 weeks after database lock)
-        emmes_tasks.append(Task(
-            id='EMMES-009',
+        industry_tasks.append(Task(
+            id='IND-108',
             name='Clinical Study Report (CSR)',
             duration_days=56,
             category='Regulatory',
@@ -553,24 +564,46 @@ class TemplateGenerator:
             is_mandatory=True
         ))
 
-        return emmes_tasks
+        return industry_tasks
 
     def _build_dependencies(self, tasks: List[Task], workflow: Dict) -> List[Dependency]:
         """Build dependencies between tasks"""
         dependencies = []
         task_map = {t.id: t for t in tasks}
 
-        # Emmes dependencies (from Emmes timeline PDFs)
-        emmes_deps = [
-            ('EMMES-001', 'EMMES-002'),  # Protocol → Data Collection Forms
-            ('EMMES-001', 'EMMES-003'),  # Protocol → MOP
-            ('EMMES-002', 'EMMES-004'),  # Final Forms → Data System
-            ('EMMES-006', 'EMMES-007'),  # Data Entry → Data Cleaning
-            ('EMMES-007', 'EMMES-008'),  # Data Cleaning → Database Lock
-            ('EMMES-008', 'EMMES-009'),  # Database Lock → CSR
+        # ===== STUDY STARTUP DEPENDENCIES =====
+        # Based on industry-standard CRO timelines
+        startup_deps = [
+            ('IND-100', 'IND-101'),   # Protocol Development → Data Collection Forms
+            ('IND-100', 'IND-102'),   # Protocol Development → MOP
+            ('IND-101', 'IND-103'),   # Data Collection Forms → Data System Configuration
+            ('IND-103', 'DATA-016'),  # Data System Configuration → Database Deployed
+            ('DATA-016', 'IND-104'),  # Database Deployed → Site Training
+            ('IND-104', 'SITE-001'),  # Site Training → Site Initiation Visit
+            ('SITE-001', 'SITE-002'), # Site Initiation Visit → Site Activation
         ]
 
-        for predecessor_id, successor_id in emmes_deps:
+        # ===== STUDY EXECUTION DEPENDENCIES =====
+        execution_deps = [
+            ('SITE-002', 'SITE-003'), # Site Activation → First Patient In
+            ('SITE-003', 'SITE-004'), # First Patient In → Patient Enrollment Period
+            ('SITE-004', 'SITE-005'), # Patient Enrollment Period → Last Patient Last Visit (LPLV)
+        ]
+
+        # ===== STUDY CLOSEOUT DEPENDENCIES =====
+        closeout_deps = [
+            ('SITE-005', 'IND-105'),  # LPLV → Clinical Data Entry
+            ('IND-105', 'IND-106'),   # Clinical Data Entry → Data Cleaning
+            ('IND-106', 'IND-107'),   # Data Cleaning → Database Lock (industry-standard milestone)
+            ('IND-107', 'DATA-001'),  # Database Lock milestone → Clinical Database Lock (ontology task)
+            ('DATA-001', 'DATA-004'), # Clinical Database Lock → CSR Writing
+            ('DATA-004', 'REG-031'),  # CSR Writing → Final Regulatory Submissions
+        ]
+
+        # Combine all industry-standard dependencies
+        all_industry_deps = startup_deps + execution_deps + closeout_deps
+
+        for predecessor_id, successor_id in all_industry_deps:
             if predecessor_id in task_map and successor_id in task_map:
                 dependencies.append(Dependency(
                     predecessor_id=predecessor_id,
