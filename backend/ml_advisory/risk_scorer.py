@@ -109,7 +109,7 @@ class RiskScorer:
         Returns:
             Dictionary with risk analysis for all tasks
         """
-        from backend.graph_analytics import DependencyGraph
+        from graph_analytics import DependencyGraph
         
         # Build context from dependency graph
         graph = DependencyGraph(timeline)
