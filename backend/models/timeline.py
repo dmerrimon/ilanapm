@@ -68,6 +68,10 @@ class TaskCategory(str, Enum):
     SITE = "Site"
     DATA = "Data"
     CLOSEOUT = "Closeout"
+    PHARMACY = "Pharmacy"
+    LABORATORY = "Laboratory"
+    SAFETY = "Safety"
+    DOCUMENTS = "Documents"
 
 
 class GatingStatus(str, Enum):

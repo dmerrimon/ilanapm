@@ -132,11 +132,12 @@ class TemplateGenerator:
             tasks_by_category[category].append(task)
 
         # Define category order and labels
+        # Order follows logical clinical trial workflow: Regulatory → Operational → Data → Site → Closeout
         category_order = [
             ('Regulatory', '═══ REGULATORY TASKS ═══'),
             ('Operational', '═══ OPERATIONAL TASKS ═══'),
-            ('Site', '═══ SITE MANAGEMENT TASKS ═══'),
             ('Data', '═══ DATA MANAGEMENT TASKS ═══'),
+            ('Site', '═══ SITE MANAGEMENT TASKS ═══'),
             ('Pharmacy', '═══ PHARMACY TASKS ═══'),
             ('Laboratory', '═══ LABORATORY TASKS ═══'),
             ('Safety', '═══ SAFETY OVERSIGHT TASKS ═══'),
@@ -276,7 +277,13 @@ class TemplateGenerator:
             'Data Management': 'Data',
             'Operational': 'Operational',
             'Regulatory': 'Regulatory',
-            'Closeout': 'Closeout'
+            'Closeout': 'Closeout',
+            'Data': 'Data',
+            'Site': 'Site',
+            'Safety': 'Safety',
+            'Pharmacy': 'Pharmacy',
+            'Laboratory': 'Laboratory',
+            'Documents': 'Documents'
         }
         return category_map.get(category, 'Operational')
 
