@@ -14,7 +14,9 @@ namespace IlanaPM.AddIn.Services
         /// </summary>
         /// <param name="template">Template timeline from API</param>
         /// <param name="projectApp">MS Project application</param>
-        public void LoadTemplateIntoProject(Models.Timeline template, Application projectApp)
+        /// <param name="customColumnNames">Optional custom column names for Text5, Text6, Text7</param>
+        public void LoadTemplateIntoProject(Models.Timeline template, Application projectApp,
+            Dictionary<string, string> customColumnNames = null)
         {
             if (projectApp.ActiveProject == null)
             {
@@ -30,23 +32,49 @@ namespace IlanaPM.AddIn.Services
             // Map template task IDs to MS Project task IDs
             Dictionary<string, int> taskIdMap = new Dictionary<string, int>();
 
-            // Create tasks
+            // Create tasks with proper hierarchy (summary tasks + children)
             foreach (var templateTask in template.tasks)
             {
                 var msTask = project.Tasks.Add(templateTask.name);
 
-                // Set duration
-                msTask.Duration = templateTask.duration_days + "d";
+                // Set duration (summary tasks will auto-calculate from children)
+                if (!templateTask.is_summary)
+                {
+                    msTask.Duration = templateTask.duration_days + "d";
+                }
 
-                // Set custom fields based on template metadata
-                SetTaskCustomFields(msTask, templateTask);
+                // Set outline level for proper indentation
+                // Level 1 = Summary task (not indented)
+                // Level 2 = Normal task (indented under summary)
+                msTask.OutlineLevel = templateTask.outline_level;
 
-                // Store mapping for dependency creation
-                taskIdMap[templateTask.id] = msTask.ID;
+                // Mark as summary task if needed (MS Project will auto-detect based on children)
+                if (templateTask.is_summary)
+                {
+                    msTask.Summary = true;
+                }
+
+                // Set custom fields based on template metadata (skip for summary tasks)
+                if (!templateTask.is_summary)
+                {
+                    SetTaskCustomFields(msTask, templateTask);
+                }
+
+                // Store mapping for dependency creation (skip summary tasks)
+                if (!templateTask.is_summary)
+                {
+                    taskIdMap[templateTask.id] = msTask.ID;
+                }
             }
 
             // Create dependencies
             CreateDependencies(project, template.dependencies, taskIdMap);
+
+            // Rename custom column headers if provided
+            if (customColumnNames != null && customColumnNames.Count > 0)
+            {
+                RenameCustomColumns(project, customColumnNames);
+            }
 
             // Auto-schedule the project
             project.UpdateProject();
@@ -141,6 +169,48 @@ namespace IlanaPM.AddIn.Services
                     return PjTaskLinkType.pjStartToFinish;
                 default:
                     return PjTaskLinkType.pjFinishToStart;
+            }
+        }
+
+        /// <summary>
+        /// Rename custom column headers in MS Project
+        /// </summary>
+        /// <param name="project">MS Project project</param>
+        /// <param name="customColumnNames">Dictionary of field names to custom names</param>
+        private void RenameCustomColumns(Project project, Dictionary<string, string> customColumnNames)
+        {
+            try
+            {
+                // Map custom field names to MS Project field constants
+                var fieldMapping = new Dictionary<string, PjField>
+                {
+                    { "Text5", PjField.pjTaskText5 },
+                    { "Text6", PjField.pjTaskText6 },
+                    { "Text7", PjField.pjTaskText7 }
+                };
+
+                foreach (var customField in customColumnNames)
+                {
+                    if (fieldMapping.ContainsKey(customField.Key))
+                    {
+                        // Rename the column header by setting the custom field name
+                        PjField field = fieldMapping[customField.Key];
+
+                        // Use CustomFieldSetName to rename the column
+                        // This changes how the column appears in Insert Column dialogs and views
+                        project.Application.CustomFieldSetName(
+                            field,
+                            customField.Value
+                        );
+
+                        System.Diagnostics.Debug.WriteLine($"Renamed {customField.Key} to '{customField.Value}'");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Non-critical error - log but don't fail template load
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not rename custom columns: {ex.Message}");
             }
         }
     }

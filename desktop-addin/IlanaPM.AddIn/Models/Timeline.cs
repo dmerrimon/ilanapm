@@ -31,6 +31,10 @@ namespace IlanaPM.AddIn.Models
         public string authority { get; set; }
         public bool is_mandatory { get; set; }
         public int checklist_completion_pct { get; set; }
+
+        // Summary task fields (for category dividers)
+        public bool is_summary { get; set; }
+        public int outline_level { get; set; } = 2; // Default to level 2 (normal task)
     }
 
     public class Dependency
