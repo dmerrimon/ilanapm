@@ -134,7 +134,35 @@ class TemplateGenerator:
         # Find regulatory tasks in ontology
         regulatory_task_defs = [t for t in self.tasks if t.get('category') == 'Regulatory']
 
+        # Country-specific task exclusions
+        country_code = workflow['country_code']
+        workflow_type = workflow.get('workflow_type')
+        us_only_tasks = ['REG-001', 'REG-011']  # IND/CTA and IND Submission are US-specific
+
         for task_def in regulatory_task_defs:
+            task_id = task_def['id']
+
+            # Check if task has applicable_countries field
+            applicable_countries = task_def.get('applicable_countries', [])
+            if applicable_countries and country_code not in applicable_countries:
+                continue
+
+            # Skip US-only tasks for non-US countries
+            if country_code != 'US' and task_id in us_only_tasks:
+                continue
+
+            # Skip generic "Ministerial/Final Approval" for countries with specific multi-layer workflows
+            # These countries have their own specific approval tasks (EC → PPB → NACOSTI, etc.)
+            if task_id == 'REG-INT-003' and workflow_type in ['three_layer_sequential', 'four_layer_sequential']:
+                continue
+
+            # Skip if this is a country-specific task for a different country
+            # Example: REG-US-xxx tasks should only appear in US templates
+            if '-' in task_id and len(task_id.split('-')) >= 3:
+                task_country = task_id.split('-')[1]
+                if task_country != country_code and task_country != 'INT':
+                    continue
+
             # Apply country-specific variation
             duration = self._get_country_duration(task_def, workflow, phase)
 
@@ -142,9 +170,12 @@ class TemplateGenerator:
             if duration is None:
                 continue
 
+            # Use task name as-is (don't append country name for generic tasks)
+            task_name = task_def['name']
+
             task = Task(
                 id=task_def['id'],
-                name=f"{task_def['name']} - {workflow['country_name']}",
+                name=task_name,
                 duration_days=duration,
                 category='Regulatory',
                 phase=phase,

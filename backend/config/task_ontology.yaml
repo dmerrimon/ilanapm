@@ -1290,7 +1290,7 @@ tasks:
     is_mandatory: true
 
   - id: REG-010
-    name: "NLM Submission for ClinicalTrials.gov (NCT# assigned)"
+    name: "ClinicalTrials.gov Registration (NCT#)"
     category: Regulatory
     typical_duration_days: 21
     description: "National Library of Medicine submission for clinicaltrials.gov (NCT# assigned). Not required for activation; to be submitted no later than 21 days after enrollment of first subject (21 CFR 11.24)"
@@ -1302,9 +1302,10 @@ tasks:
     typical_duration_days: 30
     description: "If conducted under IND, date of initial submission to FDA documented"
     is_mandatory: false
+    applicable_countries: ["US"]  # US-specific task
 
   - id: REG-012
-    name: "IRB Continuing Review"
+    name: "IRB/EC Continuing Review"
     category: Regulatory
     typical_duration_days: 365
     description: "IRB Continuing Review (annual or as specified by IRB) - ongoing during study execution"
