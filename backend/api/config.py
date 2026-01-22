@@ -95,17 +95,17 @@ async def get_authorities():
     """
     try:
         config = load_config()
-        authorities = config.get('authorities', {})
+        authorities = config.get('authorities', [])
 
         summaries = []
-        for code, data in authorities.items():
+        for auth in authorities:
             summaries.append(AuthoritySummary(
-                code=code,
-                name=data.get('name', 'Unknown'),
-                country=data.get('country'),
-                region=data.get('region'),
-                gates_count=len(data.get('regulatory_gates', [])),
-                has_milestone_timelines='milestone_timelines' in data
+                code=auth.get('code', 'UNKNOWN'),
+                name=auth.get('name', 'Unknown'),
+                country=auth.get('country'),
+                region=auth.get('region'),
+                gates_count=len(auth.get('regulatory_gates', [])),
+                has_milestone_timelines='milestone_timelines' in auth
             ))
 
         # Sort by country/region name
@@ -278,22 +278,17 @@ async def get_authority_details(authority_code: str):
     """
     try:
         config = load_config()
-        authorities = config.get('authorities', {})
+        authorities = config.get('authorities', [])
 
         # Try exact match first
-        if authority_code in authorities:
-            return {
-                "code": authority_code,
-                **authorities[authority_code]
-            }
+        for auth in authorities:
+            if auth.get('code') == authority_code:
+                return auth
 
         # Try case-insensitive match
-        for code, data in authorities.items():
-            if code.upper() == authority_code.upper():
-                return {
-                    "code": code,
-                    **data
-                }
+        for auth in authorities:
+            if auth.get('code', '').upper() == authority_code.upper():
+                return auth
 
         raise HTTPException(
             status_code=404,
@@ -475,7 +470,7 @@ async def reload_configuration():
         return {
             "status": "success",
             "message": "Configuration reloaded successfully",
-            "authorities_loaded": len(config.get('authorities', {})),
+            "authorities_loaded": len(config.get('authorities', [])),
             "tasks_loaded": len(config.get('task_ontology', [])),
             "checklists_loaded": len(config.get('checklists', {})),
             "sequences_loaded": len(config.get('operational_sequences', []))
@@ -499,16 +494,17 @@ async def get_config_summary():
     try:
         config = load_config()
 
-        authorities = config.get('authorities', {})
+        authorities = config.get('authorities', [])
         tasks = config.get('task_ontology', [])
         checklists = config.get('checklists', {})
         sequences = config.get('operational_sequences', [])
 
         # Count regional coverage
-        africa_count = sum(1 for k in authorities.keys() if any(x in k for x in ['MCAZ', 'PPB', 'LMHRA', 'DPM', 'PSLB', 'SAHPRA', 'TFDA', 'NDA', 'DGRDF', 'DNPL']))
-        americas_count = sum(1 for k in authorities.keys() if any(x in k for x in ['FDA', 'ANVISA', 'COFEPRIS', 'DIGEMID', 'HEALTH']))
-        asia_pacific_count = sum(1 for k in authorities.keys() if any(x in k for x in ['TGA', 'BFDA', 'NMPA', 'CDSCO', 'MOH', 'PMDA']))
-        europe_count = sum(1 for k in authorities.keys() if any(x in k for x in ['EMA', 'MHRA']))
+        auth_codes = [auth.get('code', '') for auth in authorities]
+        africa_count = sum(1 for k in auth_codes if any(x in k for x in ['MCAZ', 'PPB', 'LMHRA', 'DPM', 'PSLB', 'SAHPRA', 'TFDA', 'NDA', 'DGRDF', 'DNPL']))
+        americas_count = sum(1 for k in auth_codes if any(x in k for x in ['FDA', 'ANVISA', 'COFEPRIS', 'DIGEMID', 'HEALTH']))
+        asia_pacific_count = sum(1 for k in auth_codes if any(x in k for x in ['TGA', 'BFDA', 'NMPA', 'CDSCO', 'MOH', 'PMDA']))
+        europe_count = sum(1 for k in auth_codes if any(x in k for x in ['EMA', 'MHRA']))
 
         # Count task categories
         task_categories = {}
