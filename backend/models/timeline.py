@@ -103,6 +103,10 @@ class Task(BaseModel):
     gating_status: GatingStatus = Field(default=GatingStatus.NOT_APPLICABLE, description="Gating/blocking status")
     checklist_completion_pct: int = Field(default=0, ge=0, le=100, description="Checklist completion percentage")
 
+    # Summary task fields (for category dividers)
+    is_summary: bool = Field(default=False, description="Whether this is a summary/parent task (category divider)")
+    outline_level: int = Field(default=2, ge=1, le=9, description="Outline level (1=summary, 2=normal task)")
+
     # ML advisory fields (populated by backend)
     risk_score: Optional[int] = Field(None, ge=0, le=100, description="ML-predicted delay risk score")
     ml_predicted_duration: Optional[str] = Field(None, description="ML-predicted duration range")

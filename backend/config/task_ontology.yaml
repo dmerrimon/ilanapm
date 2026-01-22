@@ -348,12 +348,12 @@ tasks:
         notes: "40-120 days by product type (40 devices, 50 pharma, 60 bio, 120 GMO), expedited 10-20 days"
 
   - id: REG-002
-    name: "IRB/EC Approval"
+    name: "IRB Approval"
     category: Regulatory
     typical_duration_days: 45
     min_duration_days: 21
     max_duration_days: 90
-    description: "Obtain Institutional Review Board or Ethics Committee approval"
+    description: "Obtain Institutional Review Board approval"
     is_mandatory: true
 
     # Industry benchmarks
@@ -1305,7 +1305,7 @@ tasks:
     applicable_countries: ["US"]  # US-specific task
 
   - id: REG-012
-    name: "IRB/EC Continuing Review"
+    name: "IRB Continuing Review"
     category: Regulatory
     typical_duration_days: 365
     description: "IRB Continuing Review (annual or as specified by IRB) - ongoing during study execution"

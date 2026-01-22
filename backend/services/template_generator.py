@@ -90,6 +90,10 @@ class TemplateGenerator:
                    f"{len(operational_tasks)} operational (from ontology), " +
                    f"{len(industry_tasks)} industry-standard milestones")
 
+        # Organize tasks with category dividers
+        organized_tasks = self._organize_tasks_with_categories(all_tasks, workflow)
+        logger.info(f"Organized {len(organized_tasks)} tasks (including category dividers)")
+
         # Build dependencies
         dependencies = self._build_dependencies(all_tasks, workflow)
 
@@ -103,11 +107,74 @@ class TemplateGenerator:
                 workflow['country_name']
             ),
             therapeutic_area=therapeutic_area,
-            tasks=all_tasks,
+            tasks=organized_tasks,
             dependencies=dependencies
         )
 
         return timeline
+
+    def _organize_tasks_with_categories(self, tasks: List[Task], workflow: Dict) -> List[Task]:
+        """
+        Organize tasks with category dividers (summary tasks)
+
+        Groups tasks by category and creates summary tasks (dividers) for each category.
+        Returns tasks in organized order with summary tasks followed by their child tasks.
+
+        Category order: Regulatory → Operational → Site → Data → Pharmacy → Laboratory → Safety → Documents → Closeout
+        """
+        from collections import defaultdict
+
+        # Group tasks by category
+        tasks_by_category = defaultdict(list)
+        for task in tasks:
+            # Normalize category name (handle both enum and string values)
+            category = task.category.value if hasattr(task.category, 'value') else str(task.category)
+            tasks_by_category[category].append(task)
+
+        # Define category order and labels
+        category_order = [
+            ('Regulatory', '═══ REGULATORY TASKS ═══'),
+            ('Operational', '═══ OPERATIONAL TASKS ═══'),
+            ('Site', '═══ SITE MANAGEMENT TASKS ═══'),
+            ('Data', '═══ DATA MANAGEMENT TASKS ═══'),
+            ('Pharmacy', '═══ PHARMACY TASKS ═══'),
+            ('Laboratory', '═══ LABORATORY TASKS ═══'),
+            ('Safety', '═══ SAFETY OVERSIGHT TASKS ═══'),
+            ('Documents', '═══ DOCUMENT MANAGEMENT TASKS ═══'),
+            ('Closeout', '═══ STUDY CLOSEOUT TASKS ═══')
+        ]
+
+        organized_tasks = []
+
+        for category_key, category_label in category_order:
+            category_tasks = tasks_by_category.get(category_key, [])
+
+            if not category_tasks:
+                continue  # Skip categories with no tasks
+
+            # Create summary task (category divider)
+            summary_task = Task(
+                id=f"SUMMARY-{category_key}",
+                name=category_label,
+                duration_days=0,  # Summary tasks have zero duration (calculated from children)
+                category=category_tasks[0].category,  # Use same category as children
+                phase=category_tasks[0].phase,
+                authority=category_tasks[0].authority,
+                country=category_tasks[0].country,
+                therapeutic_area=category_tasks[0].therapeutic_area,
+                is_mandatory=True,
+                is_summary=True,
+                outline_level=1  # Level 1 = Summary/parent task
+            )
+            organized_tasks.append(summary_task)
+
+            # Add child tasks (set outline_level=2 for indentation)
+            for task in category_tasks:
+                task.outline_level = 2  # Level 2 = Child task (indented under summary)
+                organized_tasks.append(task)
+
+        logger.info(f"Created {len([t for t in organized_tasks if t.is_summary])} category dividers")
+        return organized_tasks
 
     def _get_workflow(self, country_code: str) -> Dict:
         """Get regulatory workflow for a country"""
@@ -316,7 +383,7 @@ class TemplateGenerator:
 
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-EC",
-            name=f"{workflow['ethics_authority']['name']} Approval - {workflow['country_name']}",
+            name=f"IRB Approval - {workflow['country_name']}",
             duration_days=ec_duration,
             category='Regulatory',
             phase=phase,
@@ -384,7 +451,7 @@ class TemplateGenerator:
 
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-EC",
-            name=f"{workflow['ethics_authority']['name']} Approval - {workflow['country_name']}",
+            name=f"IRB Approval - {workflow['country_name']}",
             duration_days=ec_duration,
             category='Regulatory',
             phase=phase,
