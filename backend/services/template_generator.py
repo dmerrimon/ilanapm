@@ -265,14 +265,14 @@ class TemplateGenerator:
         """Build tasks for three-layer sequential workflows (e.g., Kenya: EC → PPB → NACOSTI)"""
         tasks = []
 
-        # Layer 1: Ethics Committee
+        # Layer 1: Ethics Committee (use specific authority name)
         ec_duration = workflow['ethics_authority'].get('review_days')
         if ec_duration is None:
             ec_duration = 30  # Default to 30 days if not specified
 
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-EC",
-            name=f"Ethics Committee Approval - {workflow['country_name']}",
+            name=f"{workflow['ethics_authority']['name']} Approval - {workflow['country_name']}",
             duration_days=ec_duration,
             category='Regulatory',
             phase=phase,
@@ -289,7 +289,7 @@ class TemplateGenerator:
         # Layer 2: Primary Regulatory Authority (e.g., PPB in Kenya)
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-REG",
-            name=f"{workflow['regulatory_authority']['name']} Approval",
+            name=f"{workflow['regulatory_authority']['name']} Approval - {workflow['country_name']}",
             duration_days=workflow['regulatory_authority'].get('review_days', 30),
             category='Regulatory',
             phase=phase,
@@ -340,7 +340,7 @@ class TemplateGenerator:
 
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-EC",
-            name=f"{workflow['ethics_authority']['name']} Approval",
+            name=f"{workflow['ethics_authority']['name']} Approval - {workflow['country_name']}",
             duration_days=ec_duration,
             category='Regulatory',
             phase=phase,
@@ -357,7 +357,7 @@ class TemplateGenerator:
         # Layer 2: Regulatory Authority (ASTT in Vietnam)
         tasks.append(Task(
             id=f"REG-{workflow['country_code']}-REG",
-            name=f"{workflow['regulatory_authority']['name']} Review",
+            name=f"{workflow['regulatory_authority']['name']} Review - {workflow['country_name']}",
             duration_days=workflow['regulatory_authority'].get('review_days', 30),
             category='Regulatory',
             phase=phase,
