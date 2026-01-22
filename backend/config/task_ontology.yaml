@@ -791,7 +791,7 @@ tasks:
 
   - id: DATA-001
     name: "Clinical Database Lock"
-    category: Data
+    category: Closeout
     typical_duration_days: 42  # Updated from Emmes v3.0
     min_duration_days: 42
     max_duration_days: 60
@@ -815,7 +815,7 @@ tasks:
 
   - id: DATA-002
     name: "Laboratory Database Lock"
-    category: Data
+    category: Closeout
     typical_duration_days: 98  # Updated from Emmes v3.0
     min_duration_days: 84
     max_duration_days: 120
@@ -924,7 +924,7 @@ tasks:
 
   - id: IND-010
     name: "Data Collection Forms First Draft"
-    category: Operational
+    category: Data
     typical_duration_days: 28
     description: "First draft of data collection forms after protocol Quality Crosswalk review"
     is_mandatory: true
@@ -933,7 +933,7 @@ tasks:
 
   - id: IND-011
     name: "eCRF Instructions (MOP Appendix)"
-    category: Operational
+    category: Data
     typical_duration_days: 14
     description: "Electronic Case Report Form instructions as appendix to Manual of Procedures"
     is_mandatory: true
@@ -942,7 +942,7 @@ tasks:
 
   - id: IND-012
     name: "MOP First Draft"
-    category: Operational
+    category: Data
     typical_duration_days: 28
     description: "First draft of Manual of Procedures after protocol Quality Crosswalk review"
     is_mandatory: true
@@ -951,14 +951,14 @@ tasks:
 
   - id: IND-013
     name: "DSMB/SMC Charter Review"
-    category: Safety
+    category: Data
     typical_duration_days: 7
     description: "Review charter and expectations for DSMB/SMC report shell"
     is_mandatory: false
 
   - id: IND-014
     name: "DSMB/SMC Report Shell Preparation"
-    category: Safety
+    category: Data
     typical_duration_days: 14
     description: "Prepare Data Safety Monitoring Board/Safety Monitoring Committee report shell"
     is_mandatory: false
@@ -974,14 +974,14 @@ tasks:
 
   - id: IND-016
     name: "Barcode Labels Ordering/Shipping"
-    category: Operational
+    category: Data
     typical_duration_days: 14
     description: "Order and ship barcode labels 2 weeks prior to site activation"
     is_mandatory: false
 
   - id: IND-017
     name: "Randomization Materials Preparation"
-    category: Pharmacy
+    category: Data
     typical_duration_days: 7
     description: "Prepare and distribute randomization materials 1 week prior to site activation"
     is_mandatory: true
@@ -1006,7 +1006,7 @@ tasks:
 
   - id: IND-020
     name: "Website Initial Set-up"
-    category: Operational
+    category: Data
     typical_duration_days: 7
     description: "Initial website setup (1 week to complete)"
     is_mandatory: false
@@ -1020,7 +1020,7 @@ tasks:
 
   - id: IND-022
     name: "Interim SAP (if required)"
-    category: Regulatory
+    category: Data
     typical_duration_days: 42
     description: "Interim Statistical Analysis Plan if required for interim analyses (6 weeks after Protocol v1.0)"
     is_mandatory: false
@@ -1201,7 +1201,7 @@ tasks:
 
   - id: DATA-017
     name: "Draft Statistical Analysis Plan in Place"
-    category: Regulatory
+    category: Data
     typical_duration_days: 42
     description: "Draft Statistical Analysis Plan or appropriate statistical section of protocol in place"
     is_mandatory: true
@@ -1348,7 +1348,7 @@ tasks:
 
   - id: DATA-020
     name: "Resolution of Data Management Queries"
-    category: Data
+    category: Closeout
     typical_duration_days: 1
     description: "Resolution of all data management queries (1 day after final monitoring visit)"
     is_mandatory: true
@@ -1361,14 +1361,14 @@ tasks:
 
   - id: LAB-010
     name: "Laboratory Assay Completion and Transfer"
-    category: Laboratory
+    category: Closeout
     typical_duration_days: 84
     description: "Assay completion and transfer of laboratory data (12 weeks after last specimen collection time point)"
     is_mandatory: true
 
   - id: LAB-011
     name: "QC of Laboratory Data"
-    category: Laboratory
+    category: Closeout
     typical_duration_days: 4
     description: "Quality control of laboratory data (4 days after receipt of lab data)"
     is_mandatory: true
@@ -1377,7 +1377,7 @@ tasks:
 
   - id: LAB-012
     name: "Resolution of Laboratory Queries"
-    category: Laboratory
+    category: Closeout
     typical_duration_days: 7
     description: "Resolution of laboratory queries (1 week after distribution)"
     is_mandatory: true
@@ -1386,7 +1386,7 @@ tasks:
 
   - id: LAB-013
     name: "Laboratory Database Lock"
-    category: Laboratory
+    category: Closeout
     typical_duration_days: 1
     description: "Laboratory database lock (1 day after resolution of lab queries)"
     is_mandatory: true
@@ -1399,7 +1399,7 @@ tasks:
 
   - id: REG-020
     name: "Preparation of Draft CSR (including TFLs)"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 84
     description: "Preparation of draft Clinical Study Report including Tables, Figures, and Listings (12 weeks after clinical AND lab database lock)"
     is_mandatory: true
@@ -1409,7 +1409,7 @@ tasks:
 
   - id: SAFETY-010
     name: "Pharmacovigilance Provides SAE Narratives"
-    category: Safety
+    category: Closeout
     typical_duration_days: 30
     description: "Pharmacovigilance provides Serious Adverse Event narratives (30 days after clinical database lock)"
     is_mandatory: true
@@ -1418,7 +1418,7 @@ tasks:
 
   - id: REG-021
     name: "Distribute Draft CSR to PI"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 1
     description: "Distribute draft Clinical Study Report to Principal Investigator (1 day after CSR preparation complete)"
     is_mandatory: true
@@ -1427,7 +1427,7 @@ tasks:
 
   - id: REG-022
     name: "PI Reviews and Completes CSR Sections"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 35
     description: "Principal Investigator reviews and completes designated sections of CSR (4-6 weeks average)"
     is_mandatory: true
@@ -1436,7 +1436,7 @@ tasks:
 
   - id: REG-023
     name: "Incorporate PI Text and Comments"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 7
     description: "Incorporate PI text and address PI comments (1 week after receiving draft from PI)"
     is_mandatory: true
@@ -1445,7 +1445,7 @@ tasks:
 
   - id: REG-024
     name: "Distribute Draft CSR to Sponsor and PI for Review"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 1
     description: "Distribute draft CSR to Sponsor and PI for review (1 day after draft complete)"
     is_mandatory: true
@@ -1454,7 +1454,7 @@ tasks:
 
   - id: REG-025
     name: "Sponsor Reviews Draft CSR"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 28
     description: "Sponsor reviews draft Clinical Study Report (4 weeks after distribution)"
     is_mandatory: true
@@ -1463,7 +1463,7 @@ tasks:
 
   - id: REG-026
     name: "Incorporate Sponsor Comments"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 7
     description: "Incorporate Sponsor comments and prepare final draft (1 week after receipt of comments)"
     is_mandatory: true
@@ -1472,7 +1472,7 @@ tasks:
 
   - id: REG-027
     name: "Receive Sponsor and PI Approval to Finalize CSR"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 3
     description: "Receive Sponsor and PI approval to finalize CSR (3 days after final draft distributed)"
     is_mandatory: true
@@ -1481,7 +1481,7 @@ tasks:
 
   - id: REG-028
     name: "Prepare Approved CSR per Regulatory Requirements"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 3
     description: "Prepare approved CSR in accordance with regulatory requirements (3 days after approval)"
     is_mandatory: true
@@ -1490,7 +1490,7 @@ tasks:
 
   - id: REG-029
     name: "Lead PI Signs CSR Signature Page"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 3
     description: "Lead Principal Investigator signs CSR signature page (3 days after notification)"
     is_mandatory: true
@@ -1499,7 +1499,7 @@ tasks:
 
   - id: REG-030
     name: "Distribute Approved CSR"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 1
     description: "Distribute approved Clinical Study Report (1 day after receipt of signature)"
     is_mandatory: true
@@ -1508,7 +1508,7 @@ tasks:
 
   - id: REG-031
     name: "Final CSR Submission to Regulatory Authority"
-    category: Regulatory
+    category: Closeout
     typical_duration_days: 17
     description: "Regulatory Affairs Specialist submits final CSR to regulatory authority (FDA, EMA, PPB, etc.) - 2-3 weeks average"
     is_mandatory: true
