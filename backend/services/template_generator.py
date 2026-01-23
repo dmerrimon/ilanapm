@@ -421,17 +421,25 @@ class TemplateGenerator:
         # Sort tasks by priority, then by ID for stable ordering
         sorted_tasks = sorted(tasks, key=get_task_priority)
 
-        # Filter out duplicate "Database Lock" entries (generic ones when specific ones exist)
-        # Keep only if it's the specific "Clinical Database Lock" or "Laboratory Database Lock"
+        # Filter out duplicate entries
         if category == 'Closeout':
             filtered_tasks = []
+            seen_names = set()
             has_clinical_db_lock = any('clinical database lock' in t.name.lower() for t in sorted_tasks)
             has_lab_db_lock = any('laboratory database lock' in t.name.lower() for t in sorted_tasks)
 
             for task in sorted_tasks:
+                task_name_lower = task.name.lower()
+
                 # Skip generic "Database Lock" if we have specific ones
-                if task.name.lower() == 'database lock' and (has_clinical_db_lock or has_lab_db_lock):
+                if task_name_lower == 'database lock' and (has_clinical_db_lock or has_lab_db_lock):
                     continue
+
+                # Skip exact duplicates (keep first occurrence only)
+                if task_name_lower in seen_names:
+                    continue
+
+                seen_names.add(task_name_lower)
                 filtered_tasks.append(task)
             return filtered_tasks
 
