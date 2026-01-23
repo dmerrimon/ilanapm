@@ -691,6 +691,16 @@ tasks:
     cannot_start_until: "Forms finalized"
     system_opens: "Same day as site activation"
 
+  - id: OPS-005
+    name: "Last Specimen Collection"
+    category: Operational
+    typical_duration_days: 1
+    description: "Last biological specimen collected from study participants"
+    is_mandatory: true
+    notes: "Triggers laboratory closeout process - Lab assay completion occurs 12 weeks after this milestone"
+    prerequisites:
+      - SITE-005  # After Last Patient Last Visit
+
   # ========================================================================
   # SITE TASKS
   # ========================================================================
@@ -1365,6 +1375,8 @@ tasks:
     typical_duration_days: 84
     description: "Assay completion and transfer of laboratory data (12 weeks after last specimen collection time point)"
     is_mandatory: true
+    prerequisites:
+      - OPS-005  # Last Specimen Collection
 
   - id: LAB-011
     name: "QC of Laboratory Data"
