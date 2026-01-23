@@ -101,6 +101,18 @@ JsonConvert.DeserializeObject<Models.ValidationResult>(responseBody);
             return JsonConvert.DeserializeObject<Models.CountriesResponse>(responseBody);
         }
 
+        /// <summary>
+        /// Get comprehensive country data for Multi-Country Calculator
+        /// Returns detailed workflow information, complexity, authorities, and pathways
+        /// </summary>
+        public async Task<System.Collections.Generic.List<Models.CountrySummary>> GetCountriesDetailedAsync()
+        {
+            HttpResponseMessage response = await httpClient.GetAsync(API_BASE_URL + "/api/v1/config/countries");
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<System.Collections.Generic.List<Models.CountrySummary>>(responseBody);
+        }
+
         public async Task<Models.Timeline> GenerateTemplateAsync(Models.TemplateRequest request)
         {
             string jsonContent = JsonConvert.SerializeObject(request);

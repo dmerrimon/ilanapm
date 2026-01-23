@@ -197,16 +197,23 @@ namespace IlanaPM.AddIn
 
                     // Load template into MS Project
                     var loader = new Services.TemplateLoader();
-                    loader.LoadTemplateIntoProject(template, Globals.ThisAddIn.Application);
+                    loader.LoadTemplateIntoProject(template, Globals.ThisAddIn.Application, templateForm.CustomColumnNames);
 
-                    // Show success message
+                    // Show success message with custom columns info
+                    string customColumnsInfo = "";
+                    if (templateForm.CustomColumnNames != null && templateForm.CustomColumnNames.Count > 0)
+                    {
+                        customColumnsInfo = $"\nCustom Columns: {string.Join(", ", templateForm.CustomColumnNames.Values)}";
+                    }
+
                     MessageBox.Show(
                         $"Template loaded successfully!\n\n" +
                         $"Study: {template.study_name}\n" +
                         $"Tasks: {template.tasks.Count}\n" +
                         $"Dependencies: {template.dependencies.Count}\n" +
                         $"Country: {templateForm.SelectedCountryCode}\n" +
-                        $"Phase: {templateForm.SelectedPhase}",
+                        $"Phase: {templateForm.SelectedPhase}" +
+                        customColumnsInfo,
                         "Template Loaded",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information
@@ -221,6 +228,26 @@ namespace IlanaPM.AddIn
                     detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
                 }
                 MessageBox.Show(detailedError, "Template Load Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // PHASE 3: MULTI-COUNTRY CALCULATOR BUTTON
+        private void btnMultiCountry_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                var multiCountryForm = new MultiCountryCalculatorForm();
+                multiCountryForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                string detailedError = "Error opening Multi-Country Calculator: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
+                }
+                MessageBox.Show(detailedError, "Multi-Country Calculator Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
