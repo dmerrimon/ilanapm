@@ -153,6 +153,9 @@ class TemplateGenerator:
             if not category_tasks:
                 continue  # Skip categories with no tasks
 
+            # Sort tasks within category by workflow sequence
+            category_tasks = self._sort_tasks_by_workflow(category_tasks, category_key)
+
             # Create summary task (category divider)
             summary_task = Task(
                 id=f"SUMMARY-{category_key}",
@@ -176,6 +179,263 @@ class TemplateGenerator:
 
         logger.info(f"Created {len([t for t in organized_tasks if t.is_summary])} category dividers")
         return organized_tasks
+
+    def _sort_tasks_by_workflow(self, tasks: List[Task], category: str) -> List[Task]:
+        """
+        Sort tasks within a category by their logical workflow sequence
+
+        Returns tasks sorted in the order they typically occur in a clinical trial
+        """
+
+        def get_task_priority(task: Task) -> tuple:
+            """
+            Get priority for sorting tasks within category
+            Returns (priority_group, task_id) where lower numbers come first
+            """
+            task_id = task.id
+            task_name_lower = task.name.lower()
+
+            # Define workflow order for each category
+            if category == 'Data':
+                # Data Management workflow order
+                if 'data collection forms first draft' in task_name_lower or task_id == 'IND-010':
+                    return (1, task_id)
+                elif 'data collection forms' in task_name_lower and 'first draft' not in task_name_lower:
+                    return (2, task_id)  # Final DCF (IND-002)
+                elif 'ecrfinstructions' in task_name_lower or 'mop appendix' in task_name_lower:
+                    return (3, task_id)
+                elif 'mop first draft' in task_name_lower or task_id == 'IND-012':
+                    return (4, task_id)
+                elif 'manual of procedures available' in task_name_lower or 'mop v1.0' in task_name_lower or task_id == 'IND-003':
+                    return (5, task_id)
+                elif 'draft statistical analysis plan' in task_name_lower or 'draft sap' in task_name_lower:
+                    return (6, task_id)
+                elif 'interim sap' in task_name_lower or task_id == 'IND-022':
+                    return (7, task_id)
+                elif 'data system configuration' in task_name_lower or task_id == 'IND-004':
+                    return (8, task_id)
+                elif 'ecrfs programmed' in task_name_lower or 'direct data entry' in task_name_lower:
+                    return (9, task_id)
+                elif 'database deployed' in task_name_lower:
+                    return (10, task_id)
+                elif 'sdcc database training' in task_name_lower:
+                    return (11, task_id)
+                elif 'data management training completed' in task_name_lower:
+                    return (12, task_id)
+                elif 'site pi database access' in task_name_lower:
+                    return (13, task_id)
+                elif 'paper dcfs' in task_name_lower or 'paper crfs' in task_name_lower:
+                    return (14, task_id)
+                elif 'data system opens' in task_name_lower or task_id == 'IND-018':
+                    return (15, task_id)
+                elif 'dsmb' in task_name_lower and 'charter' in task_name_lower:
+                    return (16, task_id)
+                elif 'dsmb' in task_name_lower and 'report shell' in task_name_lower:
+                    return (17, task_id)
+                elif 'barcode labels' in task_name_lower:
+                    return (18, task_id)
+                elif 'randomization materials' in task_name_lower:
+                    return (19, task_id)
+                elif 'programmatic queries' in task_name_lower:
+                    return (20, task_id)
+                elif 'website initial' in task_name_lower:
+                    return (21, task_id)
+                elif 'web report programming' in task_name_lower:
+                    return (22, task_id)
+                elif 'statistical analysis' in task_name_lower and 'plan' not in task_name_lower:
+                    return (23, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Closeout':
+                # Study Closeout workflow order
+                if 'clinical data entry' in task_name_lower or task_id == 'IND-105':
+                    return (1, task_id)
+                elif 'data cleaning' in task_name_lower and 'resolution' not in task_name_lower:
+                    return (2, task_id)
+                elif 'serious adverse event reconciliation' in task_name_lower or 'sae reconciliation' in task_name_lower:
+                    return (3, task_id)
+                elif 'final monitoring visit' in task_name_lower:
+                    return (4, task_id)
+                elif 'resolution of data management queries' in task_name_lower or 'resolution of all data' in task_name_lower:
+                    return (5, task_id)
+                elif 'clinical database lock' in task_name_lower and 'laboratory' not in task_name_lower:
+                    return (6, task_id)
+                elif 'laboratory assay completion' in task_name_lower or 'assay completion and transfer' in task_name_lower:
+                    return (7, task_id)
+                elif 'qc of laboratory data' in task_name_lower:
+                    return (8, task_id)
+                elif 'resolution of laboratory queries' in task_name_lower:
+                    return (9, task_id)
+                elif 'laboratory database lock' in task_name_lower:
+                    return (10, task_id)
+                elif 'pharmacovigilance' in task_name_lower and 'sae narratives' in task_name_lower:
+                    return (11, task_id)
+                elif 'preparation of draft csr' in task_name_lower or (task_id == 'REG-020' and 'draft csr' in task_name_lower):
+                    return (12, task_id)
+                elif 'distribute draft csr to pi' in task_name_lower and 'sponsor' not in task_name_lower:
+                    return (13, task_id)
+                elif 'pi reviews and completes csr' in task_name_lower:
+                    return (14, task_id)
+                elif 'incorporate pi text and comments' in task_name_lower:
+                    return (15, task_id)
+                elif 'distribute draft csr to sponsor and pi' in task_name_lower or 'distribute draft csr to sponsor' in task_name_lower:
+                    return (16, task_id)
+                elif 'sponsor reviews draft csr' in task_name_lower:
+                    return (17, task_id)
+                elif 'incorporate sponsor comments' in task_name_lower:
+                    return (18, task_id)
+                elif 'receive sponsor and pi approval' in task_name_lower or 'approval to finalize csr' in task_name_lower:
+                    return (19, task_id)
+                elif 'prepare approved csr' in task_name_lower:
+                    return (20, task_id)
+                elif 'lead pi signs csr' in task_name_lower or 'pi signs csr signature page' in task_name_lower:
+                    return (21, task_id)
+                elif 'distribute approved csr' in task_name_lower:
+                    return (22, task_id)
+                elif 'final csr submission' in task_name_lower or 'submit final csr' in task_name_lower:
+                    return (23, task_id)
+                elif 'site closeout visits' in task_name_lower:
+                    return (24, task_id)
+                elif 'study archival' in task_name_lower:
+                    return (25, task_id)
+                elif 'final regulatory submissions' in task_name_lower:
+                    return (26, task_id)
+                # Remove duplicate "Database Lock" entries - already have Clinical and Lab DB locks above
+                elif task_name_lower == 'database lock':
+                    return (999, task_id)  # Push generic "Database Lock" to end (will be filtered)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Site':
+                # Site Management workflow order
+                if 'site identification' in task_name_lower or 'site feasibility' in task_name_lower:
+                    return (1, task_id)
+                elif 'site assessment visit' in task_name_lower:
+                    return (2, task_id)
+                elif 'site initiation visit' in task_name_lower:
+                    return (3, task_id)
+                elif 'essential documents' in task_name_lower:
+                    return (4, task_id)
+                elif 'investigator brochure' in task_name_lower:
+                    return (5, task_id)
+                elif 'psrl' in task_name_lower:
+                    return (6, task_id)
+                elif 'training' in task_name_lower and 'pi attestation' not in task_name_lower:
+                    return (7, task_id)
+                elif 'pi attestation' in task_name_lower:
+                    return (8, task_id)
+                elif 'site activation' in task_name_lower:
+                    return (9, task_id)
+                elif 'first patient in' in task_name_lower or 'fpi' in task_name_lower:
+                    return (10, task_id)
+                elif 'patient enrollment' in task_name_lower:
+                    return (11, task_id)
+                elif 'last patient last visit' in task_name_lower or 'lplv' in task_name_lower:
+                    return (12, task_id)
+                elif 'site closeout' in task_name_lower:
+                    return (13, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Regulatory':
+                # Regulatory workflow order (approvals first, then ongoing compliance)
+                # Country-specific approvals first (EC → PPB → NACOSTI, etc.)
+                if 'irb approval' in task_name_lower or 'ec approval' in task_name_lower or 'ethics committee approval' in task_name_lower:
+                    return (1, task_id)
+                elif 'pharmacy and poisons board' in task_name_lower or 'ppb approval' in task_name_lower:
+                    return (2, task_id)
+                elif 'nacosti' in task_name_lower:
+                    return (3, task_id)
+                elif 'ind submission' in task_name_lower:
+                    return (4, task_id)
+                elif 'clinicaltrials.gov' in task_name_lower or 'nct' in task_name_lower:
+                    return (5, task_id)
+                elif 'protocol amendment' in task_name_lower:
+                    return (6, task_id)
+                elif 'irb continuing review' in task_name_lower:
+                    return (7, task_id)
+                elif 'annual safety report' in task_name_lower:
+                    return (8, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Operational':
+                # Operational workflow order
+                if 'protocol development' in task_name_lower:
+                    return (1, task_id)
+                elif 'site identification' in task_name_lower:
+                    return (2, task_id)
+                elif 'site contract' in task_name_lower:
+                    return (3, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Pharmacy':
+                # Pharmacy workflow order
+                if 'pharmacist list' in task_name_lower or 'blinded' in task_name_lower or 'unblinded' in task_name_lower:
+                    return (1, task_id)
+                elif 'study product available' in task_name_lower:
+                    return (2, task_id)
+                elif 'randomization process' in task_name_lower or 'unblinding table' in task_name_lower:
+                    return (3, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Laboratory':
+                # Laboratory workflow order
+                if 'cap' in task_name_lower or 'specimen table' in task_name_lower or 'assay table' in task_name_lower:
+                    return (1, task_id)
+                elif 'ldms' in task_name_lower or 'equipment tested' in task_name_lower:
+                    return (2, task_id)
+                elif 'lab readiness' in task_name_lower:
+                    return (3, task_id)
+                else:
+                    return (99, task_id)
+
+            elif category == 'Safety':
+                # Safety workflow order
+                if 'dsmb' in task_name_lower or 'smc' in task_name_lower:
+                    if 'organizational meeting' in task_name_lower:
+                        return (1, task_id)
+                    elif 'charter' in task_name_lower:
+                        return (2, task_id)
+                    elif 'report shell' in task_name_lower:
+                        return (3, task_id)
+                return (99, task_id)
+
+            elif category == 'Documents':
+                # Documents workflow order
+                if 'clinical trial agreement' in task_name_lower or 'cta' in task_name_lower or 'mou' in task_name_lower:
+                    return (1, task_id)
+                elif 'monitoring plan' in task_name_lower:
+                    return (2, task_id)
+                elif 'mta' in task_name_lower or 'dta' in task_name_lower or 'agreements in place' in task_name_lower:
+                    return (3, task_id)
+                else:
+                    return (99, task_id)
+
+            # Default: sort by task ID
+            return (99, task_id)
+
+        # Sort tasks by priority, then by ID for stable ordering
+        sorted_tasks = sorted(tasks, key=get_task_priority)
+
+        # Filter out duplicate "Database Lock" entries (generic ones when specific ones exist)
+        # Keep only if it's the specific "Clinical Database Lock" or "Laboratory Database Lock"
+        if category == 'Closeout':
+            filtered_tasks = []
+            has_clinical_db_lock = any('clinical database lock' in t.name.lower() for t in sorted_tasks)
+            has_lab_db_lock = any('laboratory database lock' in t.name.lower() for t in sorted_tasks)
+
+            for task in sorted_tasks:
+                # Skip generic "Database Lock" if we have specific ones
+                if task.name.lower() == 'database lock' and (has_clinical_db_lock or has_lab_db_lock):
+                    continue
+                filtered_tasks.append(task)
+            return filtered_tasks
+
+        return sorted_tasks
 
     def _get_workflow(self, country_code: str) -> Dict:
         """Get regulatory workflow for a country"""
