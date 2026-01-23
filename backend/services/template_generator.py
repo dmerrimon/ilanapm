@@ -944,13 +944,47 @@ class TemplateGenerator:
         dependencies = []
         task_map = {t.id: t for t in tasks}
 
+        # ===== TASK ONTOLOGY PREREQUISITES =====
+        # Convert task ontology prerequisites to MS Project dependencies
+        # This reads the 'prerequisites' field from task_ontology.yaml and creates
+        # predecessor relationships in MS Project
+        for task_def in self.tasks:
+            task_id = task_def['id']
+            prerequisites = task_def.get('prerequisites', [])
+
+            # Only create dependencies if both tasks exist in the generated template
+            if task_id in task_map:
+                for predecessor_id in prerequisites:
+                    if predecessor_id in task_map:
+                        dependencies.append(Dependency(
+                            predecessor_id=predecessor_id,
+                            successor_id=task_id,
+                            type='finish-to-start',
+                            lag_days=0
+                        ))
+                        logger.debug(f"Added ontology dependency: {predecessor_id} → {task_id}")
+
+        logger.info(f"Created {len(dependencies)} dependencies from task ontology prerequisites")
+
         # ===== STUDY STARTUP DEPENDENCIES =====
-        # Based on industry-standard CRO timelines
+        # Based on industry-standard CRO timelines and Emmes workflows
         startup_deps = [
+            # CRITICAL: Protocol Development must complete BEFORE regulatory submissions
+            # User requirement: "before we can submit to the various authorities and irbs
+            # the protocol development must be completed and it must be reviewed and
+            # approved by the sponsor/study leadership"
+            ('IND-100', 'REG-001'),   # Protocol Development → IND/CTA Submission
+            ('IND-100', 'REG-002'),   # Protocol Development → IRB/EC Approval
+
+            # Protocol-dependent operational tasks
             ('IND-100', 'IND-101'),   # Protocol Development → Data Collection Forms
             ('IND-100', 'IND-102'),   # Protocol Development → MOP
+
+            # Data management workflow
             ('IND-101', 'IND-103'),   # Data Collection Forms → Data System Configuration
             ('IND-103', 'DATA-016'),  # Data System Configuration → Database Deployed
+
+            # Site preparation workflow
             ('DATA-016', 'IND-104'),  # Database Deployed → Site Training
             ('IND-104', 'SITE-001'),  # Site Training → Site Initiation Visit
             ('SITE-001', 'SITE-002'), # Site Initiation Visit → Site Activation
@@ -976,14 +1010,48 @@ class TemplateGenerator:
         # Combine all industry-standard dependencies
         all_industry_deps = startup_deps + execution_deps + closeout_deps
 
+        # Track existing dependency pairs to avoid duplicates
+        existing_pairs = {(d.predecessor_id, d.successor_id) for d in dependencies}
+
         for predecessor_id, successor_id in all_industry_deps:
             if predecessor_id in task_map and successor_id in task_map:
+                # Only add if this dependency pair doesn't already exist
+                if (predecessor_id, successor_id) not in existing_pairs:
+                    dependencies.append(Dependency(
+                        predecessor_id=predecessor_id,
+                        successor_id=successor_id,
+                        type='finish-to-start',
+                        lag_days=0
+                    ))
+                    existing_pairs.add((predecessor_id, successor_id))
+
+        # ===== PROTOCOL DEVELOPMENT → COUNTRY-SPECIFIC REGULATORY TASKS =====
+        # Protocol must be complete BEFORE any country-specific regulatory submissions
+        # This links IND-100 to dynamically-created country regulatory tasks
+        if 'IND-100' in task_map:
+            country_code = workflow['country_code']
+
+            # Link to country-specific EC (if exists)
+            ec_id = f"REG-{country_code}-EC"
+            if ec_id in task_map and ('IND-100', ec_id) not in existing_pairs:
                 dependencies.append(Dependency(
-                    predecessor_id=predecessor_id,
-                    successor_id=successor_id,
+                    predecessor_id='IND-100',
+                    successor_id=ec_id,
                     type='finish-to-start',
                     lag_days=0
                 ))
+                existing_pairs.add(('IND-100', ec_id))
+
+            # Link to country-specific Regulatory Authority (if exists)
+            reg_id = f"REG-{country_code}-REG"
+            if reg_id in task_map and ('IND-100', reg_id) not in existing_pairs:
+                dependencies.append(Dependency(
+                    predecessor_id='IND-100',
+                    successor_id=reg_id,
+                    type='finish-to-start',
+                    lag_days=0
+                ))
+                existing_pairs.add(('IND-100', reg_id))
 
         # Three-layer sequential dependencies (e.g., Kenya: EC → PPB → NACOSTI)
         if workflow.get('workflow_type') == 'three_layer_sequential':
@@ -993,24 +1061,28 @@ class TemplateGenerator:
             ec_id = f"REG-{country_code}-EC"
             reg_id = f"REG-{country_code}-REG"
             if ec_id in task_map and reg_id in task_map:
-                dependencies.append(Dependency(
-                    predecessor_id=ec_id,
-                    successor_id=reg_id,
-                    type='finish-to-start',
-                    lag_days=0
-                ))
+                if (ec_id, reg_id) not in existing_pairs:
+                    dependencies.append(Dependency(
+                        predecessor_id=ec_id,
+                        successor_id=reg_id,
+                        type='finish-to-start',
+                        lag_days=0
+                    ))
+                    existing_pairs.add((ec_id, reg_id))
 
             # Regulatory Authority → Additional authorities/bodies
             additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
             for auth in additional_bodies:
                 auth_id = f"REG-{country_code}-{auth['code']}"
                 if reg_id in task_map and auth_id in task_map:
-                    dependencies.append(Dependency(
-                        predecessor_id=reg_id,
-                        successor_id=auth_id,
-                        type='finish-to-start',
-                        lag_days=0
-                    ))
+                    if (reg_id, auth_id) not in existing_pairs:
+                        dependencies.append(Dependency(
+                            predecessor_id=reg_id,
+                            successor_id=auth_id,
+                            type='finish-to-start',
+                            lag_days=0
+                        ))
+                        existing_pairs.add((reg_id, auth_id))
 
         # Four-layer sequential dependencies (e.g., Vietnam: CEBRGL → ASTT → NECBR → Minister)
         if workflow.get('workflow_type') == 'four_layer_sequential':
@@ -1020,12 +1092,14 @@ class TemplateGenerator:
             ec_id = f"REG-{country_code}-EC"
             reg_id = f"REG-{country_code}-REG"
             if ec_id in task_map and reg_id in task_map:
-                dependencies.append(Dependency(
-                    predecessor_id=ec_id,
-                    successor_id=reg_id,
-                    type='finish-to-start',
-                    lag_days=0
-                ))
+                if (ec_id, reg_id) not in existing_pairs:
+                    dependencies.append(Dependency(
+                        predecessor_id=ec_id,
+                        successor_id=reg_id,
+                        type='finish-to-start',
+                        lag_days=0
+                    ))
+                    existing_pairs.add((ec_id, reg_id))
 
             # Layer 2 → Layer 3 → Layer 4: Sequential chain through additional bodies
             additional_bodies = workflow.get('additional_bodies', [])
@@ -1033,12 +1107,14 @@ class TemplateGenerator:
             for auth in additional_bodies:
                 auth_id = f"REG-{country_code}-{auth['code']}"
                 if predecessor_id in task_map and auth_id in task_map:
-                    dependencies.append(Dependency(
-                        predecessor_id=predecessor_id,
-                        successor_id=auth_id,
-                        type='finish-to-start',
-                        lag_days=0
-                    ))
+                    if (predecessor_id, auth_id) not in existing_pairs:
+                        dependencies.append(Dependency(
+                            predecessor_id=predecessor_id,
+                            successor_id=auth_id,
+                            type='finish-to-start',
+                            lag_days=0
+                        ))
+                        existing_pairs.add((predecessor_id, auth_id))
                     predecessor_id = auth_id  # Chain to next layer
 
         # ====================================================================================
@@ -1060,13 +1136,16 @@ class TemplateGenerator:
         if final_approval_task_id and final_approval_task_id in task_map:
             for task_id in tasks_requiring_approval:
                 if task_id in task_map:
-                    dependencies.append(Dependency(
-                        predecessor_id=final_approval_task_id,
-                        successor_id=task_id,
-                        type='finish-to-start',
-                        lag_days=0
-                    ))
+                    if (final_approval_task_id, task_id) not in existing_pairs:
+                        dependencies.append(Dependency(
+                            predecessor_id=final_approval_task_id,
+                            successor_id=task_id,
+                            type='finish-to-start',
+                            lag_days=0
+                        ))
+                        existing_pairs.add((final_approval_task_id, task_id))
 
+        logger.info(f"Total dependencies created: {len(dependencies)}")
         return dependencies
 
     def _get_final_regulatory_approval_id(self, workflow: Dict, task_map: Dict) -> Optional[str]:
