@@ -5,11 +5,14 @@ This is the main application file that initializes the FastAPI app
 and registers all API routes.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
+from jose import JWTError, jwt
+from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing
 from database import init_db
 
 # Configure logging
@@ -18,6 +21,83 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# JWT Configuration
+import os
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+if not SECRET_KEY:
+    # Fallback for development only (not secure for production)
+    SECRET_KEY = "dev-secret-key-change-in-production"
+    logger.warning("⚠️  JWT_SECRET_KEY not set! Using insecure development key. Set JWT_SECRET_KEY environment variable for production.")
+
+ALGORITHM = "HS256"
+
+# Security
+security = HTTPBearer()
+
+
+# ============================================================================
+# JWT Authentication Middleware
+# ============================================================================
+
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """
+    Verify JWT token from Authorization header
+
+    Returns payload with user_id, org_id, tier if valid.
+    Raises 401 HTTPException if invalid.
+
+    Usage in protected endpoints:
+        @router.get("/protected")
+        async def protected_route(auth: dict = Depends(verify_token)):
+            user_id = auth["user_id"]
+            org_id = auth["org_id"]
+            tier = auth["tier"]
+    """
+    token = credentials.credentials
+
+    try:
+        # Decode JWT token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        user_id = payload.get("user_id")
+        org_id = payload.get("org_id")
+        tier = payload.get("tier")
+
+        if not user_id or not org_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Check if token is expired (JWT library handles this, but double-check)
+        exp = payload.get("exp")
+        if exp and datetime.utcfromtimestamp(exp) < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # TODO: Check subscription status in database for extra security
+        # For now, we trust the JWT token
+
+        return {
+            "user_id": user_id,
+            "org_id": org_id,
+            "tier": tier
+        }
+
+    except JWTError as e:
+        logger.warning(f"JWT verification failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -28,17 +108,28 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Configure CORS for web add-in
+# Configure CORS for web add-in and admin portals
+# NOTE: For development, we allow localhost. In production, use specific domains.
+allowed_origins = [
+    "https://portal.ilanapm.com",  # Customer admin portal
+    "https://admin.ilanapm.com",   # Internal super admin portal
+    "https://ilanapm.com",          # Marketing website
+    "http://localhost:3000",        # Local development (Next.js)
+    "http://localhost:5173",        # Local development (Vite)
+    "http://127.0.0.1:3000",        # Local development (Next.js)
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Configure appropriately for production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # Register API routes
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
+app.include_router(licensing.router, prefix="/api/v1", tags=["licensing"])  # NEW: License activation & validation
 app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
 app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])
@@ -61,6 +152,7 @@ async def startup_event():
         logger.warning(f"⚠️  Database initialization skipped (already exists): {e}")
 
     logger.info("📍 API documentation available at: /docs")
+    logger.info("🔐 Licensing endpoints: /api/v1/licensing/* (NEW)")
     logger.info("✅ Validation endpoints: /api/v1/validate")
     logger.info("📊 Analytics endpoints: /api/v1/analytics/*")
     logger.info("🤖 ML Advisory endpoints: /api/v1/advisory/*")
@@ -69,6 +161,9 @@ async def startup_event():
     logger.info("📢 Teams integration: /api/v1/teams/*")
     logger.info("📝 Feedback endpoints: /api/v1/feedback/*")
     logger.info("❤️  Health check: /api/v1/health")
+    logger.info("")
+    logger.info("🔒 JWT authentication enabled for protected endpoints")
+    logger.info("🌐 CORS configured for: portal.ilanapm.com, admin.ilanapm.com, localhost")
 
 
 @app.on_event("shutdown")
