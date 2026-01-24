@@ -164,70 +164,10 @@ namespace IlanaPM.AddIn
         // Reason: Not core to PM workflow. Users can share validation results manually.
         // The backend API endpoint remains available if needed in the future.
 
-        // VIEW REPORT BUTTON
-        private void btnViewReport_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                using (var form = new Form())
-                {
-                    form.Text = "Select View";
-                    form.Width = 300;
-                    form.Height = 285;
-                    form.StartPosition = FormStartPosition.CenterScreen;
-
-                    var label = new Label { Text = "Choose a report view:", Left = 20, Top = 20, Width = 240 };
-
-                    var btnWorkflow = new Button { Text = "Ilana PM Workflow", Left = 20, Top = 50, Width = 240 };
-                    btnWorkflow.Click += (s, args) => {
-                        var viewManager = new Services.ViewManager();
-                        viewManager.CreateIlanaPMWorkflowView(Globals.ThisAddIn.Application);
-                        form.Close();
-                    };
-
-                    var btnValidation = new Button { Text = "Validation Summary", Left = 20, Top = 85, Width = 240 };
-                    btnValidation.Click += (s, args) => {
-                        var viewManager = new Services.ViewManager();
-                        viewManager.CreateValidationSummaryView(Globals.ThisAddIn.Application);
-                        form.Close();
-                    };
-
-                    var btnRisk = new Button { Text = "Risk Dashboard", Left = 20, Top = 120, Width = 240 };
-                    btnRisk.Click += (s, args) => {
-                        var viewManager = new Services.ViewManager();
-                        viewManager.CreateRiskDashboardView(Globals.ThisAddIn.Application);
-                        form.Close();
-                    };
-
-                    var btnExecutive = new Button { Text = "Executive Summary", Left = 20, Top = 155, Width = 240 };
-                    btnExecutive.Click += (s, args) => {
-                        var viewManager = new Services.ViewManager();
-                        viewManager.CreateExecutiveSummaryView(Globals.ThisAddIn.Application);
-                        form.Close();
-                    };
-
-                    var btnChecklist = new Button { Text = "Checklist Completion", Left = 20, Top = 190, Width = 240 };
-                    btnChecklist.Click += (s, args) => {
-                        var viewManager = new Services.ViewManager();
-                        viewManager.CreateChecklistCompletionView(Globals.ThisAddIn.Application);
-                        form.Close();
-                    };
-
-                    form.Controls.Add(label);
-                    form.Controls.Add(btnWorkflow);
-                    form.Controls.Add(btnValidation);
-                    form.Controls.Add(btnRisk);
-                    form.Controls.Add(btnExecutive);
-                    form.Controls.Add(btnChecklist);
-
-                    form.ShowDialog();
-                }
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show("Error: " + ex.Message, "View Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        // VIEW REPORT BUTTON - REMOVED
+        // View Report functionality has been removed from the ribbon UI.
+        // The ViewManager methods (CreateValidationSummaryView, CreateRiskDashboardView, etc.)
+        // remain available for future use if needed.
 
         // SETTINGS BUTTON
         private void btnSettings_Click(object sender, RibbonControlEventArgs e)
