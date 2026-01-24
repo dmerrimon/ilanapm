@@ -9,7 +9,57 @@ namespace IlanaPM.AddIn
     {
         private void IlanaPMRibbon_Load(object sender, RibbonUIEventArgs e)
         {
-            // Ribbon loaded                                                                                                                                                                                      
+            // Check for valid license on startup
+            CheckLicenseActivation();
+        }
+
+        /// <summary>
+        /// Check if user has activated license
+        /// Show activation form if no token exists
+        /// </summary>
+        private void CheckLicenseActivation()
+        {
+            try
+            {
+                bool hasToken = Services.SecureStorage.HasToken();
+
+                if (!hasToken)
+                {
+                    System.Diagnostics.Debug.WriteLine("No activation token found - showing activation form");
+
+                    // Show activation form
+                    var activationForm = new LicenseActivationForm();
+                    var result = activationForm.ShowDialog();
+
+                    if (result != System.Windows.Forms.DialogResult.OK)
+                    {
+                        // User canceled activation - show reminder
+                        MessageBox.Show(
+                            "Ilana PM requires an active license to function.\n\n" +
+                            "You can activate your license anytime by clicking the Settings button in the ribbon.\n\n" +
+                            "Some features may not work until you activate.",
+                            "License Required",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information
+                        );
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("License activated successfully on startup");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Valid activation token found");
+                    string email = Services.SecureStorage.ReadUserEmail();
+                    System.Diagnostics.Debug.WriteLine($"Licensed to: {email}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"License check error: {ex.Message}");
+                // Don't block ribbon load if license check fails
+            }
         }
 
         private async void btnValidate_Click(object sender, RibbonControlEventArgs e)
@@ -45,6 +95,15 @@ namespace IlanaPM.AddIn
                 EnhancedValidationResultsForm resultsForm = new EnhancedValidationResultsForm();
                 resultsForm.DisplayResults(validationResult, advisoryResult, timeline);
                 resultsForm.ShowDialog();
+            }
+            catch (Models.UnauthorizedException ex)
+            {
+                // License expired or invalid - show activation form
+                MessageBox.Show(ex.Message, "License Required",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                var activationForm = new LicenseActivationForm();
+                activationForm.ShowDialog();
             }
             catch (System.Exception ex)
             {
@@ -105,7 +164,7 @@ namespace IlanaPM.AddIn
         // Reason: Not core to PM workflow. Users can share validation results manually.
         // The backend API endpoint remains available if needed in the future.
 
-        // VIEW REPORT BUTTON                                                                                                                                                                                     
+        // VIEW REPORT BUTTON
         private void btnViewReport_Click(object sender, RibbonControlEventArgs e)
         {
             try
@@ -114,33 +173,40 @@ namespace IlanaPM.AddIn
                 {
                     form.Text = "Select View";
                     form.Width = 300;
-                    form.Height = 250;
+                    form.Height = 285;
                     form.StartPosition = FormStartPosition.CenterScreen;
 
                     var label = new Label { Text = "Choose a report view:", Left = 20, Top = 20, Width = 240 };
 
-                    var btnValidation = new Button { Text = "Validation Summary", Left = 20, Top = 50, Width = 240 };
+                    var btnWorkflow = new Button { Text = "Ilana PM Workflow", Left = 20, Top = 50, Width = 240 };
+                    btnWorkflow.Click += (s, args) => {
+                        var viewManager = new Services.ViewManager();
+                        viewManager.CreateIlanaPMWorkflowView(Globals.ThisAddIn.Application);
+                        form.Close();
+                    };
+
+                    var btnValidation = new Button { Text = "Validation Summary", Left = 20, Top = 85, Width = 240 };
                     btnValidation.Click += (s, args) => {
                         var viewManager = new Services.ViewManager();
                         viewManager.CreateValidationSummaryView(Globals.ThisAddIn.Application);
                         form.Close();
                     };
 
-                    var btnRisk = new Button { Text = "Risk Dashboard", Left = 20, Top = 85, Width = 240 };
+                    var btnRisk = new Button { Text = "Risk Dashboard", Left = 20, Top = 120, Width = 240 };
                     btnRisk.Click += (s, args) => {
                         var viewManager = new Services.ViewManager();
                         viewManager.CreateRiskDashboardView(Globals.ThisAddIn.Application);
                         form.Close();
                     };
 
-                    var btnExecutive = new Button { Text = "Executive Summary", Left = 20, Top = 120, Width = 240 };
+                    var btnExecutive = new Button { Text = "Executive Summary", Left = 20, Top = 155, Width = 240 };
                     btnExecutive.Click += (s, args) => {
                         var viewManager = new Services.ViewManager();
                         viewManager.CreateExecutiveSummaryView(Globals.ThisAddIn.Application);
                         form.Close();
                     };
 
-                    var btnChecklist = new Button { Text = "Checklist Completion", Left = 20, Top = 155, Width = 240 };
+                    var btnChecklist = new Button { Text = "Checklist Completion", Left = 20, Top = 190, Width = 240 };
                     btnChecklist.Click += (s, args) => {
                         var viewManager = new Services.ViewManager();
                         viewManager.CreateChecklistCompletionView(Globals.ThisAddIn.Application);
@@ -148,6 +214,7 @@ namespace IlanaPM.AddIn
                     };
 
                     form.Controls.Add(label);
+                    form.Controls.Add(btnWorkflow);
                     form.Controls.Add(btnValidation);
                     form.Controls.Add(btnRisk);
                     form.Controls.Add(btnExecutive);
@@ -220,6 +287,13 @@ namespace IlanaPM.AddIn
                     );
                 }
             }
+            catch (Models.UnauthorizedException ex)
+            {
+                MessageBox.Show(ex.Message, "License Required",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var activationForm = new LicenseActivationForm();
+                activationForm.ShowDialog();
+            }
             catch (System.Exception ex)
             {
                 string detailedError = "Error loading template: " + ex.Message;
@@ -274,6 +348,13 @@ namespace IlanaPM.AddIn
                 CriticalPathResultsForm resultsForm = new CriticalPathResultsForm();
                 resultsForm.DisplayResults(criticalPath, timeline);
                 resultsForm.ShowDialog();
+            }
+            catch (Models.UnauthorizedException ex)
+            {
+                MessageBox.Show(ex.Message, "License Required",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                var activationForm = new LicenseActivationForm();
+                activationForm.ShowDialog();
             }
             catch (System.Exception ex)
             {
