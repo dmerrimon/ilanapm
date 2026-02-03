@@ -55,6 +55,51 @@ def init_db():
         conn.close()
 
 
+class PostgreSQLCursor:
+    """Wrapper cursor that converts SQLite ? placeholders to PostgreSQL %s"""
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def execute(self, query, params=None):
+        # Convert ? to %s for PostgreSQL
+        if '?' in query:
+            query = query.replace('?', '%s')
+        return self._cursor.execute(query, params)
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def fetchmany(self, size=None):
+        return self._cursor.fetchmany(size)
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+
+class PostgreSQLConnection:
+    """Wrapper connection that returns our custom cursor"""
+    def __init__(self, conn):
+        self._conn = conn
+
+    def cursor(self):
+        return PostgreSQLCursor(self._conn.cursor())
+
+    def commit(self):
+        return self._conn.commit()
+
+    def rollback(self):
+        return self._conn.rollback()
+
+    def close(self):
+        return self._conn.close()
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+
 @contextmanager
 def get_db_connection():
     """
@@ -66,8 +111,9 @@ def get_db_connection():
             cursor.execute("SELECT ...")
     """
     if DB_TYPE == "postgresql":
-        # PostgreSQL connection
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        # PostgreSQL connection with query translation
+        raw_conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        conn = PostgreSQLConnection(raw_conn)
         try:
             yield conn
             conn.commit()
