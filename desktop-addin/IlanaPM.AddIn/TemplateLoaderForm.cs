@@ -180,8 +180,8 @@ namespace IlanaPM.AddIn
             {
                 Left = 120,
                 Top = 23,
-                Width = 300,
-                PlaceholderText = "e.g., Responsible Person"
+                Width = 300
+                // PlaceholderText not available in .NET Framework 4.7.2
             };
             grpCustomColumns.Controls.Add(txtCustomText5);
 
@@ -199,8 +199,8 @@ namespace IlanaPM.AddIn
             {
                 Left = 120,
                 Top = 58,
-                Width = 300,
-                PlaceholderText = "e.g., Budget Code"
+                Width = 300
+                // PlaceholderText not available in .NET Framework 4.7.2
             };
             grpCustomColumns.Controls.Add(txtCustomText6);
 
@@ -218,8 +218,8 @@ namespace IlanaPM.AddIn
             {
                 Left = 120,
                 Top = 93,
-                Width = 300,
-                PlaceholderText = "e.g., Department"
+                Width = 300
+                // PlaceholderText not available in .NET Framework 4.7.2
             };
             grpCustomColumns.Controls.Add(txtCustomText7);
 
