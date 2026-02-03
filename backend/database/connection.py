@@ -41,30 +41,41 @@ def init_db():
         schema_sql = schema_sql.replace("AUTOINCREMENT", "")
 
         conn = psycopg.connect(DATABASE_URL)
-        cursor = conn.cursor()
 
-        # Split schema into individual statements (PostgreSQL can't execute multiple statements at once)
+        # Split schema into individual statements
         # Remove comments and split by semicolon
-        statements = []
-        for statement in schema_sql.split(';'):
-            # Clean up statement
-            statement = statement.strip()
-            # Skip empty statements and comments
-            if statement and not statement.startswith('--'):
-                statements.append(statement)
+        lines = []
+        for line in schema_sql.split('\n'):
+            # Skip comment lines
+            if not line.strip().startswith('--'):
+                lines.append(line)
 
-        # Execute each statement separately
+        cleaned_sql = '\n'.join(lines)
+        statements = [s.strip() for s in cleaned_sql.split(';') if s.strip()]
+
+        # Execute each statement in its own transaction
+        # This prevents one failure from aborting the entire batch
+        success_count = 0
+        error_count = 0
+
         for statement in statements:
             if statement.strip():
                 try:
+                    cursor = conn.cursor()
                     cursor.execute(statement)
+                    conn.commit()
+                    success_count += 1
                 except Exception as e:
-                    print(f"Error executing statement: {statement[:100]}...")
-                    print(f"Error: {e}")
-                    # Continue with other statements even if one fails
-                    # (table might already exist)
+                    conn.rollback()
+                    # Only show error if it's not "already exists"
+                    if "already exists" not in str(e).lower():
+                        print(f"Error executing statement: {statement[:80]}...")
+                        print(f"Error: {e}")
+                    error_count += 1
+                finally:
+                    cursor.close()
 
-        conn.commit()
+        print(f"Schema initialization: {success_count} statements succeeded, {error_count} skipped/failed")
         conn.close()
     else:
         # SQLite
