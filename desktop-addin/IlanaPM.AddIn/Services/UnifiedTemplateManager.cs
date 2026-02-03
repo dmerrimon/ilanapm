@@ -584,10 +584,75 @@ namespace IlanaPM.AddIn.Services
         /// </summary>
         private int GenerateFullStudyTimeline(MSProject.Application app, ClinicalProjectConfiguration config)
         {
-            // TODO: Implement API call for Full Study Timeline
-            // For Phase 2.1 - placeholder
-            System.Diagnostics.Debug.WriteLine("Full Study Timeline generation not yet implemented");
-            return 0;
+            int tasksCreated = 0;
+
+            try
+            {
+                // Call API to generate full study timeline
+                var apiClient = new ApiClient();
+
+                // Create template request for each selected country
+                foreach (string countryCode in config.Countries)
+                {
+                    var templateRequest = new Models.TemplateRequest
+                    {
+                        country_code = countryCode,
+                        study_phase = config.StudyPhase,
+                        therapeutic_area = config.TherapeuticArea,
+                        include_optional = config.Filters?.IncludeOptionalTasks ?? true
+                    };
+
+                    System.Diagnostics.Debug.WriteLine($"Calling API for Full Study Timeline: {countryCode}");
+
+                    // Call API to generate timeline
+                    var timeline = apiClient.GenerateTemplateAsync(templateRequest).Result;
+
+                    if (timeline != null && timeline.tasks != null && timeline.tasks.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {countryCode}");
+
+                        // Create tasks in MS Project
+                        foreach (var task in timeline.tasks)
+                        {
+                            // Apply filters
+                            if (config.Filters != null && !config.Filters.PassesFilter(task))
+                                continue;
+
+                            var msTask = app.ActiveProject.Tasks.Add(task.name);
+                            msTask.Duration = $"{task.duration_days}d";
+
+                            // Populate custom fields
+                            msTask.SetField(MSProject.PjField.pjTaskText11, countryCode); // Site/Country
+                            msTask.SetField(MSProject.PjField.pjTaskText4, task.category); // Category
+                            msTask.SetField(MSProject.PjField.pjTaskText12, task.phase); // Stage/Phase
+                            msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase ?? ""); // Substage
+                            msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{countryCode}"); // Template Source
+
+                            // Set task properties
+                            msTask.Notes = task.description ?? "";
+                            if (task.is_mandatory)
+                            {
+                                msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                            }
+
+                            tasksCreated++;
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Full Study Timeline tasks for {countryCode}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"No tasks returned from API for {countryCode}");
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error generating Full Study Timeline: {ex.Message}");
+                throw new InvalidOperationException($"Failed to generate Full Study Timeline from API: {ex.Message}", ex);
+            }
+
+            return tasksCreated;
         }
 
         /// <summary>
