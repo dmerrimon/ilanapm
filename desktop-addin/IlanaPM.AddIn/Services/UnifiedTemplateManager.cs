@@ -599,7 +599,7 @@ namespace IlanaPM.AddIn.Services
                         country_code = countryCode,
                         study_phase = config.StudyPhase,
                         therapeutic_area = config.TherapeuticArea,
-                        include_optional = config.Filters?.IncludeOptionalTasks ?? true
+                        include_optional = config.Filters?.IncludeOptional ?? true
                     };
 
                     System.Diagnostics.Debug.WriteLine($"Calling API for Full Study Timeline: {countryCode}");
@@ -614,22 +614,28 @@ namespace IlanaPM.AddIn.Services
                         // Create tasks in MS Project
                         foreach (var task in timeline.tasks)
                         {
-                            // Apply filters
-                            if (config.Filters != null && !config.Filters.PassesFilter(task))
+                            // API already applied filters based on include_optional parameter
+                            // Additional filtering based on category if specified
+                            if (config.Filters != null &&
+                                config.Filters.IncludedCategories.Count > 0 &&
+                                !string.IsNullOrEmpty(task.category) &&
+                                !config.Filters.IncludedCategories.Contains(task.category))
+                            {
                                 continue;
+                            }
 
                             var msTask = app.ActiveProject.Tasks.Add(task.name);
                             msTask.Duration = $"{task.duration_days}d";
 
                             // Populate custom fields
                             msTask.SetField(MSProject.PjField.pjTaskText11, countryCode); // Site/Country
-                            msTask.SetField(MSProject.PjField.pjTaskText4, task.category); // Category
-                            msTask.SetField(MSProject.PjField.pjTaskText12, task.phase); // Stage/Phase
-                            msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase ?? ""); // Substage
+                            msTask.SetField(MSProject.PjField.pjTaskText4, task.category ?? ""); // Category
+                            msTask.SetField(MSProject.PjField.pjTaskText12, task.phase ?? ""); // Stage/Phase
+                            msTask.SetField(MSProject.PjField.pjTaskText13, ""); // Substage (not provided by API)
                             msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{countryCode}"); // Template Source
 
                             // Set task properties
-                            msTask.Notes = task.description ?? "";
+                            msTask.Notes = ""; // Task model doesn't have description field
                             if (task.is_mandatory)
                             {
                                 msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
