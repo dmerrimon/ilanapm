@@ -1,16 +1,27 @@
 """
-Database connection management for feedback storage
+Database connection management for feedback storage and licensing
 
-Uses SQLite for simplicity. Can migrate to PostgreSQL for production.
+Supports both PostgreSQL (production on Render) and SQLite (local development)
 """
 
 import sqlite3
+import os
 from pathlib import Path
 from typing import Optional
 from contextlib import contextmanager
 
-# Database file location
-DB_PATH = Path(__file__).parent / "feedback.db"
+# Check if running on Render with PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # PostgreSQL for production (Render)
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    DB_TYPE = "postgresql"
+else:
+    # SQLite for local development
+    DB_PATH = Path(__file__).parent / "feedback.db"
+    DB_TYPE = "sqlite"
 
 
 def init_db():
@@ -20,11 +31,28 @@ def init_db():
     if not schema_path.exists():
         raise FileNotFoundError(f"Schema file not found: {schema_path}")
 
-    conn = sqlite3.connect(DB_PATH)
     with open(schema_path, 'r') as f:
-        conn.executescript(f.read())
-    conn.commit()
-    conn.close()
+        schema_sql = f.read()
+
+    if DB_TYPE == "postgresql":
+        # PostgreSQL - adjust schema syntax
+        # Replace SQLite-specific syntax with PostgreSQL equivalents
+        schema_sql = schema_sql.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        schema_sql = schema_sql.replace("AUTOINCREMENT", "")
+        schema_sql = schema_sql.replace("BOOLEAN", "BOOLEAN")
+        schema_sql = schema_sql.replace("IF NOT EXISTS", "IF NOT EXISTS")
+
+        conn = psycopg2.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        cursor.execute(schema_sql)
+        conn.commit()
+        conn.close()
+    else:
+        # SQLite
+        conn = sqlite3.connect(DB_PATH)
+        conn.executescript(schema_sql)
+        conn.commit()
+        conn.close()
 
 
 @contextmanager
@@ -37,25 +65,42 @@ def get_db_connection():
             cursor = conn.cursor()
             cursor.execute("SELECT ...")
     """
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # Enable column access by name
-    conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
-    try:
-        yield conn
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        conn.close()
+    if DB_TYPE == "postgresql":
+        # PostgreSQL connection
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        try:
+            yield conn
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
+    else:
+        # SQLite connection
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # Enable column access by name
+        conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
+        try:
+            yield conn
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            raise e
+        finally:
+            conn.close()
 
 
-def get_db() -> sqlite3.Connection:
+def get_db():
     """Get database connection (non-context manager version)"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
-    return conn
+    if DB_TYPE == "postgresql":
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        return conn
+    else:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
 
 
-__all__ = ["get_db_connection", "get_db", "init_db"]
+__all__ = ["get_db_connection", "get_db", "init_db", "DB_TYPE"]
