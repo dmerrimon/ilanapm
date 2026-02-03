@@ -92,8 +92,8 @@ namespace IlanaPM.AddIn
             dgvAmendments = new DataGridView
             {
                 Location = new Point(10, 10),
-                Size = new Size(520, 280),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Size = new Size(530, 255),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect = false,
@@ -104,28 +104,31 @@ namespace IlanaPM.AddIn
             btnAddAmendment = new Button
             {
                 Text = "Add Amendment",
-                Location = new Point(10, 300),
-                Size = new Size(120, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(10, 275),
+                Size = new Size(120, 30)
             };
             btnEditAmendment = new Button
             {
                 Text = "Edit Amendment",
-                Location = new Point(140, 300),
-                Size = new Size(120, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(140, 275),
+                Size = new Size(120, 30)
             };
             btnRemoveAmendment = new Button
             {
                 Text = "Remove Amendment",
-                Location = new Point(270, 300),
-                Size = new Size(140, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(270, 275),
+                Size = new Size(140, 30)
             };
 
             btnAddAmendment.Click += btnAddAmendment_Click;
             btnEditAmendment.Click += btnEditAmendment_Click;
             btnRemoveAmendment.Click += btnRemoveAmendment_Click;
+
+            // Setup Amendments DataGridView columns
+            dgvAmendments.Columns.Add("ID", "ID");
+            dgvAmendments.Columns.Add("Number", "Amendment Number");
+            dgvAmendments.Columns.Add("Date", "Effective Date");
+            dgvAmendments.Columns.Add("Description", "Description");
 
             tabAmendments.Controls.Add(dgvAmendments);
             tabAmendments.Controls.Add(btnAddAmendment);
@@ -136,8 +139,8 @@ namespace IlanaPM.AddIn
             dgvCohorts = new DataGridView
             {
                 Location = new Point(10, 10),
-                Size = new Size(520, 280),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                Size = new Size(530, 255),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 MultiSelect = false,
@@ -148,28 +151,31 @@ namespace IlanaPM.AddIn
             btnAddCohort = new Button
             {
                 Text = "Add Cohort",
-                Location = new Point(10, 300),
-                Size = new Size(120, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(10, 275),
+                Size = new Size(120, 30)
             };
             btnEditCohort = new Button
             {
                 Text = "Edit Cohort",
-                Location = new Point(140, 300),
-                Size = new Size(120, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(140, 275),
+                Size = new Size(120, 30)
             };
             btnRemoveCohort = new Button
             {
                 Text = "Remove Cohort",
-                Location = new Point(270, 300),
-                Size = new Size(140, 30),
-                Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+                Location = new Point(270, 275),
+                Size = new Size(140, 30)
             };
 
             btnAddCohort.Click += btnAddCohort_Click;
             btnEditCohort.Click += btnEditCohort_Click;
             btnRemoveCohort.Click += btnRemoveCohort_Click;
+
+            // Setup Cohorts DataGridView columns
+            dgvCohorts.Columns.Add("ID", "ID");
+            dgvCohorts.Columns.Add("Name", "Cohort Name");
+            dgvCohorts.Columns.Add("Size", "Target Size");
+            dgvCohorts.Columns.Add("Description", "Description");
 
             tabCohorts.Controls.Add(dgvCohorts);
             tabCohorts.Controls.Add(btnAddCohort);
