@@ -252,7 +252,7 @@ Transform Ilana PM from a debug-only prototype into an enterprise-ready B2B SaaS
 
 **Support:**
 - Zendesk account ($29/agent/month)
-  - Configure support@ilanapm.com
+  - Configure support@ilanaimmersive.com
   - Create 15 knowledge base articles
 - SendGrid for email notifications
   - CEO notifications: new customer, churn, system error, team action
@@ -555,7 +555,7 @@ nano .env  # Add your JWT_SECRET_KEY
    - Verify: All users can validate timelines successfully
 
 **Support:**
-1. User submits support ticket via support@ilanapm.com
+1. User submits support ticket via support@ilanaimmersive.com
    - Verify: Ticket created in Zendesk within 1 hour
    - Verify: Response sent within 24 hours (Enterprise SLA)
 
