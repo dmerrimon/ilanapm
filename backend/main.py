@@ -12,7 +12,7 @@ import logging
 from jose import JWTError, jwt
 from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin
 from database import init_db
 
 # Configure logging
@@ -130,6 +130,7 @@ app.add_middleware(
 # Register API routes
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(licensing.router, prefix="/api/v1", tags=["licensing"])  # NEW: License activation & validation
+app.include_router(admin.router, prefix="/api/v1", tags=["admin"])  # NEW: Admin endpoints for org/license management
 app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
 app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
 app.include_router(analytics.router, prefix="/api/v1", tags=["analytics"])

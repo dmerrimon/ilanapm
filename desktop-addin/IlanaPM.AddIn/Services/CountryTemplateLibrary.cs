@@ -1,0 +1,5236 @@
+using IlanaPM.AddIn.Models;
+using System.Collections.Generic;
+
+namespace IlanaPM.AddIn.Services
+{
+    /// <summary>
+    /// Library of country-specific site task templates
+    /// Provides starter templates for FDA, EMA (Germany), MHRA (UK), Health Canada, and PMDA (Japan)
+    /// </summary>
+    public class CountryTemplateLibrary
+    {
+        #region USA (FDA) Site Startup Tasks
+
+        public static SitePhaseTaskSet GetUSA_SiteStartup()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = "USA",
+                country_name = "United States",
+                regulatory_authority = "FDA"
+            };
+
+            // Phase 1: Essential Documents Collection (PARALLEL - Days 1-7)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-001",
+                    name = "Collect FDA Form 1572",
+                    description = "Statement of Investigator",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "FDA-1572" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-002",
+                    name = "Collect PI CV and Medical License",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "PI-CV" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-003",
+                    name = "Collect Sub-Investigator CVs (IND only)",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "SUB-INV-CV" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-004",
+                    name = "Collect Financial Disclosure Forms (IND only)",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "FIN-DISC" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-005",
+                    name = "Collect Laboratory Certifications (CLIA)",
+                    duration_days = 3,
+                    category = "Lab",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "LAB-CERT" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-006",
+                    name = "Collect Laboratory Reference Ranges",
+                    duration_days = 2,
+                    category = "Lab",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-Docs",
+                    predecessors = new List<string> { "USA-SS-005" },
+                    required_documents = new List<string> { "LAB-CERT" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-007",
+                    name = "Collect Protocol Signature Pages (all versions)",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "PROTOCOL-SIG" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-008",
+                    name = "Collect IBC documentation (if required)",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = false,
+                    required_documents = new List<string> { "IBC-APPROVAL" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-009",
+                    name = "Collect Approved Informed Consent Templates",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "ICF-APPROVED" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-010",
+                    name = "Collect Blank Approved CRFs",
+                    duration_days = 2,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "BLANK-CRF" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-011",
+                    name = "Collect Approved PSRL",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    required_documents = new List<string> { "PSRL-APPROVED" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-012",
+                    name = "Review and Collect Investigator Brochure",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-013",
+                    name = "Setup Site Regulatory Binder Structure",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                }
+            });
+
+            // Phase 2: IRB Submission (SEQUENTIAL - Days 8-13)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-014",
+                    name = "Prepare IRB Submission Package",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Prep",
+                    predecessors = new List<string> { "USA-SS-001", "USA-SS-002", "USA-SS-007", "USA-SS-009" },
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-015",
+                    name = "Internal Quality Check of IRB Package",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Prep",
+                    predecessors = new List<string> { "USA-SS-014" },
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-016",
+                    name = "Submit Protocol to IRB",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "USA-SS-015" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-017",
+                    name = "IRB Review and Approval",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "USA-SS-016" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    required_documents = new List<string> { "IRB-APPROVAL" },
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                }
+            });
+
+            // Phase 3: Contracts & Budget (PARALLEL with IRB - Days 8-25)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-018",
+                    name = "Draft Site Contract/CDA",
+                    duration_days = 7,
+                    category = "Admin",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 2,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-019",
+                    name = "Budget Negotiation with Site",
+                    duration_days = 10,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Site-Prep",
+                    predecessors = new List<string> { "USA-SS-018" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-020",
+                    name = "Legal Review of Contract",
+                    duration_days = 5,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Site-Prep",
+                    predecessors = new List<string> { "USA-SS-019" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-021",
+                    name = "Site Contract Execution",
+                    duration_days = 3,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Site-Prep",
+                    predecessors = new List<string> { "USA-SS-020" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-022",
+                    name = "Budget Approval and Upload to CTMS",
+                    duration_days = 2,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Site-Prep",
+                    predecessors = new List<string> { "USA-SS-021" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-023",
+                    name = "Payment Milestone Setup",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Site-Prep",
+                    predecessors = new List<string> { "USA-SS-022" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-024",
+                    name = "Purchase Order Creation (if required)",
+                    duration_days = 2,
+                    category = "Admin",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 2,
+                    is_mandatory = false,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            // Phase 4: Site Training Prep (PARALLEL with IRB - Days 20-35)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-025",
+                    name = "Schedule Site Initiation Visit (SIV)",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-026",
+                    name = "Prepare SIV Materials and Agenda",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-027",
+                    name = "Prepare Protocol Training Materials",
+                    duration_days = 5,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-028",
+                    name = "Prepare eCRF Training Materials",
+                    duration_days = 5,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-029",
+                    name = "Prepare IRT/IWRS Training Materials",
+                    duration_days = 3,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-030",
+                    name = "Prepare AE/SAE Reporting Training Materials",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Training-Prep",
+                    parallel_group_id = 3,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                }
+            });
+
+            // Phase 5: Systems & Equipment Setup (PARALLEL with IRB - Days 15-35)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-031",
+                    name = "EDC User Account Creation",
+                    duration_days = 1,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-032",
+                    name = "IRT/IWRS User Account Creation",
+                    duration_days = 1,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-033",
+                    name = "CTMS User Account Creation",
+                    duration_days = 1,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-034",
+                    name = "Ship Equipment to Site (ECG, Centrifuge, etc.)",
+                    duration_days = 5,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-035",
+                    name = "Equipment Installation",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Systems-Setup",
+                    predecessors = new List<string> { "USA-SS-034" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-036",
+                    name = "Equipment Qualification (IQ/OQ)",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Systems-Setup",
+                    predecessors = new List<string> { "USA-SS-035" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-037",
+                    name = "Order Barcode Labels",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-038",
+                    name = "Ship Barcode Labels to Site",
+                    duration_days = 5,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Systems-Setup",
+                    predecessors = new List<string> { "USA-SS-037" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-039",
+                    name = "Prepare Randomization Materials",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-040",
+                    name = "ePRO Device Configuration (if applicable)",
+                    duration_days = 3,
+                    category = "Data",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    is_mandatory = false,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-041",
+                    name = "Temperature Monitoring Device Setup",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Systems-Setup",
+                    parallel_group_id = 4,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            // Phase 6: Site Training Execution (SEQUENTIAL - after IRB - Days 45-52)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-042",
+                    name = "Conduct Site Initiation Visit (SIV)",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-017" },  // Needs IRB approval
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-043",
+                    name = "Protocol Training for PI and Staff",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-044",
+                    name = "GCP Refresher Training",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-045",
+                    name = "EDC/eCRF System Training",
+                    duration_days = 1,
+                    category = "Data",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042", "USA-SS-031" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-046",
+                    name = "IRT/IWRS Randomization Training",
+                    duration_days = 1,
+                    category = "Data",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042", "USA-SS-032" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-047",
+                    name = "Lab Procedures and Specimen Handling Training",
+                    duration_days = 1,
+                    category = "Lab",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-048",
+                    name = "AE/SAE Reporting Training",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-049",
+                    name = "Complete SIV Report and Action Items",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "USA-SS-042" },
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                }
+            });
+
+            // Phase 7: Site Activation (SEQUENTIAL - after training - Days 53-58)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-SS-050",
+                    name = "Pharmacy Setup and Training",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-017" },  // Needs IRB approval
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-051",
+                    name = "Ship Investigational Product to Site",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-017", "USA-SS-050" },
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-052",
+                    name = "Pharmacy IP Receipt and Accountability",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-051" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-053",
+                    name = "IP Temperature Monitoring Activation",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-052" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-054",
+                    name = "Site Activation Readiness Checklist Review",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-049", "USA-SS-052", "USA-SS-021" },
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SS-055",
+                    name = "Issue Site Activation Memo",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "USA-SS-054" },
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            // Add milestone
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "USA-MS-001",
+                name = "Site Activated",
+                description = "Site ready to enroll patients",
+                phase = "Site Startup",
+                is_study_level = false
+            });
+
+            // Add essential documents
+            taskSet.essential_documents = GetUSA_EssentialDocuments();
+
+            return taskSet;
+        }
+
+        public static List<EssentialDocument> GetUSA_EssentialDocuments()
+        {
+            return new List<EssentialDocument>
+            {
+                new EssentialDocument
+                {
+                    document_id = "FDA-1572",
+                    document_name = "FDA Form 1572 (Statement of Investigator)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 312.53(c)",
+                    collection_task_id = "USA-SS-001",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PI-CV",
+                    document_name = "Principal Investigator CV and Medical License",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 312.62",
+                    collection_task_id = "USA-SS-002",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PROTOCOL-SIG",
+                    document_name = "Protocol Signature Page (all versions)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "ICH-GCP 8.2.2",
+                    collection_task_id = "USA-SS-007",
+                    document_category = "Protocol"
+                },
+                new EssentialDocument
+                {
+                    document_id = "SUB-INV-CV",
+                    document_name = "Sub-Investigator CVs (IND only)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 312.53(c)(4)",
+                    collection_task_id = "USA-SS-003",
+                    document_category = "Investigator",
+                    is_ind_specific = true
+                },
+                new EssentialDocument
+                {
+                    document_id = "FIN-DISC",
+                    document_name = "Financial Disclosure Forms (IND only)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 54",
+                    collection_task_id = "USA-SS-004",
+                    document_category = "Investigator",
+                    is_ind_specific = true
+                },
+                new EssentialDocument
+                {
+                    document_id = "IRB-APPROVAL",
+                    document_name = "All IRB Submissions, Reviews, and Approvals",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 56",
+                    collection_task_id = "USA-SS-016",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "IBC-APPROVAL",
+                    document_name = "IBC Submissions, Reviews, Approvals (if required)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = false,
+                    regulatory_reference = "NIH Guidelines for Research Involving rDNA",
+                    collection_task_id = "USA-SS-008",
+                    document_category = "IRB",
+                    is_ibc_specific = true
+                },
+                new EssentialDocument
+                {
+                    document_id = "ICF-APPROVED",
+                    document_name = "Informed Consent (approved templates)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 50",
+                    collection_task_id = "USA-SS-009",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "IRB-ANNUAL",
+                    document_name = "IRB Reports and Annual Reviews",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "21 CFR 56.109",
+                    collection_task_id = "Ongoing",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "MEMOS-NTF",
+                    document_name = "All Memorandums and Notes to File",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "ICH-GCP 8.3",
+                    collection_task_id = "Ongoing",
+                    document_category = "Other"
+                },
+                new EssentialDocument
+                {
+                    document_id = "LAB-CERT",
+                    document_name = "Laboratory Certifications, CLIA, Reference Ranges",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "CLIA '88",
+                    collection_task_id = "USA-SS-005",
+                    document_category = "Lab"
+                },
+                new EssentialDocument
+                {
+                    document_id = "BLANK-CRF",
+                    document_name = "Copy of Blank Approved CRFs",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "ICH-GCP 8.3.18",
+                    collection_task_id = "USA-SS-010",
+                    document_category = "Protocol"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PSRL-FINAL",
+                    document_name = "Final PSRL (Protocol Safety Review Letter)",
+                    country_code = "USA",
+                    regulatory_authority = "FDA",
+                    is_mandatory = true,
+                    regulatory_reference = "Sponsor SOP",
+                    collection_task_id = "USA-SS-011",
+                    document_category = "Protocol"
+                }
+            };
+        }
+
+        #endregion
+
+        #region Germany (BfArM/EMA) Site Startup Tasks
+
+        public static SitePhaseTaskSet GetGermany_SiteStartup()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = "DEU",
+                country_name = "Germany",
+                regulatory_authority = "BfArM"
+            };
+
+            // Germany has similar structure but different regulatory requirements
+            // Key differences: No 1572, uses IoR; No Financial Disclosure; Ethikkommission instead of IRB
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-001",
+                    name = "Collect Investigator of Record (IoR) Form",
+                    description = "EU equivalent of FDA 1572",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-002",
+                    name = "Collect PI CV and Medical License (Approbation)",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-003",
+                    name = "Obtain EudraCT Number",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-004",
+                    name = "Prepare BfArM Notification Package",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Regulatory-Prep",
+                    predecessors = new List<string> { "DEU-SS-001", "DEU-SS-002", "DEU-SS-003" },
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-005",
+                    name = "Submit to Ethikkommission",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    predecessors = new List<string> { "DEU-SS-004" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-006",
+                    name = "Ethikkommission Review and Approval",
+                    duration_days = 45,  // Longer than US IRB
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    predecessors = new List<string> { "DEU-SS-005" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-007",
+                    name = "Obtain Import License for Investigational Product (Einfuhrgenehmigung)",
+                    duration_days = 14,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 2,
+                    is_mandatory = true,  // Required for Germany
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-008",
+                    name = "Conduct Site Initiation Visit (SIV)",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "DEU-SS-006" },  // Needs Ethics approval
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-009",
+                    name = "Ship Investigational Product to Site",
+                    duration_days = 5,  // Longer due to import requirements
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "DEU-SS-006", "DEU-SS-007" },  // Needs both Ethics + Import License
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SS-010",
+                    name = "Issue Site Activation Memo",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "DEU-SS-008", "DEU-SS-009" },
+                    is_blocking = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "DEU-MS-001",
+                name = "Site Activated",
+                phase = "Site Startup",
+                is_study_level = false
+            });
+
+            taskSet.essential_documents = GetGermany_EssentialDocuments();
+
+            return taskSet;
+        }
+
+        public static List<EssentialDocument> GetGermany_EssentialDocuments()
+        {
+            return new List<EssentialDocument>
+            {
+                new EssentialDocument
+                {
+                    document_id = "IOR-FORM",
+                    document_name = "Investigator of Record (IoR) Form",
+                    country_code = "DEU",
+                    regulatory_authority = "BfArM",
+                    is_mandatory = true,
+                    regulatory_reference = "EU GCP Directive 2001/20/EC",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "EUDRACT",
+                    document_name = "EudraCT Number",
+                    country_code = "DEU",
+                    regulatory_authority = "EMA",
+                    is_mandatory = true,
+                    regulatory_reference = "Regulation (EU) No 536/2014",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "IMPORT-LICENSE",
+                    document_name = "Import License (Einfuhrgenehmigung)",
+                    country_code = "DEU",
+                    regulatory_authority = "BfArM",
+                    is_mandatory = true,
+                    regulatory_reference = "AMG §73",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "ETHICS-APPROVAL",
+                    document_name = "Ethikkommission Approval",
+                    country_code = "DEU",
+                    regulatory_authority = "Ethikkommission",
+                    is_mandatory = true,
+                    regulatory_reference = "EU GCP Article 6",
+                    document_category = "IRB"
+                }
+            };
+        }
+
+        #endregion
+
+        // Placeholder methods for other countries (UK, Canada, Japan)
+        // These would follow similar structure with country-specific requirements
+
+        public static SitePhaseTaskSet GetUK_SiteStartup()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = "GBR",
+                country_name = "United Kingdom",
+                regulatory_authority = "MHRA"
+            };
+
+            // Phase 1: Essential Documents Collection (PARALLEL - Days 1-7)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-001",
+                    name = "Collect Investigator Site File Documents",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-002",
+                    name = "Collect PI CV and GMC Registration",
+                    description = "General Medical Council registration required",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-003",
+                    name = "Collect GCP Certificates (all staff)",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-004",
+                    name = "Prepare IRAS Application",
+                    description = "Integrated Research Application System",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-REC-Prep",
+                    predecessors = new List<string> { "GBR-SS-001", "GBR-SS-002", "GBR-SS-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-005",
+                    name = "Submit to Research Ethics Committee (REC)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-REC-Review",
+                    predecessors = new List<string> { "GBR-SS-004" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-006",
+                    name = "REC Review Period",
+                    description = "Up to 60 days for favourable opinion",
+                    duration_days = 60,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-REC-Review",
+                    predecessors = new List<string> { "GBR-SS-005" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-007",
+                    name = "Obtain NHS R&D Approval",
+                    description = "NHS Research & Development approval",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-NHS-Approval",
+                    parallel_group_id = 2,
+                    predecessors = new List<string> { "GBR-SS-005" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-008",
+                    name = "Submit MHRA Clinical Trial Application (if CTIMP)",
+                    description = "Clinical Trial of an Investigational Medicinal Product",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-MHRA",
+                    parallel_group_id = 3,
+                    is_mandatory = false,  // Only for CTIMPs
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-009",
+                    name = "MHRA Assessment Period (30 days)",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-MHRA",
+                    predecessors = new List<string> { "GBR-SS-008" },
+                    is_mandatory = false,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-010",
+                    name = "Pharmacy Setup (MHRA-Licensed)",
+                    description = "Pharmacy must be MHRA licensed for IMP storage",
+                    duration_days = 14,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 4,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-011",
+                    name = "Site Initiation Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "GBR-SS-006", "GBR-SS-007", "GBR-SS-010" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-012",
+                    name = "GCP Training (ICH-GCP)",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "GBR-SS-011" },
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-013",
+                    name = "Ship Investigational Product to Site",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "GBR-SS-006", "GBR-SS-010" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SS-014",
+                    name = "Issue Site Activation Memo",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "GBR-SS-012", "GBR-SS-013" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "GBR-MS-001",
+                name = "Site Activated",
+                phase = "Site Startup",
+                is_study_level = false
+            });
+
+            taskSet.essential_documents = GetUK_EssentialDocuments();
+
+            return taskSet;
+        }
+
+        public static List<EssentialDocument> GetUK_EssentialDocuments()
+        {
+            return new List<EssentialDocument>
+            {
+                new EssentialDocument
+                {
+                    document_id = "GMC-REG",
+                    document_name = "GMC Registration Certificate",
+                    country_code = "GBR",
+                    regulatory_authority = "GMC",
+                    is_mandatory = true,
+                    regulatory_reference = "UK GCP",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "REC-APPROVAL",
+                    document_name = "REC Favourable Opinion",
+                    country_code = "GBR",
+                    regulatory_authority = "HRA",
+                    is_mandatory = true,
+                    regulatory_reference = "HRA Guidelines",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "NHS-RD",
+                    document_name = "NHS R&D Approval",
+                    country_code = "GBR",
+                    regulatory_authority = "NHS",
+                    is_mandatory = true,
+                    regulatory_reference = "NHS R&D Framework",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "MHRA-CTA",
+                    document_name = "MHRA Clinical Trial Authorization (CTIMP only)",
+                    country_code = "GBR",
+                    regulatory_authority = "MHRA",
+                    is_mandatory = false,
+                    regulatory_reference = "SI 2004/1031",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "IRAS-APP",
+                    document_name = "IRAS Application",
+                    country_code = "GBR",
+                    regulatory_authority = "HRA",
+                    is_mandatory = true,
+                    regulatory_reference = "HRA Guidelines",
+                    document_category = "Regulatory"
+                }
+            };
+        }
+
+        public static SitePhaseTaskSet GetCanada_SiteStartup()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = "CAN",
+                country_name = "Canada",
+                regulatory_authority = "Health Canada"
+            };
+
+            // Phase 1: Essential Documents Collection (PARALLEL - Days 1-7)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-001",
+                    name = "Collect Investigator Agreement",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-002",
+                    name = "Collect PI CV and Medical License",
+                    description = "Provincial medical license required",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-003",
+                    name = "Collect Conflict of Interest Declarations",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-004",
+                    name = "Collect Laboratory Certifications",
+                    duration_days = 3,
+                    category = "Lab",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-005",
+                    name = "Prepare Health Canada CTA Submission",
+                    description = "Clinical Trial Application to Health Canada",
+                    duration_days = 10,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-HC-Prep",
+                    predecessors = new List<string> { "CAN-SS-001", "CAN-SS-002" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-006",
+                    name = "Submit Health Canada CTA",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-HC-Review",
+                    predecessors = new List<string> { "CAN-SS-005" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-007",
+                    name = "Health Canada CTA Review Period (30 days)",
+                    description = "No objection letter from Health Canada",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-HC-Review",
+                    predecessors = new List<string> { "CAN-SS-006" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-008",
+                    name = "Prepare REB Submission Package",
+                    description = "Research Ethics Board submission",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-REB-Prep",
+                    parallel_group_id = 2,
+                    predecessors = new List<string> { "CAN-SS-001", "CAN-SS-002", "CAN-SS-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-009",
+                    name = "Submit to Research Ethics Board (REB)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-REB-Review",
+                    predecessors = new List<string> { "CAN-SS-008" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-010",
+                    name = "REB Review Period",
+                    description = "Ethics board review - typically 35 days",
+                    duration_days = 35,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-REB-Review",
+                    predecessors = new List<string> { "CAN-SS-009" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-011",
+                    name = "Pharmacy Setup and IP Storage",
+                    duration_days = 10,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 3,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-012",
+                    name = "Site Initiation Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "CAN-SS-007", "CAN-SS-010", "CAN-SS-011" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-013",
+                    name = "ICH-GCP Training",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "CAN-SS-012" },
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-014",
+                    name = "Ship Investigational Product to Site",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "CAN-SS-007", "CAN-SS-011" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SS-015",
+                    name = "Issue Site Activation Memo",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "CAN-SS-013", "CAN-SS-014" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "CAN-MS-001",
+                name = "Site Activated",
+                phase = "Site Startup",
+                is_study_level = false
+            });
+
+            taskSet.essential_documents = GetCanada_EssentialDocuments();
+
+            return taskSet;
+        }
+
+        public static List<EssentialDocument> GetCanada_EssentialDocuments()
+        {
+            return new List<EssentialDocument>
+            {
+                new EssentialDocument
+                {
+                    document_id = "HC-CTA",
+                    document_name = "Health Canada Clinical Trial Application",
+                    country_code = "CAN",
+                    regulatory_authority = "Health Canada",
+                    is_mandatory = true,
+                    regulatory_reference = "C.05.005 Food and Drug Regulations",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "REB-APPROVAL",
+                    document_name = "REB Approval Letter",
+                    country_code = "CAN",
+                    regulatory_authority = "REB",
+                    is_mandatory = true,
+                    regulatory_reference = "ICH-GCP / TCPS2",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PI-LICENSE",
+                    document_name = "Provincial Medical License",
+                    country_code = "CAN",
+                    regulatory_authority = "Provincial College",
+                    is_mandatory = true,
+                    regulatory_reference = "Provincial Regulations",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "COI-DECL",
+                    document_name = "Conflict of Interest Declaration",
+                    country_code = "CAN",
+                    regulatory_authority = "REB",
+                    is_mandatory = true,
+                    regulatory_reference = "TCPS2",
+                    document_category = "Investigator"
+                }
+            };
+        }
+
+        public static SitePhaseTaskSet GetJapan_SiteStartup()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = "JPN",
+                country_name = "Japan",
+                regulatory_authority = "PMDA"
+            };
+
+            // Phase 1: Translation and Essential Documents (CRITICAL - Days 1-14)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-001",
+                    name = "Translate Protocol to Japanese",
+                    description = "PMDA requires Japanese translation",
+                    duration_days = 14,
+                    category = "Translation",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Translation",
+                    parallel_group_id = 1,
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-002",
+                    name = "Translate Informed Consent Form to Japanese",
+                    duration_days = 10,
+                    category = "Translation",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Translation",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-003",
+                    name = "Collect Investigator Agreement (Japanese)",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-004",
+                    name = "Collect PI CV and Medical License (Japanese)",
+                    description = "Japanese medical license required",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Essential-Docs",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Essential Documents"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-005",
+                    name = "Assign Clinical Research Coordinator (CRC)",
+                    description = "Dedicated CRC required in Japan",
+                    duration_days = 7,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 3,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-006",
+                    name = "Prepare PMDA Clinical Trial Notification",
+                    description = "jRCT registration required",
+                    duration_days = 10,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PMDA-Prep",
+                    predecessors = new List<string> { "JPN-SS-001", "JPN-SS-003", "JPN-SS-004" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-007",
+                    name = "Submit PMDA Notification (jRCT)",
+                    description = "Japan Registry of Clinical Trials",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PMDA-Review",
+                    predecessors = new List<string> { "JPN-SS-006" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-008",
+                    name = "PMDA Review Period (30 days)",
+                    description = "PMDA assessment period",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PMDA-Review",
+                    predecessors = new List<string> { "JPN-SS-007" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-009",
+                    name = "Prepare IRB Submission (Japanese)",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-IRB-Prep",
+                    parallel_group_id = 4,
+                    predecessors = new List<string> { "JPN-SS-001", "JPN-SS-002" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-010",
+                    name = "Submit to IRB",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "JPN-SS-009" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-011",
+                    name = "IRB Review Period",
+                    description = "Japanese IRB review - typically 30 days",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "JPN-SS-010" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "IRB Submission"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-012",
+                    name = "Hospital Pharmacy Setup",
+                    description = "Hospital pharmacy must be certified",
+                    duration_days = 14,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Site-Prep",
+                    parallel_group_id = 5,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-013",
+                    name = "Site Initiation Visit (with Translator)",
+                    description = "Japanese-English translator required",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "JPN-SS-008", "JPN-SS-011", "JPN-SS-012", "JPN-SS-005" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-014",
+                    name = "J-GCP Training (Japanese GCP)",
+                    description = "Japanese version of GCP training required",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "JPN-SS-013" },
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-015",
+                    name = "CRC Protocol Training (Japanese)",
+                    duration_days = 1,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Training",
+                    predecessors = new List<string> { "JPN-SS-013" },
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Training"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-016",
+                    name = "Ship Investigational Product to Site",
+                    description = "Import documentation required",
+                    duration_days = 5,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "JPN-SS-008", "JPN-SS-012" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SS-017",
+                    name = "Issue Site Activation Memo",
+                    duration_days = 1,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Activation",
+                    predecessors = new List<string> { "JPN-SS-014", "JPN-SS-015", "JPN-SS-016" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Activation",
+                    subphase = "Activation"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "JPN-MS-001",
+                name = "Site Activated",
+                phase = "Site Startup",
+                is_study_level = false
+            });
+
+            taskSet.essential_documents = GetJapan_EssentialDocuments();
+
+            return taskSet;
+        }
+
+        public static List<EssentialDocument> GetJapan_EssentialDocuments()
+        {
+            return new List<EssentialDocument>
+            {
+                new EssentialDocument
+                {
+                    document_id = "JRCT-REG",
+                    document_name = "jRCT Registration",
+                    country_code = "JPN",
+                    regulatory_authority = "PMDA",
+                    is_mandatory = true,
+                    regulatory_reference = "Clinical Trials Act (2018)",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PMDA-NOTIF",
+                    document_name = "PMDA Clinical Trial Notification",
+                    country_code = "JPN",
+                    regulatory_authority = "PMDA",
+                    is_mandatory = true,
+                    regulatory_reference = "Pharmaceutical Affairs Law",
+                    document_category = "Regulatory"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PROTOCOL-JP",
+                    document_name = "Protocol (Japanese Translation)",
+                    country_code = "JPN",
+                    regulatory_authority = "PMDA",
+                    is_mandatory = true,
+                    regulatory_reference = "J-GCP",
+                    document_category = "Protocol"
+                },
+                new EssentialDocument
+                {
+                    document_id = "ICF-JP",
+                    document_name = "Informed Consent Form (Japanese)",
+                    country_code = "JPN",
+                    regulatory_authority = "IRB",
+                    is_mandatory = true,
+                    regulatory_reference = "J-GCP Article 53",
+                    document_category = "IRB"
+                },
+                new EssentialDocument
+                {
+                    document_id = "PI-LICENSE-JP",
+                    document_name = "Japanese Medical License",
+                    country_code = "JPN",
+                    regulatory_authority = "MHLW",
+                    is_mandatory = true,
+                    regulatory_reference = "Medical Practitioners' Law",
+                    document_category = "Investigator"
+                },
+                new EssentialDocument
+                {
+                    document_id = "CRC-ASSIGNMENT",
+                    document_name = "Clinical Research Coordinator Assignment",
+                    country_code = "JPN",
+                    regulatory_authority = "Hospital",
+                    is_mandatory = true,
+                    regulatory_reference = "J-GCP",
+                    document_category = "Other"
+                }
+            };
+        }
+
+        #region International Generic Site Startup Template (All Countries)
+
+        public static SitePhaseTaskSet GetInternational_SiteStartup(CountryRegulatoryInfo countryInfo)
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Startup",
+                phase_type = "Site Activation",
+                country_code = countryInfo.country_code,
+                country_name = countryInfo.country_name,
+                regulatory_authority = countryInfo.regulatory_authority
+            };
+
+            string irbName = countryInfo.ethics_committee_name;
+            string authName = countryInfo.regulatory_authority;
+            string formName = countryInfo.approval_form_name;
+            string countryCode = countryInfo.country_code;
+
+            // Phase 1: Essential Documents Collection (13 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-001",
+            name = $"Collect {formName}",
+            description = "Statement of Investigator",
+            duration_days = 5,
+            category = "Regulatory",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            required_documents = new List<string> { formName },
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-002",
+            name = "Collect CV of Principal Investigator",
+            description = "Current Curriculum Vitae",
+            duration_days = 3,
+            category = "Site Qualification",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-003",
+            name = "Collect CV of Sub-Investigators",
+            description = "CVs for all sub-investigators",
+            duration_days = 5,
+            category = "Site Qualification",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-004",
+            name = "Collect Medical Licenses",
+            description = "All medical licenses for investigators",
+            duration_days = 3,
+            category = "Site Qualification",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-005",
+            name = "Collect GCP Training Certificates",
+            description = "Good Clinical Practice training certifications",
+            duration_days = 3,
+            category = "Training",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-006",
+            name = "Collect Financial Disclosure Forms",
+            description = "Financial interest disclosure forms",
+            duration_days = 5,
+            category = "Regulatory",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-007",
+            name = "Collect Site Facility Documentation",
+            description = "Laboratory certifications, equipment validation",
+            duration_days = 7,
+            category = "Site Qualification",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-008",
+            name = "Collect Study Protocol",
+            description = "Finalized study protocol version",
+            duration_days = 2,
+            category = "Study Documentation",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-009",
+            name = "Collect Informed Consent Form",
+            description = "Template informed consent form",
+            duration_days = 3,
+            category = "Study Documentation",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-010",
+            name = "Collect Investigator's Brochure",
+            description = "Current version of IB",
+            duration_days = 2,
+            category = "Study Documentation",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-011",
+            name = "Collect CRF Templates",
+            description = "Case Report Form templates",
+            duration_days = 3,
+            category = "Study Documentation",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-012",
+            name = "Collect Laboratory Reference Ranges",
+            description = "Normal reference ranges for lab tests",
+            duration_days = 5,
+            category = "Laboratory",
+            can_run_parallel = true,
+            execution_group = "Parallel-Essential-Docs",
+            parallel_group_id = 1,
+            phase_type = "Site Activation",
+            subphase = "Essential Documents"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-013",
+            name = "Review Completeness of Essential Documents",
+            description = "Verify all required documents collected",
+            duration_days = 2,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Document-Review",
+            predecessors = new List<string>
+            {
+                $"{countryCode}-SS-001", $"{countryCode}-SS-002", $"{countryCode}-SS-003",
+                $"{countryCode}-SS-004", $"{countryCode}-SS-005", $"{countryCode}-SS-006",
+                $"{countryCode}-SS-007", $"{countryCode}-SS-008", $"{countryCode}-SS-009",
+                $"{countryCode}-SS-010", $"{countryCode}-SS-011", $"{countryCode}-SS-012"
+            },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        }
+    });
+
+            // Phase 2: Ethics Committee Submission (4 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-014",
+            name = $"Prepare {irbName} Submission Package",
+            description = $"Compile documents for {irbName} submission",
+            duration_days = 5,
+            category = "Ethics",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB",
+            predecessors = new List<string> { $"{countryCode}-SS-013" },
+            phase_type = "Site Activation",
+            subphase = "IRB Submission"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-015",
+            name = $"Submit to {irbName}",
+            description = $"Submit protocol to {irbName}",
+            duration_days = 2,
+            category = "Ethics",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB",
+            predecessors = new List<string> { $"{countryCode}-SS-014" },
+            phase_type = "Site Activation",
+            subphase = "IRB Submission"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-016",
+            name = $"Await {irbName} Approval",
+            description = $"Wait for {irbName} review and approval",
+            duration_days = 45,
+            category = "Ethics",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB",
+            predecessors = new List<string> { $"{countryCode}-SS-015" },
+            phase_type = "Site Activation",
+            subphase = "IRB Submission"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-017",
+            name = $"Receive {irbName} Approval",
+            description = $"Obtain approved stamped consent and approval letter",
+            duration_days = 1,
+            category = "Ethics",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB",
+            predecessors = new List<string> { $"{countryCode}-SS-016" },
+            
+            is_blocking = true,
+            phase_type = "Site Activation",
+            subphase = "IRB Submission"
+        }
+    });
+
+            // Phase 3: Contracts & Budget (7 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-018",
+            name = "Negotiate Site Budget",
+            description = "Finalize per-patient costs and budget",
+            duration_days = 15,
+            category = "Contracts",
+            can_run_parallel = true,
+            execution_group = "Parallel-Contracts",
+            parallel_group_id = 2,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-019",
+            name = "Draft Clinical Trial Agreement (CTA)",
+            description = "Prepare CTA between sponsor and site",
+            duration_days = 10,
+            category = "Contracts",
+            can_run_parallel = true,
+            execution_group = "Parallel-Contracts",
+            parallel_group_id = 2,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-020",
+            name = "Execute CTA",
+            description = "Sign and finalize CTA",
+            duration_days = 20,
+            category = "Contracts",
+            can_run_parallel = false,
+            execution_group = "Sequential-Contracts",
+            predecessors = new List<string> { $"{countryCode}-SS-019" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-021",
+            name = "Draft Confidentiality Agreement",
+            description = "Prepare confidentiality disclosures",
+            duration_days = 5,
+            category = "Contracts",
+            can_run_parallel = true,
+            execution_group = "Parallel-Contracts",
+            parallel_group_id = 2,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-022",
+            name = "Execute Confidentiality Agreement",
+            description = "Sign confidentiality agreements",
+            duration_days = 10,
+            category = "Contracts",
+            can_run_parallel = false,
+            execution_group = "Sequential-Contracts",
+            predecessors = new List<string> { $"{countryCode}-SS-021" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-023",
+            name = "Set Up Payment Schedule",
+            description = "Establish payment milestones and wire instructions",
+            duration_days = 5,
+            category = "Finance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Contracts",
+            predecessors = new List<string> { $"{countryCode}-SS-018", $"{countryCode}-SS-020" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-024",
+            name = "Process Initial Payment to Site",
+            description = "Initiate startup payment to site",
+            duration_days = 7,
+            category = "Finance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Contracts",
+            predecessors = new List<string> { $"{countryCode}-SS-023" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        }
+    });
+
+            // Phase 4: Site Training Prep (6 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-025",
+            name = "Develop Site-Specific Training Materials",
+            description = "Customize training slides and manuals",
+            duration_days = 10,
+            category = "Training",
+            can_run_parallel = true,
+            execution_group = "Parallel-Training-Prep",
+            parallel_group_id = 3,
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-026",
+            name = "Prepare Protocol Training Presentation",
+            description = "Protocol overview and study procedures",
+            duration_days = 7,
+            category = "Training",
+            can_run_parallel = true,
+            execution_group = "Parallel-Training-Prep",
+            parallel_group_id = 3,
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-027",
+            name = "Prepare EDC Training Materials",
+            description = "Electronic Data Capture system training",
+            duration_days = 5,
+            category = "Training",
+            can_run_parallel = true,
+            execution_group = "Parallel-Training-Prep",
+            parallel_group_id = 3,
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-028",
+            name = "Prepare Safety Reporting Training",
+            description = "Adverse event reporting procedures",
+            duration_days = 5,
+            category = "Training",
+            can_run_parallel = true,
+            execution_group = "Parallel-Training-Prep",
+            parallel_group_id = 3,
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-029",
+            name = "Schedule Site Initiation Visit (SIV)",
+            description = "Coordinate SIV dates with site staff",
+            duration_days = 10,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-Training-Prep",
+            predecessors = new List<string>
+            {
+                $"{countryCode}-SS-025", $"{countryCode}-SS-026",
+                $"{countryCode}-SS-027", $"{countryCode}-SS-028"
+            },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-030",
+            name = "Confirm SIV Logistics",
+            description = "Confirm venue, attendees, equipment",
+            duration_days = 3,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-Training-Prep",
+            predecessors = new List<string> { $"{countryCode}-SS-029" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        }
+    });
+
+            // Phase 5: Systems & Equipment Setup (11 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-031",
+            name = "Set Up EDC System User Accounts",
+            description = "Create user accounts for site staff",
+            duration_days = 3,
+            category = "Data Management",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-032",
+            name = "Set Up IWRS/IVRS System",
+            description = "Interactive Web/Voice Response System for randomization",
+            duration_days = 5,
+            category = "Data Management",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-033",
+            name = "Configure Safety Reporting System Access",
+            description = "Set up AE reporting system credentials",
+            duration_days = 3,
+            category = "Safety",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-034",
+            name = "Ship Study Supplies to Site",
+            description = "CRFs, source documents, binders, labels",
+            duration_days = 7,
+            category = "Study Materials",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-035",
+            name = "Ship Investigational Product to Site",
+            description = "Ship drug/device to site pharmacy",
+            duration_days = 10,
+            category = "Study Product",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            predecessors = new List<string> { $"{countryCode}-SS-017" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-036",
+            name = "Verify Temperature Monitoring System",
+            description = "Ensure pharmacy has proper storage monitoring",
+            duration_days = 3,
+            category = "Study Product",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-037",
+            name = "Set Up Laboratory Kits and Shipment",
+            description = "Arrange lab kit delivery and return logistics",
+            duration_days = 7,
+            category = "Laboratory",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-038",
+            name = "Confirm Laboratory Certifications",
+            description = "Verify lab accreditations current",
+            duration_days = 5,
+            category = "Laboratory",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-039",
+            name = "Set Up Source Document Templates",
+            description = "Provide site-specific source worksheets",
+            duration_days = 3,
+            category = "Study Materials",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-040",
+            name = "Establish Document Filing System",
+            description = "Set up Trial Master File and Investigator Site File",
+            duration_days = 5,
+            category = "Quality Assurance",
+            can_run_parallel = true,
+            execution_group = "Parallel-Systems-Setup",
+            parallel_group_id = 4,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-041",
+            name = "Verify All Systems Ready",
+            description = "Confirm all systems and equipment operational",
+            duration_days = 2,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Systems-Verification",
+            predecessors = new List<string>
+            {
+                $"{countryCode}-SS-031", $"{countryCode}-SS-032", $"{countryCode}-SS-033",
+                $"{countryCode}-SS-034", $"{countryCode}-SS-035", $"{countryCode}-SS-036",
+                $"{countryCode}-SS-037", $"{countryCode}-SS-038", $"{countryCode}-SS-039",
+                $"{countryCode}-SS-040"
+            },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        }
+    });
+
+            // Phase 6: Site Training Execution (6 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-042",
+            name = "Conduct Site Initiation Visit",
+            description = "On-site training with all study staff",
+            duration_days = 1,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string> { $"{countryCode}-SS-030", $"{countryCode}-SS-041" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-043",
+            name = "Complete Protocol Training",
+            description = "Train on protocol procedures and eligibility",
+            duration_days = 1,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string> { $"{countryCode}-SS-042" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-044",
+            name = "Complete EDC Training",
+            description = "Hands-on EDC system training",
+            duration_days = 1,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string> { $"{countryCode}-SS-042" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-045",
+            name = "Complete Safety Reporting Training",
+            description = "Train on AE/SAE reporting procedures",
+            duration_days = 1,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string> { $"{countryCode}-SS-042" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-046",
+            name = "Document Training Completion",
+            description = "Collect signed training logs and certificates",
+            duration_days = 1,
+            category = "Training",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string>
+            {
+                $"{countryCode}-SS-043", $"{countryCode}-SS-044", $"{countryCode}-SS-045"
+            },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-047",
+            name = "Complete SIV Report",
+            description = "Document SIV findings and action items",
+            duration_days = 3,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-SIV",
+            predecessors = new List<string> { $"{countryCode}-SS-046" },
+            phase_type = "Site Activation",
+            subphase = "Training"
+        }
+    });
+
+            // Phase 7: Regulatory Authority Submission (3 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-048",
+            name = $"Prepare {authName} Submission Package",
+            description = $"Compile regulatory documents for {authName}",
+            duration_days = 5,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Regulatory",
+            predecessors = new List<string> { $"{countryCode}-SS-017" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-049",
+            name = $"Submit to {authName}",
+            description = $"Submit clinical trial notification/authorization to {authName}",
+            duration_days = 2,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Regulatory",
+            predecessors = new List<string> { $"{countryCode}-SS-048" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-050",
+            name = $"Receive {authName} Authorization",
+            description = $"Obtain regulatory clearance from {authName}",
+            duration_days = 30,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Regulatory",
+            predecessors = new List<string> { $"{countryCode}-SS-049" },
+            
+            is_blocking = true,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        }
+    });
+
+            // Phase 8: Final Activation (5 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-051",
+            name = "Confirm All Approvals Received",
+            description = $"Verify {irbName} and {authName} approvals in place",
+            duration_days = 1,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Activation",
+            predecessors = new List<string> { $"{countryCode}-SS-017", $"{countryCode}-SS-050" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-052",
+            name = "Resolve All SIV Action Items",
+            description = "Complete outstanding items from SIV report",
+            duration_days = 5,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Activation",
+            predecessors = new List<string> { $"{countryCode}-SS-047" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-053",
+            name = "Conduct Site Activation Call",
+            description = "Final readiness check with site staff",
+            duration_days = 1,
+            category = "Site Management",
+            can_run_parallel = false,
+            execution_group = "Sequential-Activation",
+            predecessors = new List<string> { $"{countryCode}-SS-051", $"{countryCode}-SS-052" },
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-054",
+            name = "Issue Site Activation Notice",
+            description = "Formal notification that site is activated",
+            duration_days = 1,
+            category = "Site Management",
+            can_run_parallel = false,
+            execution_group = "Sequential-Activation",
+            predecessors = new List<string> { $"{countryCode}-SS-053" },
+            
+            is_blocking = true,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SS-055",
+            name = "Site Ready for Enrollment",
+            description = "Site authorized to begin screening and enrolling patients",
+            duration_days = 0,
+            category = "Milestone",
+            can_run_parallel = false,
+            execution_group = "Sequential-Activation",
+            predecessors = new List<string> { $"{countryCode}-SS-054" },
+            
+            is_blocking = true,
+            phase_type = "Site Activation",
+            subphase = "Activation"
+        }
+    });
+
+            return taskSet;
+        }
+
+        #endregion
+
+        #region Site Closeout Tasks (Country-Specific)
+
+        public static SitePhaseTaskSet GetUSA_SiteCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = "USA",
+                country_name = "United States",
+                regulatory_authority = "FDA"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                // REGULATORY TASKS
+                new TemplateTask
+                {
+                    task_id = "USA-SC-001",
+                    name = "Determine local IRB close-out reporting requirements",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Regulatory-Prep",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-002",
+                    name = "Send final local IRB report to PS",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Regulatory-Prep",
+                    predecessors = new List<string> { "USA-SC-001" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-003",
+                    name = "Collect and file FDA 1572 or IoR",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-004",
+                    name = "Collect and file PI CV and Medical License",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-005",
+                    name = "Collect and file Protocol Signature Pages (all versions)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-006",
+                    name = "Collect Sub-Investigator CVs (IND studies only)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = false,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-007",
+                    name = "Collect Financial Disclosure Forms (IND studies only)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = false,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-008",
+                    name = "Collect all IRB Submissions, Reviews, and Approvals",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-009",
+                    name = "Collect IBC Submissions and Closeouts (if required)",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = false,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-010",
+                    name = "Collect Informed Consent approved templates",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-011",
+                    name = "Collect IRB reports and annual reviews",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-012",
+                    name = "Collect all Memorandums and Notes to File",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-013",
+                    name = "Collect Laboratory Certifications, CLIA, Reference Ranges",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-014",
+                    name = "Collect copy of blank approved CRFs",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-015",
+                    name = "Collect Final PSRL",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Doc-Collection",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-016",
+                    name = "Destroy draft/error documents from Regulatory Binder",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Regulatory-Finalize",
+                    predecessors = new List<string> { "USA-SC-003", "USA-SC-015" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-017",
+                    name = "Report protocol deviations, unblinding, SAEs to DMID",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Reporting",
+                    parallel_group_id = 3,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-018",
+                    name = "Provide Final Study Personnel Signature/Responsibility Log",
+                    duration_days = 2,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Reporting",
+                    parallel_group_id = 3,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // HUMAN SUBJECTS - INFORMED CONSENT
+                new TemplateTask
+                {
+                    task_id = "USA-SC-019",
+                    name = "Confirm all signed consent forms on file",
+                    duration_days = 3,
+                    category = "Human Subjects",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Human-Subjects",
+                    parallel_group_id = 4,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-020",
+                    name = "Verify list of participants not consenting to post-study storage",
+                    duration_days = 2,
+                    category = "Human Subjects",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Human-Subjects",
+                    parallel_group_id = 4,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // ADVERSE EVENTS
+                new TemplateTask
+                {
+                    task_id = "USA-SC-021",
+                    name = "Contact participants with ongoing AE outcomes",
+                    duration_days = 10,
+                    category = "Human Subjects",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-AE-Resolution",
+                    parallel_group_id = 5,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Patient Closeout"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-022",
+                    name = "Document all efforts to contact participants with ongoing AEs",
+                    duration_days = 2,
+                    category = "Human Subjects",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-AE-Resolution",
+                    predecessors = new List<string> { "USA-SC-021" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Patient Closeout"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-023",
+                    name = "Complete queries to change ongoing AEs to resolved/unknown",
+                    duration_days = 3,
+                    category = "Human Subjects",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-AE-Resolution",
+                    predecessors = new List<string> { "USA-SC-022" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Patient Closeout"
+                },
+
+                // STUDY PRODUCT
+                new TemplateTask
+                {
+                    task_id = "USA-SC-024",
+                    name = "Complete disposal of remaining study product",
+                    description = "Must be done in presence of ICON monitor",
+                    duration_days = 1,
+                    category = "Study Product",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Product-Disposal",
+                    parallel_group_id = 6,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // CLOSE-OUT MONITORING VISIT
+                new TemplateTask
+                {
+                    task_id = "USA-SC-025",
+                    name = "Facilitate site close-out monitoring visit",
+                    duration_days = 2,
+                    category = "Monitoring",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Monitoring",
+                    predecessors = new List<string> { "USA-SC-016", "USA-SC-023", "USA-SC-024" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-026",
+                    name = "Resolve all outstanding monitoring issues",
+                    duration_days = 5,
+                    category = "Monitoring",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Monitoring",
+                    predecessors = new List<string> { "USA-SC-025" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-027",
+                    name = "Confirm download of participant data books",
+                    duration_days = 1,
+                    category = "Monitoring",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Monitoring",
+                    predecessors = new List<string> { "USA-SC-025" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // DATA MANAGEMENT
+                new TemplateTask
+                {
+                    task_id = "USA-SC-028",
+                    name = "Confirm all paper CRFs complete and legible",
+                    duration_days = 3,
+                    category = "Data Management",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Data-Management",
+                    parallel_group_id = 7,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-029",
+                    name = "Confirm all eCRFs complete and submitted to DCC",
+                    duration_days = 5,
+                    category = "Data Management",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Data-Management",
+                    parallel_group_id = 7,
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-030",
+                    name = "Resolve all outstanding data queries",
+                    duration_days = 7,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Data-Clean",
+                    predecessors = new List<string> { "USA-SC-029" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // LABORATORY SPECIMENS
+                new TemplateTask
+                {
+                    task_id = "USA-SC-031",
+                    name = "Ensure all laboratory specimens sent to appropriate labs",
+                    duration_days = 5,
+                    category = "Laboratory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Lab-Closeout",
+                    parallel_group_id = 8,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-032",
+                    name = "Verify list of ICFs for post-study storage with lab/DCC",
+                    duration_days = 3,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Lab-Closeout",
+                    predecessors = new List<string> { "USA-SC-031" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-033",
+                    name = "Destroy specimens from participants who did not consent",
+                    duration_days = 2,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Lab-Closeout",
+                    predecessors = new List<string> { "USA-SC-032" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+
+                // RECORD RETENTION
+                new TemplateTask
+                {
+                    task_id = "USA-SC-034",
+                    name = "Review protocol for long-term storage requirements",
+                    duration_days = 1,
+                    category = "Record Retention",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Retention",
+                    parallel_group_id = 9,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-035",
+                    name = "Confirm storage location with COU and DMID",
+                    duration_days = 2,
+                    category = "Record Retention",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Retention",
+                    predecessors = new List<string> { "USA-SC-034" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-002",
+                    name = "Conduct Final Monitoring Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Closeout-Visit",
+                    predecessors = new List<string> { "USA-SC-001" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-003",
+                    name = "Complete Source Document Verification (SDV)",
+                    duration_days = 5,
+                    category = "Data",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Closeout-Visit",
+                    predecessors = new List<string> { "USA-SC-002" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-004",
+                    name = "Resolve All Outstanding Queries",
+                    duration_days = 10,
+                    category = "Data",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Data-Clean",
+                    predecessors = new List<string> { "USA-SC-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-005",
+                    name = "Complete Site Database Lock",
+                    duration_days = 2,
+                    category = "Data",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Data-Clean",
+                    predecessors = new List<string> { "USA-SC-004" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-006",
+                    name = "Account for All Investigational Product",
+                    duration_days = 3,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-IP-Closeout",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-007",
+                    name = "Return or Destroy Unused IP",
+                    duration_days = 5,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-IP-Closeout",
+                    predecessors = new List<string> { "USA-SC-006" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-008",
+                    name = "Reconcile All Study Supplies",
+                    duration_days = 2,
+                    category = "Clinical",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-IP-Closeout",
+                    parallel_group_id = 1,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-009",
+                    name = "Prepare Site Closeout Visit Report",
+                    duration_days = 7,
+                    category = "Clinical",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Reporting",
+                    predecessors = new List<string> { "USA-SC-002", "USA-SC-005" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-010",
+                    name = "Collect Final Essential Documents",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Final-Docs",
+                    parallel_group_id = 2,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-011",
+                    name = "Archive Site Regulatory Binder",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Parallel-Final-Docs",
+                    predecessors = new List<string> { "USA-SC-010" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-012",
+                    name = "Submit IRB Final Report/Closure Notification",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Closure",
+                    predecessors = new List<string> { "USA-SC-009" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-013",
+                    name = "Receive IRB Closure Acknowledgment",
+                    duration_days = 10,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Closure",
+                    predecessors = new List<string> { "USA-SC-012" },
+                    requires_irb_approval = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-014",
+                    name = "Process Final Site Payment",
+                    duration_days = 5,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Payment",
+                    predecessors = new List<string> { "USA-SC-009" },
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-SC-015",
+                    name = "Issue Site Closure Confirmation Letter",
+                    duration_days = 2,
+                    category = "Admin",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Payment",
+                    predecessors = new List<string> { "USA-SC-013", "USA-SC-014", "USA-SC-011" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "USA-MSC-001",
+                name = "Site Closeout Complete",
+                description = "All regulatory documents archived, records retained per protocol",
+                phase = "Site Closeout",
+                is_study_level = false
+            });
+
+            return taskSet;
+        }
+
+        public static SitePhaseTaskSet GetGermany_SiteCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = "DEU",
+                country_name = "Germany",
+                regulatory_authority = "BfArM"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-001",
+                    name = "Schedule Site Closeout Visit",
+                    duration_days = 3,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-002",
+                    name = "Conduct Final Monitoring Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    predecessors = new List<string> { "DEU-SC-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-003",
+                    name = "Complete Source Document Verification",
+                    duration_days = 5,
+                    category = "Data",
+                    predecessors = new List<string> { "DEU-SC-002" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-004",
+                    name = "Resolve All Queries",
+                    duration_days = 10,
+                    category = "Data",
+                    predecessors = new List<string> { "DEU-SC-003" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-005",
+                    name = "Site Database Lock",
+                    duration_days = 2,
+                    category = "Data",
+                    predecessors = new List<string> { "DEU-SC-004" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-006",
+                    name = "Return or Destroy IP (with Export Documentation)",
+                    description = "German export requirements for IP return",
+                    duration_days = 7,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-007",
+                    name = "Prepare Closeout Report",
+                    duration_days = 7,
+                    category = "Clinical",
+                    predecessors = new List<string> { "DEU-SC-002", "DEU-SC-005" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-008",
+                    name = "Archive Essential Documents",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-009",
+                    name = "Submit Ethikkommission Closure Notification",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    predecessors = new List<string> { "DEU-SC-007" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-010",
+                    name = "Final Site Payment",
+                    duration_days = 5,
+                    category = "Admin",
+                    predecessors = new List<string> { "DEU-SC-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "DEU-SC-011",
+                    name = "Issue Site Closure Letter",
+                    duration_days = 2,
+                    category = "Admin",
+                    predecessors = new List<string> { "DEU-SC-009", "DEU-SC-010" },
+                    is_blocking = true,
+                    is_mandatory = true
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "DEU-MSC-001",
+                name = "Site Closed",
+                phase = "Site Closeout",
+                is_study_level = false
+            });
+
+            return taskSet;
+        }
+
+        public static SitePhaseTaskSet GetUK_SiteCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = "GBR",
+                country_name = "United Kingdom",
+                regulatory_authority = "MHRA"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-001",
+                    name = "Schedule Site Closeout Visit",
+                    duration_days = 3,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-002",
+                    name = "Conduct Final Monitoring Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    predecessors = new List<string> { "GBR-SC-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-003",
+                    name = "Complete Source Document Verification",
+                    duration_days = 5,
+                    category = "Data",
+                    predecessors = new List<string> { "GBR-SC-002" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-004",
+                    name = "Resolve All Queries",
+                    duration_days = 10,
+                    category = "Data",
+                    predecessors = new List<string> { "GBR-SC-003" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-005",
+                    name = "Site Database Lock",
+                    duration_days = 2,
+                    category = "Data",
+                    predecessors = new List<string> { "GBR-SC-004" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-006",
+                    name = "Return or Destroy IP per MHRA Guidelines",
+                    duration_days = 5,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-007",
+                    name = "Prepare Closeout Report",
+                    duration_days = 7,
+                    category = "Clinical",
+                    predecessors = new List<string> { "GBR-SC-002", "GBR-SC-005" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-008",
+                    name = "Archive Essential Documents",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-009",
+                    name = "Submit REC End of Study Notification",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    predecessors = new List<string> { "GBR-SC-007" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-010",
+                    name = "Submit NHS R&D End of Study Notification",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    predecessors = new List<string> { "GBR-SC-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-011",
+                    name = "Final Site Payment",
+                    duration_days = 5,
+                    category = "Admin",
+                    predecessors = new List<string> { "GBR-SC-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "GBR-SC-012",
+                    name = "Issue Site Closure Letter",
+                    duration_days = 2,
+                    category = "Admin",
+                    predecessors = new List<string> { "GBR-SC-009", "GBR-SC-010", "GBR-SC-011" },
+                    is_blocking = true,
+                    is_mandatory = true
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "GBR-MSC-001",
+                name = "Site Closed",
+                phase = "Site Closeout",
+                is_study_level = false
+            });
+
+            return taskSet;
+        }
+
+        public static SitePhaseTaskSet GetCanada_SiteCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = "CAN",
+                country_name = "Canada",
+                regulatory_authority = "Health Canada"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-001",
+                    name = "Schedule Site Closeout Visit",
+                    duration_days = 3,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-002",
+                    name = "Conduct Final Monitoring Visit",
+                    duration_days = 2,
+                    category = "Clinical",
+                    predecessors = new List<string> { "CAN-SC-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-003",
+                    name = "Complete Source Document Verification",
+                    duration_days = 5,
+                    category = "Data",
+                    predecessors = new List<string> { "CAN-SC-002" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-004",
+                    name = "Resolve All Queries",
+                    duration_days = 10,
+                    category = "Data",
+                    predecessors = new List<string> { "CAN-SC-003" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-005",
+                    name = "Site Database Lock",
+                    duration_days = 2,
+                    category = "Data",
+                    predecessors = new List<string> { "CAN-SC-004" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-006",
+                    name = "Return or Destroy IP",
+                    duration_days = 5,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-007",
+                    name = "Prepare Closeout Report",
+                    duration_days = 7,
+                    category = "Clinical",
+                    predecessors = new List<string> { "CAN-SC-002", "CAN-SC-005" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-008",
+                    name = "Archive Essential Documents",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-009",
+                    name = "Submit REB End of Study Report",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    predecessors = new List<string> { "CAN-SC-007" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-010",
+                    name = "Final Site Payment",
+                    duration_days = 5,
+                    category = "Admin",
+                    predecessors = new List<string> { "CAN-SC-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "CAN-SC-011",
+                    name = "Issue Site Closure Letter",
+                    duration_days = 2,
+                    category = "Admin",
+                    predecessors = new List<string> { "CAN-SC-009", "CAN-SC-010" },
+                    is_blocking = true,
+                    is_mandatory = true
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "CAN-MSC-001",
+                name = "Site Closed",
+                phase = "Site Closeout",
+                is_study_level = false
+            });
+
+            return taskSet;
+        }
+
+        public static SitePhaseTaskSet GetJapan_SiteCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = "JPN",
+                country_name = "Japan",
+                regulatory_authority = "PMDA"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-001",
+                    name = "Schedule Site Closeout Visit",
+                    duration_days = 3,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-002",
+                    name = "Conduct Final Monitoring Visit (with Translator)",
+                    duration_days = 2,
+                    category = "Clinical",
+                    predecessors = new List<string> { "JPN-SC-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-003",
+                    name = "Complete Source Document Verification",
+                    duration_days = 5,
+                    category = "Data",
+                    predecessors = new List<string> { "JPN-SC-002" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-004",
+                    name = "Resolve All Queries",
+                    duration_days = 10,
+                    category = "Data",
+                    predecessors = new List<string> { "JPN-SC-003" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-005",
+                    name = "Site Database Lock",
+                    duration_days = 2,
+                    category = "Data",
+                    predecessors = new List<string> { "JPN-SC-004" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-006",
+                    name = "Return or Destroy IP (Japanese Documentation)",
+                    duration_days = 7,
+                    category = "Clinical",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-007",
+                    name = "Prepare Closeout Report (Japanese)",
+                    duration_days = 10,
+                    category = "Clinical",
+                    predecessors = new List<string> { "JPN-SC-002", "JPN-SC-005" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-008",
+                    name = "Archive Essential Documents",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-009",
+                    name = "Submit IRB End of Study Report (Japanese)",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    predecessors = new List<string> { "JPN-SC-007" },
+                    is_blocking = true,
+                    requires_irb_approval = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-010",
+                    name = "Final Site Payment",
+                    duration_days = 5,
+                    category = "Admin",
+                    predecessors = new List<string> { "JPN-SC-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "JPN-SC-011",
+                    name = "Issue Site Closure Letter",
+                    duration_days = 2,
+                    category = "Admin",
+                    predecessors = new List<string> { "JPN-SC-009", "JPN-SC-010" },
+                    is_blocking = true,
+                    is_mandatory = true
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "JPN-MSC-001",
+                name = "Site Closed",
+                phase = "Site Closeout",
+                is_study_level = false
+            });
+
+            return taskSet;
+        }
+
+        // Add this method after GetJapan_SiteCloseout() and before GetSiteCloseoutByCountry()
+
+
+        #region International Generic Site Closeout Template (All Countries)
+
+        public static SitePhaseTaskSet GetInternational_SiteCloseout(CountryRegulatoryInfo countryInfo)
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Closeout",
+                phase_type = "Site Closeout",
+                country_code = countryInfo.country_code,
+                country_name = countryInfo.country_name,
+                regulatory_authority = countryInfo.regulatory_authority
+            };
+
+            string irbName = countryInfo.ethics_committee_name;
+            string authName = countryInfo.regulatory_authority;
+            string countryCode = countryInfo.country_code;
+
+            // Category 1: Regulatory Tasks (18 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-001",
+            name = $"Notify {irbName} of Study Completion",
+            description = $"Submit final report to {irbName}",
+            duration_days = 5,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB-Closeout",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-002",
+            name = $"Submit Final {irbName} Report",
+            description = "Summary of study conduct and outcomes",
+            duration_days = 10,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB-Closeout",
+            predecessors = new List<string> { $"{countryCode}-SC-001" },
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-003",
+            name = $"Receive {irbName} Closure Acknowledgment",
+            description = $"Obtain final acknowledgment from {irbName}",
+            duration_days = 15,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-IRB-Closeout",
+            predecessors = new List<string> { $"{countryCode}-SC-002" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-004",
+            name = $"Notify {authName} of Study Completion",
+            description = $"Submit completion notification to {authName}",
+            duration_days = 5,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Regulatory-Closeout",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-005",
+            name = $"Submit Final Report to {authName}",
+            description = "Final regulatory report per local requirements",
+            duration_days = 20,
+            category = "Regulatory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Regulatory-Closeout",
+            predecessors = new List<string> { $"{countryCode}-SC-004" },
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-006",
+            name = "Complete Final Monitoring Visit",
+            description = "Final on-site monitoring and source document verification",
+            duration_days = 3,
+            category = "Monitoring",
+            can_run_parallel = false,
+            execution_group = "Sequential-Site-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-007",
+            name = "Finalize Monitoring Report",
+            description = "Complete final monitoring visit report",
+            duration_days = 5,
+            category = "Monitoring",
+            can_run_parallel = false,
+            execution_group = "Sequential-Site-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-006" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-008",
+            name = "Resolve All Open Queries",
+            description = "Close all data queries and discrepancies",
+            duration_days = 10,
+            category = "Data Management",
+            can_run_parallel = false,
+            execution_group = "Sequential-Data-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-009",
+            name = "Lock Site Database",
+            description = "Final database lock for this site",
+            duration_days = 2,
+            category = "Data Management",
+            can_run_parallel = false,
+            execution_group = "Sequential-Data-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-008" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-010",
+            name = "Complete Final Safety Reconciliation",
+            description = "Verify all SAEs and AEs reported and resolved",
+            duration_days = 7,
+            category = "Safety",
+            can_run_parallel = false,
+            execution_group = "Sequential-Safety-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-011",
+            name = "Submit Outstanding SAE Follow-ups",
+            description = "Complete any pending serious adverse event reports",
+            duration_days = 10,
+            category = "Safety",
+            can_run_parallel = false,
+            execution_group = "Sequential-Safety-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-010" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-012",
+            name = "Account for All Investigational Product",
+            description = "Final drug accountability and reconciliation",
+            duration_days = 3,
+            category = "Study Product",
+            can_run_parallel = false,
+            execution_group = "Sequential-IP-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-013",
+            name = "Arrange Unused IP Return/Destruction",
+            description = "Coordinate return or destruction of unused drug",
+            duration_days = 10,
+            category = "Study Product",
+            can_run_parallel = false,
+            execution_group = "Sequential-IP-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-012" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-014",
+            name = "Verify IP Destruction Certificates",
+            description = "Obtain certificates of destruction",
+            duration_days = 15,
+            category = "Study Product",
+            can_run_parallel = false,
+            execution_group = "Sequential-IP-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-013" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-015",
+            name = "Collect All Laboratory Samples",
+            description = "Account for all biological samples",
+            duration_days = 5,
+            category = "Laboratory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Lab-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-016",
+            name = "Verify Sample Storage or Destruction",
+            description = "Confirm samples stored or destroyed per protocol",
+            duration_days = 10,
+            category = "Laboratory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Lab-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-015" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-017",
+            name = "Close Out Laboratory Services",
+            description = "Final reconciliation with central laboratory",
+            duration_days = 7,
+            category = "Laboratory",
+            can_run_parallel = false,
+            execution_group = "Sequential-Lab-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-016" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-018",
+            name = "Prepare Site File for Archiving",
+            description = "Organize Investigator Site File for long-term storage",
+            duration_days = 10,
+            category = "Quality Assurance",
+            can_run_parallel = false,
+            execution_group = "Sequential-Archiving",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Archival"
+        }
+    });
+
+            // Category 2: Human Subjects Tasks (5 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+    {
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-019",
+            name = "Complete Final Patient Follow-Up",
+            description = "Ensure all enrolled patients complete final visits",
+            duration_days = 30,
+            category = "Clinical",
+            can_run_parallel = false,
+            execution_group = "Sequential-Patient-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Patient Closeout"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-020",
+            name = "Notify Patients of Study Completion",
+            description = "Inform patients study has ended",
+            duration_days = 5,
+            category = "Clinical",
+            can_run_parallel = false,
+            execution_group = "Sequential-Patient-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-019" },
+            phase_type = "Site Closeout",
+            subphase = "Patient Closeout"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-021",
+            name = "Provide Study Results Summary to Patients",
+            description = "Deliver lay summary of study outcomes if required",
+            duration_days = 10,
+            category = "Clinical",
+            can_run_parallel = false,
+            execution_group = "Sequential-Patient-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-020" },
+            phase_type = "Site Closeout",
+            subphase = "Patient Closeout"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-022",
+            name = "Arrange Transition to Standard Care",
+            description = "Ensure patients transitioned to appropriate follow-up care",
+            duration_days = 15,
+            category = "Clinical",
+            can_run_parallel = false,
+            execution_group = "Sequential-Patient-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-019" },
+            phase_type = "Site Closeout",
+            subphase = "Patient Closeout"
+        },
+        new TemplateTask
+        {
+            task_id = $"{countryCode}-SC-023",
+            name = "Complete Final Enrollment Reconciliation",
+            description = "Verify final patient enrollment numbers and screen failures",
+            duration_days = 3,
+            category = "Clinical",
+            can_run_parallel = false,
+            execution_group = "Sequential-Patient-Closure",
+            is_mandatory = true,
+            phase_type = "Site Closeout",
+            subphase = "Patient Closeout"
+        }
+            });
+
+            // Category 5: Data Management Tasks (2 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-025",
+            name = "Generate Final Data Extract",
+            description = "Export final cleaned dataset for analysis",
+            duration_days = 3,
+            category = "Data Management",
+            can_run_parallel = false,
+            execution_group = "Sequential-Data-Closure",
+            predecessors = new List<string> { $"{countryCode}-SC-009" },
+            phase_type = "Site Closeout",
+            subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-026",
+                    name = "Archive Site Data",
+                    description = "Store site data per retention requirements",
+                    duration_days = 5,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Archiving",
+                    predecessors = new List<string> { $"{countryCode}-SC-025" },
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                }
+            });
+
+            // Category 6: Laboratory Tasks (3 tasks - already included as SC-015 to SC-017)
+
+            // Category 7: Record Retention Tasks (2 tasks)
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-027",
+                    name = "Finalize Record Retention Agreement",
+                    description = "Confirm site will retain documents per regulatory requirements",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Archiving",
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-028",
+                    name = "Provide Archiving Instructions to Site",
+                    description = "Document retention period and contact information",
+                    duration_days = 3,
+                    category = "Quality Assurance",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Archiving",
+                    predecessors = new List<string> { $"{countryCode}-SC-027" },
+                    phase_type = "Site Closeout",
+                    subphase = "Archival"
+                }
+            });
+
+            // Final tasks
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-029",
+                    name = "Conduct Site Closeout Visit",
+                    description = "Final on-site visit to verify closure activities",
+                    duration_days = 2,
+                    category = "Site Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string>
+                    {
+                        $"{countryCode}-SC-018", $"{countryCode}-SC-024",
+                        $"{countryCode}-SC-026", $"{countryCode}-SC-028"
+                    },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-030",
+                    name = "Complete Site Closeout Report",
+                    description = "Document all closeout activities and final site status",
+                    duration_days = 5,
+                    category = "Quality Assurance",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string> { $"{countryCode}-SC-029" },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-031",
+                    name = "Process Final Payment to Site",
+                    description = "Complete final financial reconciliation and payment",
+                    duration_days = 15,
+                    category = "Finance",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string> { $"{countryCode}-SC-030" },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-032",
+                    name = "Obtain Site Acknowledgment of Closure",
+                    description = "Receive signed acknowledgment from PI",
+                    duration_days = 5,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string> { $"{countryCode}-SC-031" },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-033",
+                    name = "Deactivate Site Systems Access",
+                    description = "Remove site access to EDC, IWRS, and other study systems",
+                    duration_days = 2,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string> { $"{countryCode}-SC-032" },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-034",
+                    name = "Update Trial Registry with Completion",
+                    description = "Update ClinicalTrials.gov or local registry",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    is_mandatory = true,
+                    phase_type = "Site Closeout",
+                    subphase = "Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryCode}-SC-035",
+                    name = "Site Closeout Complete",
+                    description = "All closeout activities finalized",
+                    duration_days = 0,
+                    category = "Milestone",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Closeout",
+                    predecessors = new List<string>
+                    {
+                        $"{countryCode}-SC-003", $"{countryCode}-SC-005", $"{countryCode}-SC-014",
+                        $"{countryCode}-SC-030", $"{countryCode}-SC-033", $"{countryCode}-SC-034"
+                    },
+                    phase_type = "Site Closeout",
+                    subphase = "Closure",
+                    is_blocking = true
+                }
+            });
+
+            return taskSet;
+        }
+
+        #endregion
+
+        public static SitePhaseTaskSet GetSiteCloseoutByCountry(string countryCode)
+        {
+            if (countryCode.ToUpper() == "USA")
+            {
+                return GetUSA_SiteCloseout();
+            }
+
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(countryCode);
+            return GetInternational_SiteCloseout(countryInfo);
+        }
+
+        #endregion
+
+        #region Study Closeout Tasks (Study-Level)
+
+        public static SitePhaseTaskSet GetStudyCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Study Closeout",
+                phase_type = "Study Closeout",
+                country_code = "GLOBAL",
+                country_name = "All Countries",
+                regulatory_authority = "Multiple"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                // PHASE 1: FINALIZE CLINICAL DATABASE
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-001",
+                    name = "Clinical data entry completed",
+                    description = "4 days after last subject, last visit",
+                    duration_days = 4,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-002",
+                    name = "Data cleaning and querying",
+                    description = "2 weeks after data entry completion",
+                    duration_days = 14,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-001" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-003",
+                    name = "Serious Adverse Event reconciliation",
+                    description = "3 weeks after data entry completion",
+                    duration_days = 21,
+                    category = "Safety",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-SAE-Reconciliation",
+                    parallel_group_id = 1,
+                    predecessors = new List<string> { "STUDY-CO-001" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-004",
+                    name = "Final monitoring visit",
+                    description = "5 weeks after last subject, last visit",
+                    duration_days = 35,
+                    category = "Monitoring",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Monitoring",
+                    predecessors = new List<string> { "STUDY-CO-002", "STUDY-CO-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-005",
+                    name = "Resolution of all data management and monitoring queries",
+                    description = "1 day after final monitoring visit",
+                    duration_days = 1,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-004" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-006",
+                    name = "Clinical database lock",
+                    description = "1 day after resolution of all queries",
+                    duration_days = 1,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-005" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+
+                // PHASE 2: FINALIZE CORE LABORATORY/IMMUNOLOGY DATA
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-007",
+                    name = "Assay completion and transfer of laboratory data to Emmes",
+                    description = "12 weeks after last specimen collection",
+                    duration_days = 84,
+                    category = "Laboratory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Lab-Data",
+                    parallel_group_id = 2,
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-008",
+                    name = "QC of laboratory data and distribution of queries to lab",
+                    description = "4 days after receipt of laboratory data",
+                    duration_days = 4,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-007" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-009",
+                    name = "Resolution of laboratory queries",
+                    description = "1 week after distribution of queries",
+                    duration_days = 7,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-008" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-010",
+                    name = "Laboratory database lock",
+                    description = "1 day after resolution of lab queries",
+                    duration_days = 1,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-009" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+
+                // PHASE 3: PREPARE DRAFT INTERIM CLINICAL STUDY REPORT
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-011",
+                    name = "Preparation of draft Interim CSR (analyses, TFLs, text)",
+                    description = "12 weeks after clinical AND laboratory database lock",
+                    duration_days = 84,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-CSR-Draft",
+                    predecessors = new List<string> { "STUDY-CO-006", "STUDY-CO-010" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-012",
+                    name = "PVG provides SAE narratives",
+                    description = "30 days after clinical database lock",
+                    duration_days = 30,
+                    category = "Safety",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-SAE-Narratives",
+                    parallel_group_id = 3,
+                    predecessors = new List<string> { "STUDY-CO-006" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-013",
+                    name = "Distribute draft Interim CSR to PI for review",
+                    description = "1 day after draft CSR complete",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-CSR-Draft",
+                    predecessors = new List<string> { "STUDY-CO-011" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+
+                // PHASE 4: PI COMPLETES DRAFT CLINICAL STUDY REPORT
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-014",
+                    name = "PI reviews and completes designated sections of Interim CSR",
+                    description = "4-6 weeks after distribution of draft CSR",
+                    duration_days = 35,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-013" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-015",
+                    name = "Incorporate PI text, address comments, format CSR",
+                    description = "1 week after receiving draft CSR from PI",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-014" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-016",
+                    name = "Distribute draft Interim CSR to DMID and PI for review",
+                    description = "1 day after draft CSR complete",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-015" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+
+                // PHASE 5: REVIEW AND FINALIZE INTERIM CSR
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-017",
+                    name = "DMID reviews draft Interim CSR and provides comments",
+                    description = "4 weeks after distribution to DMID",
+                    duration_days = 28,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-DMID-Review",
+                    predecessors = new List<string> { "STUDY-CO-016" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-018",
+                    name = "Incorporate DMID comments and prepare final draft CSR",
+                    description = "1 week after receipt of DMID comments",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-DMID-Review",
+                    predecessors = new List<string> { "STUDY-CO-017" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-019",
+                    name = "Receive DMID and PI approval to finalize Interim CSR",
+                    description = "3 days after final draft distributed",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-018" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-020",
+                    name = "Prepare approved Interim CSR per regulatory requirements",
+                    description = "3 days after approval to finalize",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-019" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-021",
+                    name = "Lead PI signs signature page and returns to Emmes",
+                    description = "3 days after notification of approved CSR",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-020" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-022",
+                    name = "Distribute approved Interim CSR to CROMS portals",
+                    description = "1 day after receipt of PI signature",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-021" },
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-023",
+                    name = "RAS submits final, signed Interim CSR to FDA",
+                    description = "2-3 weeks after signature page posted",
+                    duration_days = 17,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-022" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Study Closeout",
+                    subphase = "Study Closure"
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "STUDY-MS-001",
+                name = "Study Closeout Complete",
+                description = "Final CSR submitted to FDA, study officially closed",
+                phase = "Study Closeout",
+                is_study_level = true
+            });
+
+            return taskSet;
+        }
+
+        #endregion
+
+        /// <summary>
+        #region Implementation/Active Phase Tasks
+
+        /// <summary>
+        /// Get Implementation phase tasks (ongoing during active enrollment)
+        /// These tasks occur between Site Activation and Site Closeout
+        /// </summary>
+        public static SitePhaseTaskSet GetUSA_Implementation()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Implementation",
+                phase_type = "Implementation",
+                country_code = "USA",
+                country_name = "United States",
+                regulatory_authority = "FDA"
+            };
+
+            // Participant Enrollment Milestones
+            // These are study-wide milestones tracked across all cohorts
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-001",
+                    name = "First Participant Screened/Consented",
+                    description = "First participant completes informed consent and screening procedures",
+                    duration_days = 1,
+                    category = "Enrollment",
+                    can_run_parallel = false,
+                    execution_group = "Enrollment-Milestones",
+                    is_blocking = false,
+                    is_mandatory = true,
+                    phase_type = "Implementation",
+                    subphase = "Enrollment Milestones"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-002",
+                    name = "First Participant Enrolled/Randomized",
+                    description = "First participant meets eligibility criteria and is enrolled/randomized into study",
+                    duration_days = 1,
+                    category = "Enrollment",
+                    can_run_parallel = false,
+                    execution_group = "Enrollment-Milestones",
+                    predecessors = new List<string> { "USA-IMPL-001" },
+                    is_blocking = false,
+                    is_mandatory = true,
+                    phase_type = "Implementation",
+                    subphase = "Enrollment Milestones"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-003",
+                    name = "Last Participant Enrolled",
+                    description = "Final participant enrolled across all cohorts - enrollment complete",
+                    duration_days = 1,
+                    category = "Enrollment",
+                    can_run_parallel = false,
+                    execution_group = "Enrollment-Milestones",
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Implementation",
+                    subphase = "Enrollment Milestones"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-004",
+                    name = "Last Participant Last Dose/Visit (LPLV)",
+                    description = "Final participant completes final study visit - all dosing complete",
+                    duration_days = 1,
+                    category = "Enrollment",
+                    can_run_parallel = false,
+                    execution_group = "Enrollment-Milestones",
+                    predecessors = new List<string> { "USA-IMPL-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    phase_type = "Implementation",
+                    subphase = "Enrollment Milestones"
+                }
+            });
+
+            // REMOVED: IRB Continuing Review tasks - user manages these separately via Tag Task feature
+            // IRB continuing review is recurring and should be tracked via task tagging, not template generation
+            /*
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                // IRB Continuing Review (Annual)
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-OLD-001",
+                    name = "IRB Continuing Review (Annual)",
+                    description = "Annual IRB review required by FDA regulations. Submit continuing review report 30 days before approval anniversary date.",
+                    duration_days = 45,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = true,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-002",
+                    name = "Prepare IRB Continuing Review Report",
+                    description = "Compile enrollment data, safety updates, protocol deviations, and progress summary for annual IRB review",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    is_blocking = false,
+                    is_mandatory = true,
+                    requires_irb_approval = false,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-003",
+                    name = "Submit IRB Continuing Review Package",
+                    description = "Submit complete continuing review package to IRB at least 30 days before approval anniversary",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "USA-IMPL-002" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = false,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = "USA-IMPL-004",
+                    name = "IRB Continuing Review Approval Received",
+                    description = "Receive IRB approval for continuation of study. Must be obtained before current approval expires.",
+                    duration_days = 30,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-IRB-Review",
+                    predecessors = new List<string> { "USA-IMPL-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = true,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                }
+            });
+            */
+
+            return taskSet;
+        }
+
+        /// <summary>
+        /// Get Implementation phase tasks for international sites
+        /// </summary>
+        public static SitePhaseTaskSet GetInternational_Implementation(CountryRegulatoryInfo countryInfo)
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Site Implementation",
+                phase_type = "Implementation",
+                country_code = countryInfo.country_code,
+                country_name = countryInfo.country_name,
+                regulatory_authority = countryInfo.regulatory_authority
+            };
+
+            // REMOVED: Ethics Committee Continuing Review tasks - user manages these separately via Tag Task feature
+            // Continuing review is recurring and should be tracked via task tagging, not template generation
+            /*
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                // Ethics Committee Continuing Review (Annual)
+                new TemplateTask
+                {
+                    task_id = $"{countryInfo.country_code}-IMPL-001",
+                    name = $"Ethics Committee Continuing Review ({countryInfo.ethics_committee_name})",
+                    description = $"Annual ethics committee review required by {countryInfo.regulatory_authority}. Review frequency may vary by country (annual, bi-annual, or as needed).",
+                    duration_days = 60,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = true,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryInfo.country_code}-IMPL-002",
+                    name = "Prepare Annual Safety Report for Ethics Committee",
+                    description = "Compile enrollment data, adverse events, protocol amendments, and progress summary",
+                    duration_days = 10,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    is_blocking = false,
+                    is_mandatory = true,
+                    requires_irb_approval = false,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryInfo.country_code}-IMPL-003",
+                    name = "Submit Continuing Review to Ethics Committee",
+                    description = $"Submit continuing review package to {countryInfo.ethics_committee_name} per local requirements",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    predecessors = new List<string> { $"{countryInfo.country_code}-IMPL-002" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = false,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                },
+                new TemplateTask
+                {
+                    task_id = $"{countryInfo.country_code}-IMPL-004",
+                    name = "Ethics Committee Continuing Approval Received",
+                    description = "Receive ethics committee approval for study continuation",
+                    duration_days = 45,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Ethics-Review",
+                    predecessors = new List<string> { $"{countryInfo.country_code}-IMPL-003" },
+                    is_blocking = true,
+                    is_mandatory = true,
+                    requires_irb_approval = true,
+                    phase_type = "Implementation",
+                    subphase = "IRB Continuing Review"
+                }
+            });
+            */
+
+            return taskSet;
+        }
+
+        /// <summary>
+        /// Get Implementation tasks by country code
+        /// </summary>
+        public static SitePhaseTaskSet GetImplementationByCountry(string countryCode)
+        {
+            if (countryCode.ToUpper() == "USA")
+            {
+                return GetUSA_Implementation();
+            }
+
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(countryCode);
+            return GetInternational_Implementation(countryInfo);
+        }
+
+        #endregion
+        /// Get site startup tasks by country code
+        /// </summary>
+        public static SitePhaseTaskSet GetSiteStartupByCountry(string countryCode)
+        {
+            if (countryCode.ToUpper() == "USA")
+            {
+                return GetUSA_SiteStartup();
+            }
+
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(countryCode);
+            return GetInternational_SiteStartup(countryInfo);
+        }
+    }
+}
