@@ -75,6 +75,17 @@ class PostgreSQLCursor:
     def fetchmany(self, size=None):
         return self._cursor.fetchmany(size)
 
+    @property
+    def rowcount(self):
+        return self._cursor.rowcount
+
+    @property
+    def description(self):
+        return self._cursor.description
+
+    def __iter__(self):
+        return iter(self._cursor)
+
     def __getattr__(self, name):
         return getattr(self._cursor, name)
 
@@ -95,6 +106,12 @@ class PostgreSQLConnection:
 
     def close(self):
         return self._conn.close()
+
+    def execute(self, query, params=None):
+        # Support direct execute on connection
+        cursor = self.cursor()
+        cursor.execute(query, params)
+        return cursor
 
     def __getattr__(self, name):
         return getattr(self._conn, name)
