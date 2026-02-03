@@ -129,10 +129,11 @@ def generate_audit_log_id() -> str:
 
 
 def log_audit_event(org_id: str, user_id: str, action: str, resource_type: str,
-                     resource_id: str, metadata: dict, ip_address: Optional[str] = None):
+                     resource_id: str, metadata: dict, ip_address: Optional[str] = None,
+                     cursor=None):
     """Create audit log entry"""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+    if cursor:
+        # Use existing cursor (within same transaction)
         cursor.execute("""
             INSERT INTO audit_logs (log_id, org_id, user_id, ip_address, action,
                                      resource_type, resource_id, metadata)
@@ -147,6 +148,24 @@ def log_audit_event(org_id: str, user_id: str, action: str, resource_type: str,
             resource_id,
             json.dumps(metadata)
         ))
+    else:
+        # Create new connection/transaction
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO audit_logs (log_id, org_id, user_id, ip_address, action,
+                                         resource_type, resource_id, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                generate_audit_log_id(),
+                org_id,
+                user_id,
+                ip_address,
+                action,
+                resource_type,
+                resource_id,
+                json.dumps(metadata)
+            ))
 
 
 # ============================================================================
@@ -356,7 +375,7 @@ async def activate_license(request: ActivationRequest):
                 UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?
             """, (user_id,))
     
-            # Step 7: Create audit log
+            # Step 7: Create audit log (within same transaction)
             log_audit_event(
                 org_id=org_id,
                 user_id=user_id,
@@ -369,7 +388,8 @@ async def activate_license(request: ActivationRequest):
                     "device_name": request.device_name,
                     "ms_project_version": request.ms_project_version,
                     "addin_version": request.addin_version
-                }
+                },
+                cursor=cursor
             )
     
             logger.info(f"✅ License activated successfully: user={user_id}, org={org_id}, tier={tier}")
