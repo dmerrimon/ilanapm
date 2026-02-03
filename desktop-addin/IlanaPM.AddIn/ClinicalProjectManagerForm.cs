@@ -45,9 +45,8 @@ namespace IlanaPM.AddIn
             tabStep2 = new TabControl
             {
                 Location = new Point(0, 30),
-                Size = new Size(560, 380),
-                Dock = DockStyle.None,
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
+                Size = new Size(560, 365),
+                Dock = DockStyle.None
             };
 
             // Create three tab pages
@@ -75,26 +74,19 @@ namespace IlanaPM.AddIn
             {
                 pnlStep2.Controls.Remove(ctrl);
                 tabSites.Controls.Add(ctrl);
-
-                // Adjust Y position since we're moving into a tab (remove the title offset)
-                if (ctrl.Top >= 35)
-                {
-                    ctrl.Top -= 35;
-                }
-
-                // Ensure DataGridView doesn't overlap buttons
-                if (ctrl == dgvSites)
-                {
-                    dgvSites.Size = new Size(540, 280);
-                    dgvSites.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-                }
-
-                // Ensure buttons are anchored at bottom
-                if (ctrl is Button)
-                {
-                    ctrl.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-                }
             }
+
+            // Now adjust positions AFTER adding to tab
+            // DataGridView: position at top
+            dgvSites.Location = new Point(0, 0);
+            dgvSites.Size = new Size(540, 280);
+
+            // Buttons: position at Y=295 (280 + 15 spacing) to be visible
+            int buttonY = 295;
+            btnAddSite.Location = new Point(0, buttonY);
+            btnEditSite.Location = new Point(110, buttonY);
+            btnRemoveSite.Location = new Point(220, buttonY);
+            btnImportSites.Location = new Point(380, buttonY);
 
             // AMENDMENTS TAB: Create new controls
             dgvAmendments = new DataGridView
