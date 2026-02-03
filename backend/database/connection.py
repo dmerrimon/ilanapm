@@ -15,8 +15,8 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
     # PostgreSQL for production (Render)
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
+    import psycopg
+    from psycopg.rows import dict_row
     DB_TYPE = "postgresql"
 else:
     # SQLite for local development
@@ -42,7 +42,7 @@ def init_db():
         schema_sql = schema_sql.replace("BOOLEAN", "BOOLEAN")
         schema_sql = schema_sql.replace("IF NOT EXISTS", "IF NOT EXISTS")
 
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg.connect(DATABASE_URL)
         cursor = conn.cursor()
         cursor.execute(schema_sql)
         conn.commit()
@@ -112,7 +112,7 @@ def get_db_connection():
     """
     if DB_TYPE == "postgresql":
         # PostgreSQL connection with query translation
-        raw_conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        raw_conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
         conn = PostgreSQLConnection(raw_conn)
         try:
             yield conn
@@ -140,7 +140,7 @@ def get_db_connection():
 def get_db():
     """Get database connection (non-context manager version)"""
     if DB_TYPE == "postgresql":
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+        conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
         return conn
     else:
         conn = sqlite3.connect(DB_PATH)
