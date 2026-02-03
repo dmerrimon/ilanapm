@@ -43,7 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_recorded_at ON task_outcomes(recorded_at);
 CREATE INDEX IF NOT EXISTS idx_accuracy ON task_outcomes(was_accurate);
 
 -- Prediction accuracy summary view
-CREATE VIEW IF NOT EXISTS prediction_accuracy_summary AS
+DROP VIEW IF EXISTS prediction_accuracy_summary;
+CREATE VIEW prediction_accuracy_summary AS
 SELECT
     country_code,
     authority,
@@ -81,7 +82,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     stripe_subscription_id TEXT,
 
     -- Enterprise features
-    sso_enabled BOOLEAN DEFAULT 0,
+    sso_enabled BOOLEAN DEFAULT FALSE,
     sso_provider TEXT,  -- 'okta', 'azure_ad', 'google', etc.
 
     -- Contact & metadata
@@ -105,7 +106,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_name TEXT,
 
     -- Status
-    is_active BOOLEAN DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
     last_login TIMESTAMP,
 
     -- Metadata
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS license_keys (
     -- Validity
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at DATE,
-    is_active BOOLEAN DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
 
     -- Metadata
     created_by TEXT,  -- Who generated this key (admin user_id)
@@ -147,7 +148,7 @@ CREATE TABLE IF NOT EXISTS activations (
     token_expires_at TIMESTAMP NOT NULL,
 
     -- Status
-    is_active BOOLEAN DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
     activated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deactivated_at TIMESTAMP,
 
