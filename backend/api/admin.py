@@ -108,63 +108,63 @@ async def create_organization(request: CreateOrgRequest, admin_verified: str = H
         if admin_verified != ADMIN_TOKEN:
             raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
 
-    # Validate tier
-    if request.tier not in ['professional', 'enterprise']:
-        raise HTTPException(status_code=400, detail="Tier must be 'professional' or 'enterprise'")
+        # Validate tier
+        if request.tier not in ['professional', 'enterprise']:
+            raise HTTPException(status_code=400, detail="Tier must be 'professional' or 'enterprise'")
 
-    # Validate seats
-    if request.seats_purchased < 1:
-        raise HTTPException(status_code=400, detail="seats_purchased must be at least 1")
+        # Validate seats
+        if request.seats_purchased < 1:
+            raise HTTPException(status_code=400, detail="seats_purchased must be at least 1")
 
-    # Generate IDs
-    org_id = generate_org_id()
-    license_key = generate_license_key()
+        # Generate IDs
+        org_id = generate_org_id()
+        license_key = generate_license_key()
 
-    # Calculate subscription dates
-    subscription_start = datetime.now().date()
-    subscription_end = (datetime.now() + timedelta(days=request.subscription_days)).date()
+        # Calculate subscription dates
+        subscription_start = datetime.now().date()
+        subscription_end = (datetime.now() + timedelta(days=request.subscription_days)).date()
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        # Create organization
-        cursor.execute("""
-            INSERT INTO organizations (
-                org_id, org_name, tier, seats_purchased, seats_used,
-                subscription_start, subscription_end, status,
-                primary_contact_email, primary_contact_name
+            # Create organization
+            cursor.execute("""
+                INSERT INTO organizations (
+                    org_id, org_name, tier, seats_purchased, seats_used,
+                    subscription_start, subscription_end, status,
+                    primary_contact_email, primary_contact_name
+                )
+                VALUES (?, ?, ?, ?, 0, ?, ?, 'active', ?, ?)
+            """, (
+                org_id,
+                request.org_name,
+                request.tier,
+                request.seats_purchased,
+                subscription_start,
+                subscription_end,
+                request.primary_contact_email,
+                request.primary_contact_name
+            ))
+
+            # Create license key
+            cursor.execute("""
+                INSERT INTO license_keys (
+                    license_key, org_id, tier, seats, is_active
+                )
+                VALUES (?, ?, ?, ?, 1)
+            """, (license_key, org_id, request.tier, request.seats_purchased))
+
+            logger.info(f"✅ Created organization: {org_id} ({request.org_name}) with license: {license_key}")
+
+            return CreateOrgResponse(
+                org_id=org_id,
+                org_name=request.org_name,
+                license_key=license_key,
+                tier=request.tier,
+                seats_purchased=request.seats_purchased,
+                subscription_end=subscription_end.isoformat(),
+                message=f"Organization created successfully. Use license key to activate desktop add-in."
             )
-            VALUES (?, ?, ?, ?, 0, ?, ?, 'active', ?, ?)
-        """, (
-            org_id,
-            request.org_name,
-            request.tier,
-            request.seats_purchased,
-            subscription_start,
-            subscription_end,
-            request.primary_contact_email,
-            request.primary_contact_name
-        ))
-
-        # Create license key
-        cursor.execute("""
-            INSERT INTO license_keys (
-                license_key, org_id, tier, seats, is_active
-            )
-            VALUES (?, ?, ?, ?, 1)
-        """, (license_key, org_id, request.tier, request.seats_purchased))
-
-        logger.info(f"✅ Created organization: {org_id} ({request.org_name}) with license: {license_key}")
-
-        return CreateOrgResponse(
-            org_id=org_id,
-            org_name=request.org_name,
-            license_key=license_key,
-            tier=request.tier,
-            seats_purchased=request.seats_purchased,
-            subscription_end=subscription_end.isoformat(),
-            message=f"Organization created successfully. Use license key to activate desktop add-in."
-        )
     except Exception as e:
         logger.error(f"❌ Failed to create organization: {type(e).__name__}: {str(e)}")
         import traceback
@@ -184,40 +184,40 @@ async def list_organizations(admin_verified: str = Header(None, alias="X-Admin-T
         if admin_verified != ADMIN_TOKEN:
             raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
 
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT
-                o.org_id,
-                o.org_name,
-                o.tier,
-                o.seats_purchased,
-                o.seats_used,
-                o.subscription_start,
-                o.subscription_end,
-                o.status,
-                lk.license_key
-            FROM organizations o
-            LEFT JOIN license_keys lk ON o.org_id = lk.org_id
-            ORDER BY o.created_at DESC
-        """)
+            cursor.execute("""
+                SELECT
+                    o.org_id,
+                    o.org_name,
+                    o.tier,
+                    o.seats_purchased,
+                    o.seats_used,
+                    o.subscription_start,
+                    o.subscription_end,
+                    o.status,
+                    lk.license_key
+                FROM organizations o
+                LEFT JOIN license_keys lk ON o.org_id = lk.org_id
+                ORDER BY o.created_at DESC
+            """)
 
-        orgs = []
-        for row in cursor.fetchall():
-            orgs.append({
-                'org_id': row['org_id'],
-                'org_name': row['org_name'],
-                'tier': row['tier'],
-                'seats_purchased': row['seats_purchased'],
-                'seats_used': row['seats_used'],
-                'subscription_start': row['subscription_start'],
-                'subscription_end': row['subscription_end'],
-                'status': row['status'],
-                'license_key': row['license_key']
-            })
+            orgs = []
+            for row in cursor.fetchall():
+                orgs.append({
+                    'org_id': row['org_id'],
+                    'org_name': row['org_name'],
+                    'tier': row['tier'],
+                    'seats_purchased': row['seats_purchased'],
+                    'seats_used': row['seats_used'],
+                    'subscription_start': row['subscription_start'],
+                    'subscription_end': row['subscription_end'],
+                    'status': row['status'],
+                    'license_key': row['license_key']
+                })
 
-        return {'organizations': orgs}
+            return {'organizations': orgs}
     except Exception as e:
         logger.error(f"❌ Failed to list organizations: {type(e).__name__}: {str(e)}")
         import traceback

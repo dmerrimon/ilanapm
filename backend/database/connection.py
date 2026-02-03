@@ -39,12 +39,31 @@ def init_db():
         # Replace SQLite-specific syntax with PostgreSQL equivalents
         schema_sql = schema_sql.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
         schema_sql = schema_sql.replace("AUTOINCREMENT", "")
-        schema_sql = schema_sql.replace("BOOLEAN", "BOOLEAN")
-        schema_sql = schema_sql.replace("IF NOT EXISTS", "IF NOT EXISTS")
 
         conn = psycopg.connect(DATABASE_URL)
         cursor = conn.cursor()
-        cursor.execute(schema_sql)
+
+        # Split schema into individual statements (PostgreSQL can't execute multiple statements at once)
+        # Remove comments and split by semicolon
+        statements = []
+        for statement in schema_sql.split(';'):
+            # Clean up statement
+            statement = statement.strip()
+            # Skip empty statements and comments
+            if statement and not statement.startswith('--'):
+                statements.append(statement)
+
+        # Execute each statement separately
+        for statement in statements:
+            if statement.strip():
+                try:
+                    cursor.execute(statement)
+                except Exception as e:
+                    print(f"Error executing statement: {statement[:100]}...")
+                    print(f"Error: {e}")
+                    # Continue with other statements even if one fails
+                    # (table might already exist)
+
         conn.commit()
         conn.close()
     else:

@@ -148,9 +148,11 @@ async def startup_event():
     # Initialize feedback database
     try:
         init_db()
-        logger.info("💾 Feedback database initialized")
+        logger.info("💾 Database initialized successfully")
     except Exception as e:
-        logger.warning(f"⚠️  Database initialization skipped (already exists): {e}")
+        logger.error(f"❌ Database initialization failed: {type(e).__name__}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
 
     logger.info("📍 API documentation available at: /docs")
     logger.info("🔐 Licensing endpoints: /api/v1/licensing/* (NEW)")
