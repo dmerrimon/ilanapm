@@ -308,7 +308,7 @@ namespace IlanaPM.AddIn
 
                 if (country.additional_authorities != null && country.additional_authorities.Count > 0)
                 {
-                    sb.AppendLine($"  Additional: {string.Join(", ", country.additional_authorities.Select(a => a.GetValueOrDefault("name", "Unknown")))}");
+                    sb.AppendLine($"  Additional: {string.Join(", ", country.additional_authorities.Select(a => a.ContainsKey("name") ? a["name"] : "Unknown"))}");
                 }
 
                 if (country.has_emergency_pathway || country.has_fast_track)
