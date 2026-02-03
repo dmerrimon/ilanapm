@@ -88,6 +88,7 @@ namespace IlanaPM.AddIn.Models
         public string id { get; set; }  // e.g., "COH-001"
         public string name { get; set; }  // e.g., "Cohort 1 - Low Dose"
         public int enrollment_target { get; set; }  // Target number of patients
+        public string description { get; set; }  // Description of the cohort
         public List<string> prerequisites { get; set; }  // What must complete before this cohort starts
         public List<string> participating_sites { get; set; }  // Site IDs participating in this cohort
 
@@ -96,6 +97,7 @@ namespace IlanaPM.AddIn.Models
             prerequisites = new List<string>();
             participating_sites = new List<string>();
             enrollment_target = 0;
+            description = "";
         }
 
         /// <summary>
