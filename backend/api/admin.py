@@ -18,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+
+@router.get("/admin/test")
+async def test_admin():
+    """Simple test endpoint to verify admin router works"""
+    return {"status": "admin router works", "db_type": os.getenv("DATABASE_URL", "sqlite")}
+
 # Simple admin token for basic protection (set via environment variable)
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "dev-admin-token-change-this")
 
