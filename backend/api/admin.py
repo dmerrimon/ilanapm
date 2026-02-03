@@ -79,7 +79,7 @@ def generate_license_key():
 # ============================================================================
 
 @router.post("/admin/organizations", response_model=CreateOrgResponse)
-async def create_organization(request: CreateOrgRequest, admin_verified: bool = Header(None, alias="X-Admin-Token")):
+async def create_organization(request: CreateOrgRequest, admin_verified: str = Header(None, alias="X-Admin-Token")):
     """
     Create a new organization with a license key (Admin only)
 
