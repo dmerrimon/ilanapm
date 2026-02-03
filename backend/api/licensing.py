@@ -171,216 +171,225 @@ async def activate_license(request: ActivationRequest):
         logger.info(f"License activation request: email={request.user_email}, device={request.device_id[:8]}...")
 
         with get_db_connection() as conn:
-        cursor = conn.cursor()
+            cursor = conn.cursor()
 
-        # Step 1: Validate license key
-        cursor.execute("""
-            SELECT lk.*, o.org_name, o.tier as org_tier, o.seats_purchased, o.seats_used,
-                   o.subscription_end, o.status as org_status
-            FROM license_keys lk
-            JOIN organizations o ON lk.org_id = o.org_id
-            WHERE lk.license_key = ?
-        """, (request.license_key,))
-
-        license_row = cursor.fetchone()
-        if not license_row:
-            logger.warning(f"Invalid license key: {request.license_key}")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Invalid license key"
-            )
-
-        # Check if license is active
-        if not license_row['is_active']:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="License key has been deactivated"
-            )
-
-        # Check if license is expired
-        if license_row['expires_at']:
-            expires_at = datetime.fromisoformat(license_row['expires_at']).date() if isinstance(license_row['expires_at'], str) else license_row['expires_at']
-            if expires_at < datetime.now().date():
+            # Step 1: Validate license key
+            cursor.execute("""
+                SELECT lk.*, o.org_name, o.tier as org_tier, o.seats_purchased, o.seats_used,
+                       o.subscription_end, o.status as org_status
+                FROM license_keys lk
+                JOIN organizations o ON lk.org_id = o.org_id
+                WHERE lk.license_key = ?
+            """, (request.license_key,))
+    
+            license_row = cursor.fetchone()
+            if not license_row:
+                logger.warning(f"Invalid license key: {request.license_key}")
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Invalid license key"
+                )
+    
+            # Check if license is active
+            if not license_row['is_active']:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="License key has expired"
+                    detail="License key has been deactivated"
                 )
-
-        org_id = license_row['org_id']
-        tier = license_row['org_tier']
-
-        # Step 2: Check organization subscription status
-        if license_row['org_status'] != 'active':
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Organization subscription is {license_row['org_status']}"
-            )
-
-        # Check if subscription has expired
-        subscription_end = datetime.fromisoformat(license_row['subscription_end']).date() if isinstance(license_row['subscription_end'], str) else license_row['subscription_end']
-        if subscription_end < datetime.now().date():
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail="Subscription has expired. Please renew to continue using Ilana PM."
-            )
-
-        # Step 3: Check seat availability
-        # First, check if this user+device already has an activation (reactivation scenario)
-        cursor.execute("""
-            SELECT user_id FROM users WHERE email = ? AND org_id = ?
-        """, (request.user_email, org_id))
-
-        existing_user = cursor.fetchone()
-
-        if existing_user:
-            user_id = existing_user['user_id']
-
-            # Check if this device already has an activation
+    
+            # Check if license is expired
+            if license_row['expires_at']:
+                expires_at = datetime.fromisoformat(license_row['expires_at']).date() if isinstance(license_row['expires_at'], str) else license_row['expires_at']
+                if expires_at < datetime.now().date():
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="License key has expired"
+                    )
+    
+            org_id = license_row['org_id']
+            tier = license_row['org_tier']
+    
+            # Step 2: Check organization subscription status
+            if license_row['org_status'] != 'active':
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Organization subscription is {license_row['org_status']}"
+                )
+    
+            # Check if subscription has expired
+            subscription_end = datetime.fromisoformat(license_row['subscription_end']).date() if isinstance(license_row['subscription_end'], str) else license_row['subscription_end']
+            if subscription_end < datetime.now().date():
+                raise HTTPException(
+                    status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                    detail="Subscription has expired. Please renew to continue using Ilana PM."
+                )
+    
+            # Step 3: Check seat availability
+            # First, check if this user+device already has an activation (reactivation scenario)
             cursor.execute("""
-                SELECT activation_id FROM activations
-                WHERE user_id = ? AND device_id = ? AND is_active = 1
-            """, (user_id, request.device_id))
-
-            existing_activation = cursor.fetchone()
-
-            if not existing_activation:
-                # New device for existing user - check seat availability
+                SELECT user_id FROM users WHERE email = ? AND org_id = ?
+            """, (request.user_email, org_id))
+    
+            existing_user = cursor.fetchone()
+    
+            if existing_user:
+                user_id = existing_user['user_id']
+    
+                # Check if this device already has an activation
+                cursor.execute("""
+                    SELECT activation_id FROM activations
+                    WHERE user_id = ? AND device_id = ? AND is_active = 1
+                """, (user_id, request.device_id))
+    
+                existing_activation = cursor.fetchone()
+    
+                if not existing_activation:
+                    # New device for existing user - check seat availability
+                    if license_row['seats_used'] >= license_row['seats_purchased']:
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail=f"No seats available. Organization has {license_row['seats_purchased']} seats, all in use."
+                        )
+            else:
+                # New user - check seat availability
                 if license_row['seats_used'] >= license_row['seats_purchased']:
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail=f"No seats available. Organization has {license_row['seats_purchased']} seats, all in use."
                     )
-        else:
-            # New user - check seat availability
-            if license_row['seats_used'] >= license_row['seats_purchased']:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail=f"No seats available. Organization has {license_row['seats_purchased']} seats, all in use."
-                )
-
-        # Step 4: Create or retrieve user record
-        if not existing_user:
-            user_id = generate_user_id()
-
-            # Extract first/last name from email (basic)
-            email_parts = request.user_email.split('@')[0].split('.')
-            first_name = email_parts[0].capitalize() if len(email_parts) > 0 else ""
-            last_name = email_parts[1].capitalize() if len(email_parts) > 1 else ""
-
+    
+            # Step 4: Create or retrieve user record
+            if not existing_user:
+                user_id = generate_user_id()
+    
+                # Extract first/last name from email (basic)
+                email_parts = request.user_email.split('@')[0].split('.')
+                first_name = email_parts[0].capitalize() if len(email_parts) > 0 else ""
+                last_name = email_parts[1].capitalize() if len(email_parts) > 1 else ""
+    
+                cursor.execute("""
+                    INSERT INTO users (user_id, org_id, email, first_name, last_name, role, is_active)
+                    VALUES (?, ?, ?, ?, ?, 'user', TRUE)
+                """, (user_id, org_id, request.user_email, first_name, last_name))
+    
+                logger.info(f"Created new user: {user_id} ({request.user_email})")
+            else:
+                user_id = existing_user['user_id']
+                logger.info(f"Using existing user: {user_id} ({request.user_email})")
+    
+            # Step 5: Create or update activation record
             cursor.execute("""
-                INSERT INTO users (user_id, org_id, email, first_name, last_name, role, is_active)
-                VALUES (?, ?, ?, ?, ?, 'user', TRUE)
-            """, (user_id, org_id, request.user_email, first_name, last_name))
-
-            logger.info(f"Created new user: {user_id} ({request.user_email})")
-        else:
-            user_id = existing_user['user_id']
-            logger.info(f"Using existing user: {user_id} ({request.user_email})")
-
-        # Step 5: Create or update activation record
-        cursor.execute("""
-            SELECT activation_id, is_active FROM activations
-            WHERE user_id = ? AND device_id = ?
-        """, (user_id, request.device_id))
-
-        existing_activation = cursor.fetchone()
-
-        # Generate JWT token
-        token_expires_at = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-        token_data = {
-            "user_id": user_id,
-            "org_id": org_id,
-            "tier": tier
-        }
-        activation_token = create_access_token(token_data)
-
-        if existing_activation:
-            activation_id = existing_activation['activation_id']
-
-            # Update existing activation
-            cursor.execute("""
-                UPDATE activations
-                SET activation_token = ?,
-                    token_expires_at = ?,
-                    is_active = TRUE,
-                    activated_at = CURRENT_TIMESTAMP,
-                    deactivated_at = NULL,
-                    ms_project_version = ?,
-                    addin_version = ?,
-                    device_name = ?
-                WHERE activation_id = ?
-            """, (
-                activation_token,
-                token_expires_at.isoformat(),
-                request.ms_project_version,
-                request.addin_version,
-                request.device_name,
-                activation_id
-            ))
-
-            logger.info(f"Reactivated existing activation: {activation_id}")
-        else:
-            activation_id = generate_activation_id()
-
-            # Create new activation
-            cursor.execute("""
-                INSERT INTO activations (
-                    activation_id, user_id, license_key, device_id, device_name,
-                    activation_token, token_expires_at, is_active,
-                    ms_project_version, addin_version
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
-            """, (
-                activation_id,
-                user_id,
-                request.license_key,
-                request.device_id,
-                request.device_name,
-                activation_token,
-                token_expires_at.isoformat(),
-                request.ms_project_version,
-                request.addin_version
-            ))
-
-            # Increment seats_used for new activation
-            cursor.execute("""
-                UPDATE organizations
-                SET seats_used = seats_used + 1
-                WHERE org_id = ?
-            """, (org_id,))
-
-            logger.info(f"Created new activation: {activation_id}")
-
-        # Step 6: Update user last_login
-        cursor.execute("""
-            UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?
-        """, (user_id,))
-
-        # Step 7: Create audit log
-        log_audit_event(
-            org_id=org_id,
-            user_id=user_id,
-            action="license_activated",
-            resource_type="activation",
-            resource_id=activation_id,
-            metadata={
-                "license_key": request.license_key,
-                "device_id": request.device_id,
-                "device_name": request.device_name,
-                "ms_project_version": request.ms_project_version,
-                "addin_version": request.addin_version
+                SELECT activation_id, is_active FROM activations
+                WHERE user_id = ? AND device_id = ?
+            """, (user_id, request.device_id))
+    
+            existing_activation = cursor.fetchone()
+    
+            # Generate JWT token
+            token_expires_at = datetime.utcnow() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+            token_data = {
+                "user_id": user_id,
+                "org_id": org_id,
+                "tier": tier
             }
-        )
-
-        logger.info(f"✅ License activated successfully: user={user_id}, org={org_id}, tier={tier}")
-
-        return ActivationResponse(
-            activation_token=activation_token,
-            org_id=org_id,
-            user_id=user_id,
-            tier=tier,
-            expires_at=token_expires_at.isoformat(),
-            message="License activated successfully"
+            activation_token = create_access_token(token_data)
+    
+            if existing_activation:
+                activation_id = existing_activation['activation_id']
+    
+                # Update existing activation
+                cursor.execute("""
+                    UPDATE activations
+                    SET activation_token = ?,
+                        token_expires_at = ?,
+                        is_active = TRUE,
+                        activated_at = CURRENT_TIMESTAMP,
+                        deactivated_at = NULL,
+                        ms_project_version = ?,
+                        addin_version = ?,
+                        device_name = ?
+                    WHERE activation_id = ?
+                """, (
+                    activation_token,
+                    token_expires_at.isoformat(),
+                    request.ms_project_version,
+                    request.addin_version,
+                    request.device_name,
+                    activation_id
+                ))
+    
+                logger.info(f"Reactivated existing activation: {activation_id}")
+            else:
+                activation_id = generate_activation_id()
+    
+                # Create new activation
+                cursor.execute("""
+                    INSERT INTO activations (
+                        activation_id, user_id, license_key, device_id, device_name,
+                        activation_token, token_expires_at, is_active,
+                        ms_project_version, addin_version
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
+                """, (
+                    activation_id,
+                    user_id,
+                    request.license_key,
+                    request.device_id,
+                    request.device_name,
+                    activation_token,
+                    token_expires_at.isoformat(),
+                    request.ms_project_version,
+                    request.addin_version
+                ))
+    
+                # Increment seats_used for new activation
+                cursor.execute("""
+                    UPDATE organizations
+                    SET seats_used = seats_used + 1
+                    WHERE org_id = ?
+                """, (org_id,))
+    
+                logger.info(f"Created new activation: {activation_id}")
+    
+            # Step 6: Update user last_login
+            cursor.execute("""
+                UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?
+            """, (user_id,))
+    
+            # Step 7: Create audit log
+            log_audit_event(
+                org_id=org_id,
+                user_id=user_id,
+                action="license_activated",
+                resource_type="activation",
+                resource_id=activation_id,
+                metadata={
+                    "license_key": request.license_key,
+                    "device_id": request.device_id,
+                    "device_name": request.device_name,
+                    "ms_project_version": request.ms_project_version,
+                    "addin_version": request.addin_version
+                }
+            )
+    
+            logger.info(f"✅ License activated successfully: user={user_id}, org={org_id}, tier={tier}")
+    
+            return ActivationResponse(
+                activation_token=activation_token,
+                org_id=org_id,
+                user_id=user_id,
+                tier=tier,
+                expires_at=token_expires_at.isoformat(),
+                message="License activated successfully"
+            )
+    except HTTPException:
+        # Re-raise HTTP exceptions (validation errors, etc.)
+        raise
+    except Exception as e:
+        logger.error(f"License activation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"License activation failed: {str(e)}"
         )
 
 
