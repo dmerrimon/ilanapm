@@ -97,9 +97,10 @@ async def create_organization(request: CreateOrgRequest, admin_verified: str = H
                "primary_contact_name": "Test Admin"
              }'
     """
-    # Verify admin token
-    if admin_verified != ADMIN_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
+    try:
+        # Verify admin token
+        if admin_verified != ADMIN_TOKEN:
+            raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
 
     # Validate tier
     if request.tier not in ['professional', 'enterprise']:
@@ -149,15 +150,20 @@ async def create_organization(request: CreateOrgRequest, admin_verified: str = H
 
         logger.info(f"✅ Created organization: {org_id} ({request.org_name}) with license: {license_key}")
 
-    return CreateOrgResponse(
-        org_id=org_id,
-        org_name=request.org_name,
-        license_key=license_key,
-        tier=request.tier,
-        seats_purchased=request.seats_purchased,
-        subscription_end=subscription_end.isoformat(),
-        message=f"Organization created successfully. Use license key to activate desktop add-in."
-    )
+        return CreateOrgResponse(
+            org_id=org_id,
+            org_name=request.org_name,
+            license_key=license_key,
+            tier=request.tier,
+            seats_purchased=request.seats_purchased,
+            subscription_end=subscription_end.isoformat(),
+            message=f"Organization created successfully. Use license key to activate desktop add-in."
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to create organization: {type(e).__name__}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.get("/admin/organizations")
@@ -167,9 +173,10 @@ async def list_organizations(admin_verified: str = Header(None, alias="X-Admin-T
 
     Requires X-Admin-Token header for authentication.
     """
-    # Verify admin token
-    if admin_verified != ADMIN_TOKEN:
-        raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
+    try:
+        # Verify admin token
+        if admin_verified != ADMIN_TOKEN:
+            raise HTTPException(status_code=401, detail="Invalid admin token. Set X-Admin-Token header.")
 
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -204,7 +211,12 @@ async def list_organizations(admin_verified: str = Header(None, alias="X-Admin-T
                 'license_key': row['license_key']
             })
 
-    return {'organizations': orgs}
+        return {'organizations': orgs}
+    except Exception as e:
+        logger.error(f"❌ Failed to list organizations: {type(e).__name__}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.delete("/admin/organizations/{org_id}")
