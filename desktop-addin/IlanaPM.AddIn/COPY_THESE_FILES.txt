@@ -1,0 +1,29 @@
+====================================
+FILES TO COPY TO WINDOWS MACHINE
+====================================
+
+You need to copy these 3 files from the Mac to your Windows build machine:
+
+FROM (Mac):
+/Users/donmerriman/Projects/ilana-pm/desktop-addin/IlanaPM.AddIn/Models/CountrySpecificTemplate.cs
+→ TO (Windows): C:\Users\ilanaadmin\Documents\ilanapm\desktop-addin\IlanaPM.AddIn\Models\CountrySpecificTemplate.cs
+
+FROM (Mac):
+/Users/donmerriman/Projects/ilana-pm/desktop-addin/IlanaPM.AddIn/Services/DependencyManager.cs
+→ TO (Windows): C:\Users\ilanaadmin\Documents\ilanapm\desktop-addin\IlanaPM.AddIn\Services\DependencyManager.cs
+
+FROM (Mac):
+/Users/donmerriman/Projects/ilana-pm/desktop-addin/IlanaPM.AddIn/Services/CountryTemplateLibrary.cs
+→ TO (Windows): C:\Users\ilanaadmin\Documents\ilanapm\desktop-addin\IlanaPM.AddIn\Services\CountryTemplateLibrary.cs
+
+====================================
+FILE SIZES:
+====================================
+CountrySpecificTemplate.cs: 318 lines
+DependencyManager.cs: 420 lines
+CountryTemplateLibrary.cs: 1,846 lines (COMPLETE with all 5 countries: USA, Germany, UK, Canada, Japan)
+
+====================================
+QUICK FIX IF YOU CAN'T COPY:
+====================================
+I can provide the content in chunks or via a different method if needed.

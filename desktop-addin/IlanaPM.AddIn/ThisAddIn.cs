@@ -5,10 +5,28 @@ namespace IlanaPM.AddIn
 {
     public partial class ThisAddIn
     {
+        // Telemetry service for ML learning (opt-in consent required)
+        public Services.TelemetryService TelemetryService { get; private set; }
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
             {
+                // Initialize telemetry service
+                TelemetryService = new Services.TelemetryService();
+                System.Diagnostics.Debug.WriteLine("Telemetry service initialized");
+
+                // Track session start
+                if (TelemetryService != null)
+                {
+                    var properties = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "ms_project_version", Application.Version },
+                        { "addin_version", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() }
+                    };
+                    TelemetryService.TrackEvent(Models.TelemetryEventType.SessionStarted, properties);
+                }
+
                 System.Threading.Thread.Sleep(1000);
                 CreateCustomFields();
             }
@@ -24,6 +42,26 @@ namespace IlanaPM.AddIn
 
         private void ThisAddIn_Shutdown(object sender, System.EventArgs e)
         {
+            try
+            {
+                // Track session end before flushing
+                if (TelemetryService != null)
+                {
+                    var properties = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "session_duration_seconds", TelemetryService.GetSessionDurationSeconds() }
+                    };
+                    TelemetryService.TrackEvent(Models.TelemetryEventType.SessionEnded, properties);
+
+                    // Flush telemetry events before shutdown
+                    TelemetryService.FlushEventsSync();
+                    System.Diagnostics.Debug.WriteLine("Telemetry events flushed on shutdown");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error flushing telemetry on shutdown: {ex.Message}");
+            }
         }
 
         private void CreateCustomFields()

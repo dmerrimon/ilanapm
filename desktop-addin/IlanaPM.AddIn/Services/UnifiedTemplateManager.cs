@@ -1,0 +1,912 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
+using IlanaPM.AddIn.Models;
+using MSProject = Microsoft.Office.Interop.MSProject;
+
+namespace IlanaPM.AddIn.Services
+{
+    /// <summary>
+    /// Unified Template Manager - consolidates TemplateLoader and SitePhaseManager
+    /// Handles all template types: Full Study, Site Startup, Site Closeout, Study Closeout
+    /// </summary>
+    public class UnifiedTemplateManager
+    {
+        private ApiClient apiClient;
+        private CustomFieldManager fieldManager;
+
+        public UnifiedTemplateManager()
+        {
+            apiClient = new ApiClient();
+            fieldManager = new CustomFieldManager();
+        }
+
+        /// <summary>
+        /// Load template based on type and configuration
+        /// </summary>
+        public async System.Threading.Tasks.Task<TemplateResult> LoadTemplateAsync(
+            TemplateConfiguration config,
+            FilterOptions filters = null)
+        {
+            switch (config.TemplateType)
+            {
+                case TemplateType.FullStudyTimeline:
+                    return await LoadFullStudyTimelineAsync(config, filters);
+
+                case TemplateType.SiteStartup:
+                    return LoadSiteStartupTemplate(config, filters);
+
+                case TemplateType.SiteImplementation:
+                    return LoadSiteImplementationTemplate(config, filters);
+
+                case TemplateType.SiteCloseout:
+                    return LoadSiteCloseoutTemplate(config, filters);
+
+                case TemplateType.StudyCloseout:
+                    return LoadStudyCloseoutTemplate(filters);
+
+                case TemplateType.AmendmentWorkflow:
+                    throw new NotImplementedException("Amendment workflow templates will be available in Phase 2");
+
+                default:
+                    throw new ArgumentException($"Unknown template type: {config.TemplateType}");
+            }
+        }
+
+        /// <summary>
+        /// Load full study timeline from API
+        /// </summary>
+        private async System.Threading.Tasks.Task<TemplateResult> LoadFullStudyTimelineAsync(
+            TemplateConfiguration config,
+            FilterOptions filters)
+        {
+            // Call API to generate template
+            var request = new TemplateRequest
+            {
+                country_code = config.CountryCode,
+                study_phase = config.StudyPhase,
+                therapeutic_area = config.TherapeuticArea,
+                include_optional = filters?.IncludeOptional ?? true
+            };
+
+            Models.Timeline timeline = await apiClient.GenerateTemplateAsync(request);
+
+            // Note: API templates come pre-filtered from backend based on include_optional
+            // Additional filtering not implemented for API templates yet
+            int originalTaskCount = timeline.tasks.Count;
+
+            return new TemplateResult
+            {
+                TemplateType = TemplateType.FullStudyTimeline,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = CalculateEstimatedDurationFromApiTasks(timeline.tasks),
+                CountryCode = config.CountryCode,
+                TemplateSource = "API",
+                PhaseType = "Full Study",
+                FiltersApplied = filters != null,
+                TaskCountBeforeFiltering = null
+            };
+        }
+
+        /// <summary>
+        /// Load site startup template from CountryTemplateLibrary
+        /// </summary>
+        private TemplateResult LoadSiteStartupTemplate(
+            TemplateConfiguration config,
+            FilterOptions filters)
+        {
+            // Get country info
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+
+            // Load template based on country
+            SitePhaseTaskSet taskSet;
+            if (config.CountryCode.ToUpper() == "USA")
+            {
+                taskSet = CountryTemplateLibrary.GetUSA_SiteStartup();
+            }
+            else
+            {
+                taskSet = CountryTemplateLibrary.GetInternational_SiteStartup(countryInfo);
+            }
+
+            // Apply filters if provided (before conversion)
+            int originalTaskCount = taskSet.tasks.Count;
+            if (filters != null)
+            {
+                taskSet.tasks = taskSet.tasks
+                    .Where(t => filters.PassesFilter(t))
+                    .ToList();
+            }
+
+            // Convert to Timeline
+            var timeline = ConvertTaskSetToTimeline(taskSet, config.SiteId);
+
+            return new TemplateResult
+            {
+                TemplateType = TemplateType.SiteStartup,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                SiteId = config.SiteId,
+                CountryCode = config.CountryCode,
+                TemplateSource = config.CountryCode.ToUpper() == "USA" ? "Library-USA" : $"Library-{config.CountryCode}",
+                PhaseType = "Site Activation",
+                FiltersApplied = filters != null,
+                TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
+            };
+        }
+
+        /// <summary>
+        /// Load site implementation template from CountryTemplateLibrary
+        /// </summary>
+        private TemplateResult LoadSiteImplementationTemplate(
+            TemplateConfiguration config,
+            FilterOptions filters)
+        {
+            // Get country info
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+
+            // Load template based on country
+            SitePhaseTaskSet taskSet;
+            if (config.CountryCode.ToUpper() == "USA")
+            {
+                taskSet = CountryTemplateLibrary.GetUSA_Implementation();
+            }
+            else
+            {
+                taskSet = CountryTemplateLibrary.GetInternational_Implementation(countryInfo);
+            }
+
+            // Apply filters if provided (before conversion)
+            int originalTaskCount = taskSet.tasks.Count;
+            if (filters != null)
+            {
+                taskSet.tasks = taskSet.tasks
+                    .Where(t => filters.PassesFilter(t))
+                    .ToList();
+            }
+
+            // Convert to Timeline
+            var timeline = ConvertTaskSetToTimeline(taskSet, config.SiteId);
+
+            return new TemplateResult
+            {
+                TemplateType = TemplateType.SiteImplementation,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                SiteId = config.SiteId,
+                CountryCode = config.CountryCode,
+                TemplateSource = config.CountryCode.ToUpper() == "USA" ? "Library-USA" : $"Library-{config.CountryCode}",
+                PhaseType = "Implementation",
+                FiltersApplied = filters != null,
+                TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
+            };
+        }
+
+        /// <summary>
+        /// Load site closeout template from CountryTemplateLibrary
+        /// </summary>
+        private TemplateResult LoadSiteCloseoutTemplate(
+            TemplateConfiguration config,
+            FilterOptions filters)
+        {
+            // Get country info
+            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+
+            // Load template based on country
+            SitePhaseTaskSet taskSet;
+            if (config.CountryCode.ToUpper() == "USA")
+            {
+                taskSet = CountryTemplateLibrary.GetUSA_SiteCloseout();
+            }
+            else
+            {
+                taskSet = CountryTemplateLibrary.GetInternational_SiteCloseout(countryInfo);
+            }
+
+            // Apply filters if provided (before conversion)
+            int originalTaskCount = taskSet.tasks.Count;
+            if (filters != null)
+            {
+                taskSet.tasks = taskSet.tasks
+                    .Where(t => filters.PassesFilter(t))
+                    .ToList();
+            }
+
+            // Convert to Timeline
+            var timeline = ConvertTaskSetToTimeline(taskSet, config.SiteId);
+
+            return new TemplateResult
+            {
+                TemplateType = TemplateType.SiteCloseout,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                SiteId = config.SiteId,
+                CountryCode = config.CountryCode,
+                TemplateSource = config.CountryCode.ToUpper() == "USA" ? "Library-USA" : $"Library-{config.CountryCode}",
+                PhaseType = "Site Closeout",
+                FiltersApplied = filters != null,
+                TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
+            };
+        }
+
+        /// <summary>
+        /// Load study closeout template (study-level, no site)
+        /// </summary>
+        private TemplateResult LoadStudyCloseoutTemplate(FilterOptions filters)
+        {
+            // Load study closeout template
+            var taskSet = CountryTemplateLibrary.GetStudyCloseout();
+
+            // Apply filters if provided (before conversion)
+            int originalTaskCount = taskSet.tasks.Count;
+            if (filters != null)
+            {
+                taskSet.tasks = taskSet.tasks
+                    .Where(t => filters.PassesFilter(t))
+                    .ToList();
+            }
+
+            // Convert to Timeline
+            var timeline = ConvertTaskSetToTimeline(taskSet, siteId: null);
+
+            return new TemplateResult
+            {
+                TemplateType = TemplateType.StudyCloseout,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                SiteId = null,  // Study-level, no site
+                CountryCode = null,  // Study-level, no country
+                TemplateSource = "Library-Study",
+                PhaseType = "Study Closeout",
+                FiltersApplied = filters != null,
+                TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
+            };
+        }
+
+        /// <summary>
+        /// Apply template result to MS Project
+        /// Sets custom fields Text11-14 for filtering
+        /// </summary>
+        public void ApplyToProject(
+            MSProject.Application app,
+            TemplateResult result,
+            Dictionary<string, string> customColumnNames = null)
+        {
+            if (app.ActiveProject == null)
+            {
+                throw new InvalidOperationException("No active project");
+            }
+
+            Project project = app.ActiveProject;
+
+            // Load timeline into project
+            var templateLoader = new TemplateLoader();
+            templateLoader.LoadTemplateIntoProject(result.Timeline, app);
+
+            // Set custom fields (Text11-14) for filtering
+            foreach (Microsoft.Office.Interop.MSProject.Task task in project.Tasks)
+            {
+                if (task == null) continue;
+
+                // Find matching API task by name
+                var apiTask = result.Timeline.tasks.FirstOrDefault(t => t.name == task.Name);
+                if (apiTask == null) continue;
+
+                // Determine subphase from category/phase
+                string subphase = apiTask.category ?? "Unspecified";
+
+                // Set filtering fields
+                fieldManager.SetFilteringFields(
+                    task,
+                    site: result.SiteId,
+                    phaseType: result.PhaseType,
+                    subphase: subphase,
+                    templateSource: result.TemplateSource
+                );
+
+                // If site-specific, also set clinical entity fields
+                if (!string.IsNullOrEmpty(result.SiteId))
+                {
+                    fieldManager.SetClinicalEntityFields(
+                        task,
+                        siteIds: result.SiteId,
+                        isSiteSpecific: true
+                    );
+                }
+            }
+
+            // Configure the MS Project view to show the custom columns
+            // DISABLED: MS Project COM API for column insertion is version-dependent and unreliable
+            // Custom fields ARE set on all tasks - users can insert columns manually
+            // ConfigureProjectColumns(app);
+
+            System.Diagnostics.Debug.WriteLine($"Applied {result.TaskCount} tasks to project with filtering fields and configured columns");
+        }
+
+        /// <summary>
+        /// Configure MS Project view to display custom columns
+        /// DISABLED: MS Project COM API for column insertion is version-dependent
+        /// Different MS Project versions have incompatible ColumnInsert signatures
+        /// Custom fields ARE populated on all tasks - users can insert columns manually
+        /// TODO Phase 2: Research version-specific API or use VSTO controls
+        /// </summary>
+        private void ConfigureProjectColumns(MSProject.Application app)
+        {
+            // This feature is disabled due to MS Project API version incompatibility
+            // The custom fields (Text11, Text12, Text4, etc.) ARE populated on all tasks
+            // Users can manually insert columns: Right-click header > Insert Column > Text11
+            System.Diagnostics.Debug.WriteLine("ConfigureProjectColumns disabled - manual column insertion required");
+        }
+
+        /// <summary>
+        /// Convert TemplateTask to API Task model
+        /// </summary>
+        private Models.Task ConvertTemplateTaskToTask(TemplateTask templateTask)
+        {
+            return new Models.Task
+            {
+                id = templateTask.task_id,
+                name = templateTask.name,
+                duration_days = templateTask.duration_days,
+                category = templateTask.category,
+                is_mandatory = templateTask.is_mandatory,
+                phase = templateTask.phase_type
+            };
+        }
+
+        /// <summary>
+        /// Convert SitePhaseTaskSet to Timeline for consistency with API templates
+        /// </summary>
+        private Models.Timeline ConvertTaskSetToTimeline(SitePhaseTaskSet taskSet, string siteId)
+        {
+            var timeline = new Models.Timeline
+            {
+                study_name = taskSet.phase_name,
+                phase = taskSet.phase_type,
+                authority = taskSet.regulatory_authority,
+                tasks = new List<Models.Task>(),
+                dependencies = new List<Dependency>()
+            };
+
+            // Convert TemplateTask to API Task
+            foreach (var templateTask in taskSet.tasks)
+            {
+                timeline.tasks.Add(ConvertTemplateTaskToTask(templateTask));
+            }
+
+            return timeline;
+        }
+
+        /// <summary>
+        /// Determine subphase from template task properties
+        /// Returns subphase if available, otherwise maps execution group
+        /// </summary>
+        private string DetermineSubphase(TemplateTask task)
+        {
+            // If subphase is already set (Phase 1 update), use it
+            if (!string.IsNullOrEmpty(task.subphase))
+            {
+                return task.subphase;
+            }
+
+            // Otherwise map from execution_group
+            if (string.IsNullOrEmpty(task.execution_group))
+            {
+                return task.category ?? "Unspecified";
+            }
+
+            // Map execution groups to subphases
+            string execGroup = task.execution_group.ToLower();
+
+            if (execGroup.Contains("essential") || execGroup.Contains("docs"))
+                return "Essential Documents";
+            if (execGroup.Contains("irb") || execGroup.Contains("ethics"))
+                return "IRB Submission";
+            if (execGroup.Contains("training"))
+                return "Training";
+            if (execGroup.Contains("activation") || execGroup.Contains("startup"))
+                return "Activation";
+            if (execGroup.Contains("patient") || execGroup.Contains("enrollment"))
+                return "Patient Closeout";
+            if (execGroup.Contains("archiv"))
+                return "Archival";
+            if (execGroup.Contains("closeout") || execGroup.Contains("closure"))
+                return "Closure";
+
+            // Default to category
+            return task.category ?? "Unspecified";
+        }
+
+        /// <summary>
+        /// Calculate estimated duration from template tasks (library)
+        /// </summary>
+        private int CalculateEstimatedDuration(List<TemplateTask> tasks)
+        {
+            if (tasks == null || tasks.Count == 0) return 0;
+
+            // Simple calculation: max of (task duration + predecessor durations)
+            // More accurate: use critical path calculation
+            return tasks.Max(t => t.duration_days);
+        }
+
+        /// <summary>
+        /// Calculate estimated duration from API tasks
+        /// </summary>
+        private int CalculateEstimatedDurationFromApiTasks(List<Models.Task> tasks)
+        {
+            if (tasks == null || tasks.Count == 0) return 0;
+
+            // Simple calculation: sum all task durations
+            // More accurate would use critical path from dependencies
+            return tasks.Sum(t => t.duration_days);
+        }
+
+        /// <summary>
+        /// Preview tasks before generation (for Step 3 of wizard)
+        /// Loads tasks directly from library without Timeline conversion for efficiency
+        /// </summary>
+        public List<TemplateTask> PreviewTasks(
+            TemplateConfiguration config,
+            FilterOptions filters = null)
+        {
+            SitePhaseTaskSet taskSet = null;
+
+            switch (config.TemplateType)
+            {
+                case TemplateType.SiteStartup:
+                    // Load directly from library
+                    var countryInfoStartup = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+                    if (config.CountryCode.ToUpper() == "USA")
+                    {
+                        taskSet = CountryTemplateLibrary.GetUSA_SiteStartup();
+                    }
+                    else
+                    {
+                        taskSet = CountryTemplateLibrary.GetInternational_SiteStartup(countryInfoStartup);
+                    }
+                    break;
+
+                case TemplateType.SiteImplementation:
+                    // Load directly from library
+                    var countryInfoImplementation = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+                    if (config.CountryCode.ToUpper() == "USA")
+                    {
+                        taskSet = CountryTemplateLibrary.GetUSA_Implementation();
+                    }
+                    else
+                    {
+                        taskSet = CountryTemplateLibrary.GetInternational_Implementation(countryInfoImplementation);
+                    }
+                    break;
+
+                case TemplateType.SiteCloseout:
+                    // Load directly from library
+                    var countryInfoCloseout = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+                    if (config.CountryCode.ToUpper() == "USA")
+                    {
+                        taskSet = CountryTemplateLibrary.GetUSA_SiteCloseout();
+                    }
+                    else
+                    {
+                        taskSet = CountryTemplateLibrary.GetInternational_SiteCloseout(countryInfoCloseout);
+                    }
+                    break;
+
+                case TemplateType.StudyCloseout:
+                    taskSet = CountryTemplateLibrary.GetStudyCloseout();
+                    break;
+
+                case TemplateType.FullStudyTimeline:
+                    // API calls need async - return empty for now, wizard will handle differently
+                    return new List<TemplateTask>();
+
+                default:
+                    return new List<TemplateTask>();
+            }
+
+            // Return tasks (with filters applied if provided)
+            if (taskSet != null && taskSet.tasks != null)
+            {
+                if (filters != null)
+                {
+                    return taskSet.tasks.Where(t => filters.PassesFilter(t)).ToList();
+                }
+                return taskSet.tasks;
+            }
+
+            return new List<TemplateTask>();
+        }
+
+        /// <summary>
+        /// Generate all selected templates based on ClinicalProjectConfiguration (unified wizard)
+        /// This is the main entry point from ClinicalProjectManagerForm
+        /// </summary>
+        public int GenerateTemplates(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            if (app == null || config == null)
+                throw new ArgumentNullException("Application and configuration are required");
+
+            int totalTasksCreated = 0;
+
+            try
+            {
+                var project = app.ActiveProject;
+                if (project == null)
+                    throw new InvalidOperationException("No active project");
+
+                // Generate each selected template type
+                if (config.Templates.GenerateFullStudyTimeline)
+                {
+                    totalTasksCreated += GenerateFullStudyTimeline(app, config);
+                }
+
+                if (config.Templates.GenerateSiteStartup && config.Templates.SitesForStartup.Count > 0)
+                {
+                    totalTasksCreated += GenerateSiteStartup(app, config);
+                }
+
+                if (config.Templates.GenerateSiteImplementation && config.Templates.SitesForImplementation.Count > 0)
+                {
+                    totalTasksCreated += GenerateSiteImplementation(app, config);
+                }
+
+                if (config.Templates.GenerateSiteCloseout && config.Templates.SitesForCloseout.Count > 0)
+                {
+                    totalTasksCreated += GenerateSiteCloseout(app, config);
+                }
+
+                if (config.Templates.GenerateStudyCloseout)
+                {
+                    totalTasksCreated += GenerateStudyCloseout(app, config);
+                }
+
+                // Apply custom column configuration once after all tasks generated
+                // DISABLED: See comment above - column insertion API is unreliable
+                // ConfigureProjectColumns(app);
+
+                return totalTasksCreated;
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error in GenerateTemplates: {ex.Message}");
+                throw new InvalidOperationException($"Failed to generate templates: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Generate Full Study Timeline (API-based regulatory phases)
+        /// </summary>
+        private int GenerateFullStudyTimeline(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            // TODO: Implement API call for Full Study Timeline
+            // For Phase 2.1 - placeholder
+            System.Diagnostics.Debug.WriteLine("Full Study Timeline generation not yet implemented");
+            return 0;
+        }
+
+        /// <summary>
+        /// Generate Site Startup templates for selected sites
+        /// </summary>
+        private int GenerateSiteStartup(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+
+            foreach (string siteId in config.Templates.SitesForStartup)
+            {
+                var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
+                if (site == null) continue;
+
+                // Get template for country
+                SitePhaseTaskSet taskSet = null;
+                var countryInfo = CountryRegulatoryInfo.GetCountryInfo(site.CountryCode);
+
+                if (site.CountryCode.ToUpper() == "USA")
+                {
+                    taskSet = CountryTemplateLibrary.GetUSA_SiteStartup();
+                }
+                else
+                {
+                    taskSet = CountryTemplateLibrary.GetInternational_SiteStartup(countryInfo);
+                }
+
+                if (taskSet != null && taskSet.tasks != null)
+                {
+                    // Create tasks in MS Project
+                    foreach (var task in taskSet.tasks)
+                    {
+                        // Apply filters
+                        if (config.Filters != null && !config.Filters.PassesFilter(task))
+                            continue;
+
+                        var msTask = app.ActiveProject.Tasks.Add(task.name);
+                        msTask.Duration = $"{task.duration_days}d";
+
+                        // Populate custom fields
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId); // Site
+                        msTask.SetField(MSProject.PjField.pjTaskText4, task.category); // Category
+                        msTask.SetField(MSProject.PjField.pjTaskText12, "Site Activation"); // Stage
+                        msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase); // Substage
+                        msTask.SetField(MSProject.PjField.pjTaskText14, $"Library-{site.CountryCode}"); // Template Source
+
+                        // Set task properties
+                        msTask.Notes = task.description;
+                        if (task.is_mandatory)
+                        {
+                            msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                        }
+
+                        tasksCreated++;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Site Startup tasks for {site.SiteId}");
+                }
+            }
+
+            return tasksCreated;
+        }
+
+        /// <summary>
+        /// Generate Site Implementation templates for selected sites
+        /// </summary>
+        private int GenerateSiteImplementation(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+
+            foreach (string siteId in config.Templates.SitesForImplementation)
+            {
+                var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
+                if (site == null) continue;
+
+                // Get template for country
+                SitePhaseTaskSet taskSet = null;
+                var countryInfo = CountryRegulatoryInfo.GetCountryInfo(site.CountryCode);
+
+                if (site.CountryCode.ToUpper() == "USA")
+                {
+                    taskSet = CountryTemplateLibrary.GetUSA_Implementation();
+                }
+                else
+                {
+                    taskSet = CountryTemplateLibrary.GetInternational_Implementation(countryInfo);
+                }
+
+                if (taskSet != null && taskSet.tasks != null)
+                {
+                    foreach (var task in taskSet.tasks)
+                    {
+                        if (config.Filters != null && !config.Filters.PassesFilter(task))
+                            continue;
+
+                        var msTask = app.ActiveProject.Tasks.Add(task.name);
+                        msTask.Duration = $"{task.duration_days}d";
+
+                        // Populate custom fields
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId);
+                        msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
+                        msTask.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                        msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
+                        msTask.SetField(MSProject.PjField.pjTaskText14, $"Library-{site.CountryCode}");
+
+                        msTask.Notes = task.description;
+                        if (task.is_mandatory)
+                            msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                        tasksCreated++;
+                    }
+                }
+            }
+
+            // Auto-generate cohort-specific milestone tasks if cohorts are defined
+            if (config.Cohorts != null && config.Cohorts.Count > 0)
+            {
+                tasksCreated += GenerateCohortMilestoneTasks(app, config);
+            }
+
+            return tasksCreated;
+        }
+
+        /// <summary>
+        /// Auto-generate cohort-specific participant milestone tasks with safety review meetings
+        /// Creates per-cohort tracking tasks with dependencies to ensure sequential dose escalation
+        /// </summary>
+        private int GenerateCohortMilestoneTasks(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+            MSProject.Task previousCohortSafetyDecision = null;
+
+            for (int i = 0; i < config.Cohorts.Count; i++)
+            {
+                var cohort = config.Cohorts[i];
+                bool isFirstCohort = (i == 0);
+
+                // First Participant Screened/Consented for this cohort
+                var taskScreened = app.ActiveProject.Tasks.Add($"First Participant Screened/Consented ({cohort.name})");
+                taskScreened.Duration = "1d";
+                taskScreened.SetField(MSProject.PjField.pjTaskText11, ""); // No specific site - applies to all sites in cohort
+                taskScreened.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                taskScreened.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                taskScreened.SetField(MSProject.PjField.pjTaskText13, $"Cohort Milestones - {cohort.name}");
+                taskScreened.SetField(MSProject.PjField.pjTaskText14, $"Auto-Generated-Cohort");
+                taskScreened.Notes = $"First participant in {cohort.name} completes informed consent and screening.\nTarget enrollment: {cohort.enrollment_target} participants";
+                taskScreened.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                // If not first cohort, this depends on previous cohort's safety approval
+                if (!isFirstCohort && previousCohortSafetyDecision != null)
+                {
+                    taskScreened.Predecessors = previousCohortSafetyDecision.ID.ToString();
+                }
+                tasksCreated++;
+
+                // First Participant Enrolled/Randomized for this cohort
+                var taskEnrolled = app.ActiveProject.Tasks.Add($"First Participant Enrolled/Randomized ({cohort.name})");
+                taskEnrolled.Duration = "1d";
+                taskEnrolled.SetField(MSProject.PjField.pjTaskText11, "");
+                taskEnrolled.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                taskEnrolled.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                taskEnrolled.SetField(MSProject.PjField.pjTaskText13, $"Cohort Milestones - {cohort.name}");
+                taskEnrolled.SetField(MSProject.PjField.pjTaskText14, $"Auto-Generated-Cohort");
+                taskEnrolled.Notes = $"First participant in {cohort.name} meets eligibility criteria and is enrolled/randomized.\nTarget enrollment: {cohort.enrollment_target} participants";
+                taskEnrolled.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                taskEnrolled.Predecessors = taskScreened.ID.ToString();
+                tasksCreated++;
+
+                // Expanded Dosing Complete for this cohort
+                var taskExpanded = app.ActiveProject.Tasks.Add($"Expanded Dosing Complete ({cohort.name})");
+                taskExpanded.Duration = "1d";
+                taskExpanded.SetField(MSProject.PjField.pjTaskText11, "");
+                taskExpanded.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                taskExpanded.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                taskExpanded.SetField(MSProject.PjField.pjTaskText13, $"Cohort Milestones - {cohort.name}");
+                taskExpanded.SetField(MSProject.PjField.pjTaskText14, $"Auto-Generated-Cohort");
+                taskExpanded.Notes = $"All participants in {cohort.name} have completed dosing phase.\nTarget enrollment: {cohort.enrollment_target} participants";
+                taskExpanded.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                taskExpanded.Predecessors = taskEnrolled.ID.ToString();
+                tasksCreated++;
+
+                // Safety Review Meeting - held after cohort completes dosing
+                var taskSafetyReview = app.ActiveProject.Tasks.Add($"Safety Review Meeting - {cohort.name}");
+                taskSafetyReview.Duration = "3d"; // Typically 2-3 days for data compilation and meeting
+                taskSafetyReview.SetField(MSProject.PjField.pjTaskText11, "");
+                taskSafetyReview.SetField(MSProject.PjField.pjTaskText4, "Safety Review");
+                taskSafetyReview.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                taskSafetyReview.SetField(MSProject.PjField.pjTaskText13, $"Cohort Safety Reviews - {cohort.name}");
+                taskSafetyReview.SetField(MSProject.PjField.pjTaskText14, $"Auto-Generated-Cohort");
+                taskSafetyReview.Notes = $"Safety review meeting for {cohort.name} to evaluate safety data before dose escalation.\n" +
+                    $"Target enrollment: {cohort.enrollment_target} participants\n\n" +
+                    $"Meeting typically includes:\n" +
+                    $"- Review of adverse events\n" +
+                    $"- Assessment of dose-limiting toxicities (DLTs)\n" +
+                    $"- Evaluation of pharmacokinetic data\n" +
+                    $"- Decision on dose escalation safety";
+                taskSafetyReview.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                taskSafetyReview.Predecessors = taskExpanded.ID.ToString();
+                tasksCreated++;
+
+                // Safety Committee Decision - approval to proceed or modify
+                var taskSafetyDecision = app.ActiveProject.Tasks.Add($"Safety Committee Decision - {cohort.name}");
+                taskSafetyDecision.Duration = "1d";
+                taskSafetyDecision.SetField(MSProject.PjField.pjTaskText11, "");
+                taskSafetyDecision.SetField(MSProject.PjField.pjTaskText4, "Safety Review");
+                taskSafetyDecision.SetField(MSProject.PjField.pjTaskText12, "Implementation");
+                taskSafetyDecision.SetField(MSProject.PjField.pjTaskText13, $"Cohort Safety Reviews - {cohort.name}");
+                taskSafetyDecision.SetField(MSProject.PjField.pjTaskText14, $"Auto-Generated-Cohort");
+                taskSafetyDecision.Notes = $"Formal safety committee decision for {cohort.name}.\n" +
+                    $"Target enrollment: {cohort.enrollment_target} participants\n\n" +
+                    $"Possible outcomes:\n" +
+                    $"- Approve dose escalation to next cohort\n" +
+                    $"- Modify dose for next cohort\n" +
+                    $"- Expand current cohort\n" +
+                    $"- Hold or terminate study";
+                taskSafetyDecision.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                taskSafetyDecision.Predecessors = taskSafetyReview.ID.ToString();
+                tasksCreated++;
+
+                // Store this cohort's safety decision for next cohort's dependency
+                previousCohortSafetyDecision = taskSafetyDecision;
+
+                System.Diagnostics.Debug.WriteLine($"Generated 5 cohort milestone tasks with safety reviews for {cohort.name}");
+            }
+
+            return tasksCreated;
+        }
+
+        /// <summary>
+        /// Generate Site Closeout templates for selected sites
+        /// </summary>
+        private int GenerateSiteCloseout(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+
+            foreach (string siteId in config.Templates.SitesForCloseout)
+            {
+                var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
+                if (site == null) continue;
+
+                // Get template for country
+                SitePhaseTaskSet taskSet = null;
+                var countryInfo = CountryRegulatoryInfo.GetCountryInfo(site.CountryCode);
+
+                if (site.CountryCode.ToUpper() == "USA")
+                {
+                    taskSet = CountryTemplateLibrary.GetUSA_SiteCloseout();
+                }
+                else
+                {
+                    taskSet = CountryTemplateLibrary.GetInternational_SiteCloseout(countryInfo);
+                }
+
+                if (taskSet != null && taskSet.tasks != null)
+                {
+                    foreach (var task in taskSet.tasks)
+                    {
+                        if (config.Filters != null && !config.Filters.PassesFilter(task))
+                            continue;
+
+                        var msTask = app.ActiveProject.Tasks.Add(task.name);
+                        msTask.Duration = $"{task.duration_days}d";
+
+                        // Populate custom fields
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId);
+                        msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
+                        msTask.SetField(MSProject.PjField.pjTaskText12, "Site Closeout");
+                        msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
+                        msTask.SetField(MSProject.PjField.pjTaskText14, $"Library-{site.CountryCode}");
+
+                        msTask.Notes = task.description;
+                        if (task.is_mandatory)
+                            msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                        tasksCreated++;
+                    }
+                }
+            }
+
+            return tasksCreated;
+        }
+
+        /// <summary>
+        /// Generate Study Closeout template (study-level, no sites)
+        /// </summary>
+        private int GenerateStudyCloseout(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+
+            var taskSet = CountryTemplateLibrary.GetStudyCloseout();
+
+            if (taskSet != null && taskSet.tasks != null)
+            {
+                foreach (var task in taskSet.tasks)
+                {
+                    if (config.Filters != null && !config.Filters.PassesFilter(task))
+                        continue;
+
+                    var msTask = app.ActiveProject.Tasks.Add(task.name);
+                    msTask.Duration = $"{task.duration_days}d";
+
+                    // Populate custom fields (no site for study-level closeout)
+                    msTask.SetField(MSProject.PjField.pjTaskText11, ""); // No site
+                    msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
+                    msTask.SetField(MSProject.PjField.pjTaskText12, "Study Closeout");
+                    msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
+                    msTask.SetField(MSProject.PjField.pjTaskText14, "Library-StudyLevel");
+
+                    msTask.Notes = task.description;
+                    if (task.is_mandatory)
+                        msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                    tasksCreated++;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Study Closeout tasks");
+            }
+
+            return tasksCreated;
+        }
+    }
+}

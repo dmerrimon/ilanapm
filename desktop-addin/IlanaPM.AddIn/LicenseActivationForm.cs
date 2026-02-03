@@ -216,7 +216,7 @@ namespace IlanaPM.AddIn
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Size = new System.Drawing.Size(510, 23);
             this.txtLicenseKey.TabIndex = 3;
-            this.txtLicenseKey.PlaceholderText = "Enter your license key (e.g., ILANA-PRO-XXXX-XXXX-XXXX)";
+            // PlaceholderText not available in .NET Framework 4.7.2
 
             //
             // lblEmail
@@ -237,7 +237,7 @@ namespace IlanaPM.AddIn
             this.txtEmail.Name = "txtEmail";
             this.txtEmail.Size = new System.Drawing.Size(510, 25);
             this.txtEmail.TabIndex = 5;
-            this.txtEmail.PlaceholderText = "your.email@company.com";
+            // PlaceholderText not available in .NET Framework 4.7.2
 
             //
             // progressBar

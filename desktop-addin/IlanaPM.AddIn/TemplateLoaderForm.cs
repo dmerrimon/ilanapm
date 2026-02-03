@@ -5,6 +5,12 @@ using System.Windows.Forms;
 
 namespace IlanaPM.AddIn
 {
+    /// <summary>
+    /// DEPRECATED: Use UnifiedTemplateManagerForm instead.
+    /// This form is kept for backward compatibility until the next major release.
+    /// The Template Manager provides a unified interface for all template types.
+    /// </summary>
+    [Obsolete("Use UnifiedTemplateManagerForm instead. This form will be removed in the next major release.", false)]
     public partial class TemplateLoaderForm : Form
     {
         private ComboBox cboCountry;
@@ -17,6 +23,13 @@ namespace IlanaPM.AddIn
         private Label lblPhase;
         private Label lblArea;
         private Label lblCountryInfo;
+        private GroupBox grpCustomColumns;
+        private TextBox txtCustomText5;
+        private TextBox txtCustomText6;
+        private TextBox txtCustomText7;
+        private Label lblCustomText5;
+        private Label lblCustomText6;
+        private Label lblCustomText7;
 
         private List<Models.CountrySummary> countries;
 
@@ -24,6 +37,7 @@ namespace IlanaPM.AddIn
         public string SelectedPhase { get; private set; }
         public string SelectedTherapeuticArea { get; private set; }
         public bool IncludeOptional { get; private set; }
+        public Dictionary<string, string> CustomColumnNames { get; private set; }
 
         public TemplateLoaderForm()
         {
@@ -35,7 +49,7 @@ namespace IlanaPM.AddIn
         {
             this.Text = "Load Country-Specific Timeline Template";
             this.Width = 500;
-            this.Height = 400;
+            this.Height = 550; // Increased height for custom columns section
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -141,12 +155,93 @@ namespace IlanaPM.AddIn
             // NOTE: All 92 tasks from task_ontology.yaml are now included by default
             // Removed checkbox for "Include Emmes timelines" - no longer needed
 
+            // Custom Columns GroupBox
+            grpCustomColumns = new GroupBox
+            {
+                Text = "Custom Columns (Optional)",
+                Left = 20,
+                Top = 215,
+                Width = 440,
+                Height = 150
+            };
+            this.Controls.Add(grpCustomColumns);
+
+            // Custom Column 1: Text5
+            lblCustomText5 = new Label
+            {
+                Text = "Text5 Column:",
+                Left = 10,
+                Top = 25,
+                Width = 100
+            };
+            grpCustomColumns.Controls.Add(lblCustomText5);
+
+            txtCustomText5 = new TextBox
+            {
+                Left = 120,
+                Top = 23,
+                Width = 300,
+                PlaceholderText = "e.g., Responsible Person"
+            };
+            grpCustomColumns.Controls.Add(txtCustomText5);
+
+            // Custom Column 2: Text6
+            lblCustomText6 = new Label
+            {
+                Text = "Text6 Column:",
+                Left = 10,
+                Top = 60,
+                Width = 100
+            };
+            grpCustomColumns.Controls.Add(lblCustomText6);
+
+            txtCustomText6 = new TextBox
+            {
+                Left = 120,
+                Top = 58,
+                Width = 300,
+                PlaceholderText = "e.g., Budget Code"
+            };
+            grpCustomColumns.Controls.Add(txtCustomText6);
+
+            // Custom Column 3: Text7
+            lblCustomText7 = new Label
+            {
+                Text = "Text7 Column:",
+                Left = 10,
+                Top = 95,
+                Width = 100
+            };
+            grpCustomColumns.Controls.Add(lblCustomText7);
+
+            txtCustomText7 = new TextBox
+            {
+                Left = 120,
+                Top = 93,
+                Width = 300,
+                PlaceholderText = "e.g., Department"
+            };
+            grpCustomColumns.Controls.Add(txtCustomText7);
+
+            // Info Label
+            Label lblCustomInfo = new Label
+            {
+                Text = "Custom column names will appear in MS Project views. Leave blank to skip.",
+                Left = 10,
+                Top = 123,
+                Width = 420,
+                Height = 20,
+                ForeColor = System.Drawing.Color.Gray,
+                Font = new System.Drawing.Font("Arial", 7)
+            };
+            grpCustomColumns.Controls.Add(lblCustomInfo);
+
             // Load Button
             btnLoad = new Button
             {
                 Text = "Load Template",
                 Left = 250,
-                Top = 280,
+                Top = 430, // Moved down to accommodate custom columns
                 Width = 100,
                 Height = 30
             };
@@ -158,7 +253,7 @@ namespace IlanaPM.AddIn
             {
                 Text = "Cancel",
                 Left = 360,
-                Top = 280,
+                Top = 430, // Moved down to match Load button
                 Width = 100,
                 Height = 30
             };
@@ -175,8 +270,7 @@ namespace IlanaPM.AddIn
             try
             {
                 var apiClient = new Services.ApiClient();
-                var response = await apiClient.GetCountriesAsync();
-                countries = response.countries;
+                countries = await apiClient.GetCountriesAsync();
 
                 // Sort countries by name
                 var sortedCountries = countries.OrderBy(c => c.name).ToList();
@@ -233,6 +327,15 @@ namespace IlanaPM.AddIn
             SelectedPhase = cboPhase.SelectedItem.ToString();
             SelectedTherapeuticArea = cboTherapeuticArea.SelectedItem.ToString();
             IncludeOptional = chkIncludeOptional.Checked;
+
+            // Capture custom column names
+            CustomColumnNames = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(txtCustomText5.Text))
+                CustomColumnNames["Text5"] = txtCustomText5.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(txtCustomText6.Text))
+                CustomColumnNames["Text6"] = txtCustomText6.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(txtCustomText7.Text))
+                CustomColumnNames["Text7"] = txtCustomText7.Text.Trim();
 
             this.DialogResult = DialogResult.OK;
             this.Close();

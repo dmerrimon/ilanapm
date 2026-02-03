@@ -63,6 +63,7 @@ namespace IlanaPM.AddIn
                 Height = 450,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
             };
+            tabControl.SelectedIndexChanged += TabControl_SelectedIndexChanged;
 
             // Tab 1: Validation Issues
             tabValidation = new TabPage("Validation Issues");
@@ -411,6 +412,30 @@ namespace IlanaPM.AddIn
             }
 
             txtAutoFix.Text = sb.ToString();
+        }
+
+        /// <summary>
+        /// Track when users switch tabs to understand which information they find useful
+        /// </summary>
+        private void TabControl_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null && tabControl.SelectedTab != null)
+                {
+                    var properties = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "tab_name", tabControl.SelectedTab.Text },
+                        { "tab_index", tabControl.SelectedIndex }
+                    };
+                    telemetryService.TrackEvent(Models.TelemetryEventType.RiskAnalysisViewed, properties);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Telemetry error in tab change: {ex.Message}");
+            }
         }
     }
 }

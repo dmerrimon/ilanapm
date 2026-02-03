@@ -19,7 +19,11 @@ namespace IlanaPM.AddIn
         private Button btnClose;
         private ProgressBar progressBar;
 
-        // Telemetry controls REMOVED in Phase 1C (deferred to future release)
+        // Telemetry controls (declared but not used in Phase 1C)
+        private GroupBox grpTelemetry;
+        private CheckBox chkTelemetryConsent;
+        private Label lblTelemetryInfo;
+        private LinkLabel lnkPrivacyPolicy;
 
         public SettingsForm()
         {

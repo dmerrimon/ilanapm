@@ -149,9 +149,8 @@ namespace IlanaPM.AddIn.Services
             {
                 CreateCustomTable(app, "Ilana PM Workflow", new[]
                 {
-                    (MSProject.PjField.pjTaskMode, "Task Mode", 15),
-                    (MSProject.PjField.pjTaskText4, "Task Category", 12),
                     (MSProject.PjField.pjTaskName, "Task Name", 30),
+                    (MSProject.PjField.pjTaskText4, "Task Category", 12),
                     (MSProject.PjField.pjTaskDuration, "Duration", 10),
                     (MSProject.PjField.pjTaskBaselineFinish, "Original Projected Completion Date", 15),
                     (MSProject.PjField.pjTaskStart, "Start", 15),

@@ -101,6 +101,10 @@
   -->
   <ItemGroup>
     <Reference Include="Accessibility" />
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c">
+      <HintPath>packages\Microsoft.Office.Interop.Excel.15.0.4795.1000\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -109,12 +113,14 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -196,19 +202,123 @@
     <Compile Include="MLAdvisoryForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="ClinicalProjectManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ClinicalProjectManagerForm.Designer.cs">
+      <DependentUpon>ClinicalProjectManagerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ClinicalEntityTaggingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ClinicalEntityTaggingForm.Designer.cs">
+      <DependentUpon>ClinicalEntityTaggingForm.cs</DependentUpon>
+    </Compile>
+    <!-- EXCLUDED: EssentialDocumentsTrackerForm - has compilation errors, not being used
+    <Compile Include="EssentialDocumentsTrackerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EssentialDocumentsTrackerForm.Designer.cs">
+      <DependentUpon>EssentialDocumentsTrackerForm.cs</DependentUpon>
+    </Compile>
+    -->
+    <Compile Include="SitePhaseManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SitePhaseManagerForm.Designer.cs">
+      <DependentUpon>SitePhaseManagerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ClinicalSetupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ClinicalSetupForm.Designer.cs">
+      <DependentUpon>ClinicalSetupForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="CriticalPathResultsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <!-- EXCLUDED: EnhancedValidationResultsForm.cs - file not found on Windows machine
+    <Compile Include="EnhancedValidationResultsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    -->
+    <Compile Include="FeedbackForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <!-- EXCLUDED: FeedbackSelectionForm.cs - has compilation errors
+    <Compile Include="FeedbackSelectionForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    -->
+    <Compile Include="LicenseActivationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MultiCountryCalculatorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="TemplateLoaderForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UnifiedTemplateManagerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UnifiedTemplateManagerForm.Designer.cs">
+      <DependentUpon>UnifiedTemplateManagerForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Models\AutoFixResult.cs" />
+    <Compile Include="Models\BaselineComparison.cs" />
+    <Compile Include="Models\BaselineComparisonRequest.cs" />
+    <Compile Include="Models\ClinicalMetadata.cs" />
+    <Compile Include="Models\ClinicalProjectConfiguration.cs" />
+    <Compile Include="Models\ClinicalWarning.cs" />
+    <Compile Include="Models\CountryRegulatoryInfo.cs" />
+    <Compile Include="Models\CountrySpecificTemplate.cs" />
+    <Compile Include="Models\CountrySummary.cs" />
+    <Compile Include="Models\CriticalPathResult.cs" />
+    <Compile Include="Models\LicensingModels.cs" />
     <Compile Include="Models\MLModels.cs" />
+    <Compile Include="Models\SiteConfiguration.cs" />
+    <Compile Include="Models\TaskFeedback.cs" />
     <Compile Include="Models\TeamsNotification.cs" />
+    <Compile Include="Models\TelemetryEvent.cs" />
+    <Compile Include="Models\TemplateRequest.cs" />
+    <Compile Include="Models\TemplateSelections.cs" />
+    <Compile Include="Models\TemplateTypes.cs" />
     <Compile Include="Models\Timeline.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Services\ApiClient.cs" />
+    <Compile Include="Services\ClinicalMetadataManager.cs" />
+    <Compile Include="Services\CountryTemplateLibrary.cs" />
+    <Compile Include="Services\CustomFieldManager.cs" />
+    <Compile Include="Services\DependencyManager.cs" />
     <Compile Include="Services\ProjectDataExtractor.cs" />
     <Compile Include="Services\ProjectDataWriter.cs" />
+    <Compile Include="Services\SecureStorage.cs" />
+    <Compile Include="Services\TelemetryService.cs" />
+    <Compile Include="Services\TemplateLoader.cs" />
+    <Compile Include="Services\UnifiedTemplateManager.cs" />
     <Compile Include="Services\ViewManager.cs" />
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="SiteStatusDashboardForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SiteActivationTimelineForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <!-- EXCLUDED: EssentialDocsComplianceForm.cs - hidden, not being used
+    <Compile Include="EssentialDocsComplianceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    -->
+    <!-- EXCLUDED: StudyTimelineStatusForm.cs - hidden, not being used
+    <Compile Include="StudyTimelineStatusForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    -->
     <Compile Include="ValidationResultsForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -221,6 +331,11 @@
     <EmbeddedResource Include="MLAdvisoryForm.resx">
       <DependentUpon>MLAdvisoryForm.cs</DependentUpon>
     </EmbeddedResource>
+    <!-- EXCLUDED: EssentialDocumentsTrackerForm.resx - not being used
+    <EmbeddedResource Include="EssentialDocumentsTrackerForm.resx">
+      <DependentUpon>EssentialDocumentsTrackerForm.cs</DependentUpon>
+    </EmbeddedResource>
+    -->
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -243,6 +358,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <EmbeddedResource Include="Resources\analysis.png" />
+    <EmbeddedResource Include="Resources\clinical.png" />
+    <EmbeddedResource Include="Resources\multicountry.png" />
+    <EmbeddedResource Include="Resources\settings.png" />
+    <EmbeddedResource Include="Resources\siteactivation.png" />
+    <EmbeddedResource Include="Resources\sitestatus.png" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>

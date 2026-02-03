@@ -46,13 +46,10 @@ namespace IlanaPM.AddIn.Services
                 // Set outline level for proper indentation
                 // Level 1 = Summary task (not indented)
                 // Level 2 = Normal task (indented under summary)
-                msTask.OutlineLevel = templateTask.outline_level;
+                msTask.OutlineLevel = (short)templateTask.outline_level;
 
-                // Mark as summary task if needed (MS Project will auto-detect based on children)
-                if (templateTask.is_summary)
-                {
-                    msTask.Summary = true;
-                }
+                // MS Project will auto-detect summary tasks based on children
+                // Summary property is read-only and cannot be set directly
 
                 // Set custom fields based on template metadata (skip for summary tasks)
                 if (!templateTask.is_summary)
@@ -76,8 +73,7 @@ namespace IlanaPM.AddIn.Services
                 RenameCustomColumns(project, customColumnNames);
             }
 
-            // Auto-schedule the project
-            project.UpdateProject();
+            // MS Project auto-calculates schedules - no manual update needed
         }
 
         /// <summary>
@@ -111,7 +107,7 @@ namespace IlanaPM.AddIn.Services
 
                 msTask.Notes = notes;
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error setting custom fields for task {templateTask.id}: {ex.Message}");
             }
@@ -141,7 +137,7 @@ namespace IlanaPM.AddIn.Services
                         string lag = dep.lag_days + "d";
                         successorTask.TaskDependencies.Add(predecessorTask, linkType, lag);
                     }
-                    catch (Exception ex)
+                    catch (System.Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"Error creating dependency {dep.predecessor_id} → {dep.successor_id}: {ex.Message}");
                     }
@@ -181,12 +177,12 @@ namespace IlanaPM.AddIn.Services
         {
             try
             {
-                // Map custom field names to MS Project field constants
-                var fieldMapping = new Dictionary<string, PjField>
+                // Map custom field names to MS Project custom field constants
+                var fieldMapping = new Dictionary<string, PjCustomField>
                 {
-                    { "Text5", PjField.pjTaskText5 },
-                    { "Text6", PjField.pjTaskText6 },
-                    { "Text7", PjField.pjTaskText7 }
+                    { "Text5", PjCustomField.pjCustomTaskText5 },
+                    { "Text6", PjCustomField.pjCustomTaskText6 },
+                    { "Text7", PjCustomField.pjCustomTaskText7 }
                 };
 
                 foreach (var customField in customColumnNames)
@@ -194,11 +190,11 @@ namespace IlanaPM.AddIn.Services
                     if (fieldMapping.ContainsKey(customField.Key))
                     {
                         // Rename the column header by setting the custom field name
-                        PjField field = fieldMapping[customField.Key];
+                        PjCustomField field = fieldMapping[customField.Key];
 
-                        // Use CustomFieldSetName to rename the column
+                        // Use CustomFieldRename to rename the column
                         // This changes how the column appears in Insert Column dialogs and views
-                        project.Application.CustomFieldSetName(
+                        project.Application.CustomFieldRename(
                             field,
                             customField.Value
                         );
@@ -207,10 +203,10 @@ namespace IlanaPM.AddIn.Services
                     }
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 // Non-critical error - log but don't fail template load
-                System.Diagnostics.Debug.WriteLine($"Warning: Could not rename custom columns: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error configuring columns: {ex.Message}");
             }
         }
     }

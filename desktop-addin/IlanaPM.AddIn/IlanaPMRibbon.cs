@@ -66,6 +66,13 @@ namespace IlanaPM.AddIn
         {
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
+            // Track telemetry
+            var telemetryService = Globals.ThisAddIn.TelemetryService;
+            if (telemetryService != null)
+            {
+                telemetryService.TrackEvent(TelemetryEventType.ValidationStarted, null);
+            }
+
             try
             {
                 // FIRST: Ensure custom fields exist
@@ -76,24 +83,26 @@ namespace IlanaPM.AddIn
 
                 var apiClient = new Services.ApiClient();
 
-                // PHASE 1.1: Call BOTH validation AND ML advisory APIs in parallel
-                var validationTask = apiClient.ValidateTimelineAsync(timeline);
-                var advisoryTask = apiClient.GetTimelineAdvisoryAsync(timeline);
+                // Call validation API
+                var validationResult = await apiClient.ValidateTimelineAsync(timeline);
 
-                // Wait for both to complete
-                await System.Threading.Tasks.Task.WhenAll(validationTask, advisoryTask);
-
-                var validationResult = await validationTask;
-                var advisoryResult = await advisoryTask;
-
-                // Write back to MS Project
+                // Write validation results back to MS Project
                 var writer = new Services.ProjectDataWriter();
                 writer.WriteValidationResults(Globals.ThisAddIn.Application, validationResult);
-                writer.WriteMLAdvisoryResults(Globals.ThisAddIn.Application, advisoryResult);
 
-                // Show enhanced results form with both validation and ML predictions
-                EnhancedValidationResultsForm resultsForm = new EnhancedValidationResultsForm();
-                resultsForm.DisplayResults(validationResult, advisoryResult, timeline);
+                // Track completion
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.ValidationCompleted, new Dictionary<string, object>
+                    {
+                        { "issue_count", validationResult.issues?.Count ?? 0 },
+                        { "task_count", timeline.tasks?.Count ?? 0 }
+                    });
+                }
+
+                // Show validation results form
+                ValidationResultsForm resultsForm = new ValidationResultsForm();
+                resultsForm.DisplayResults(validationResult);
                 resultsForm.ShowDialog();
             }
             catch (Models.UnauthorizedException ex)
@@ -126,6 +135,7 @@ namespace IlanaPM.AddIn
 
                 System.Diagnostics.Debug.WriteLine("Creating custom fields on demand...");
 
+                // Original custom fields (Text1-6)
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText1, "Regulatory Authority");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText2, "Study Phase");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText3, "Therapeutic Area");
@@ -133,11 +143,32 @@ namespace IlanaPM.AddIn
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText5, "Gating Status");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText6, "ML Predicted Duration");
 
+                // Clinical entity fields (Text7-10)
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText7, "Site IDs");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText8, "Amendment IDs");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText9, "Cohort IDs");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText10, "Clinical Summary");
+
+                // NEW: Filtering fields (Text11-14)
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText11, "Site");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText12, "Stage");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText13, "Subphase");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText14, "Template Source");
+
+                // Number fields
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber1, "Checklist Completion %");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber2, "Risk Score");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber3, "ML Confidence %");
 
+                // Flag fields
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskFlag1, "Is Mandatory");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskFlag2, "Is Site-Specific");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskFlag3, "Is Amendment-Generated");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskFlag4, "Requires IRB Approval");
+
+                // Date fields
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskDate1, "Amendment Effective Date");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskDate2, "Cohort Enrollment Start");
 
                 System.Diagnostics.Debug.WriteLine("Custom fields created successfully");
             }
@@ -184,7 +215,9 @@ namespace IlanaPM.AddIn
             try
             {
                 // Show template loader form
+#pragma warning disable CS0618 // Type or member is obsolete
                 var templateForm = new TemplateLoaderForm();
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 if (templateForm.ShowDialog() == DialogResult.OK)
                 {
@@ -251,8 +284,28 @@ namespace IlanaPM.AddIn
         {
             try
             {
+                // Track telemetry
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
+                    {
+                        { "feature", "MultiCountryCalculator" }
+                    });
+                }
+
                 var multiCountryForm = new MultiCountryCalculatorForm();
-                multiCountryForm.ShowDialog();
+                var result = multiCountryForm.ShowDialog();
+
+                // Track close
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
+                    {
+                        { "feature", "MultiCountryCalculator" },
+                        { "result", result.ToString() }
+                    });
+                }
             }
             catch (System.Exception ex)
             {
@@ -283,6 +336,17 @@ namespace IlanaPM.AddIn
 
                 // Highlight critical path tasks in MS Project
                 HighlightCriticalPathTasks(criticalPath);
+
+                // Track telemetry
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.CriticalPathAnalyzed, new Dictionary<string, object>
+                    {
+                        { "task_count", criticalPath.task_count },
+                        { "total_duration", criticalPath.total_duration }
+                    });
+                }
 
                 // Show critical path results form
                 CriticalPathResultsForm resultsForm = new CriticalPathResultsForm();
@@ -362,5 +426,262 @@ namespace IlanaPM.AddIn
                 System.Diagnostics.Debug.WriteLine("Error highlighting critical path: " + ex.Message);
             }
         }
+
+        // CLINICAL ENTITY TRACKING: CLINICAL SETUP BUTTON
+        private void btnClinicalSetup_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                EnsureCustomFields();
+
+                // Track telemetry
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
+                    {
+                        { "feature", "ClinicalSetup" }
+                    });
+                }
+
+                var setupForm = new ClinicalSetupForm();
+                var result = setupForm.ShowDialog();
+
+                // Track close
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
+                    {
+                        { "feature", "ClinicalSetup" },
+                        { "result", result.ToString() }
+                    });
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening Clinical Setup: {ex.Message}",
+                    "Clinical Setup Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // DEPRECATED: UNIFIED TEMPLATE MANAGER BUTTON (replaced by Clinical Project Manager)
+        private void btnUnifiedTemplateManager_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                // Redirect to new Clinical Project Manager
+                MessageBox.Show(
+                    "The Template Manager has been replaced by the Clinical Project Manager.\n\n" +
+                    "The new unified wizard combines Clinical Setup and Template Manager into one workflow.\n\n" +
+                    "Opening Clinical Project Manager now...",
+                    "Feature Replaced",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                // Launch new form
+                btnClinicalProjectManager_Click(sender, e);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening Clinical Project Manager: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // CLINICAL ENTITY TRACKING: ESSENTIAL DOCUMENTS TRACKER BUTTON (HIDDEN - NOT IMPLEMENTED)
+        private void btnEssentialDocs_Click(object sender, RibbonControlEventArgs e)
+        {
+            MessageBox.Show("Essential Documents Tracker feature is not yet implemented.",
+                "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // NEW: CLINICAL PROJECT MANAGER BUTTON (Phase 2 - Unified wizard)
+        private void btnClinicalProjectManager_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                EnsureCustomFields();
+
+                // Launch the new unified Clinical Project Manager wizard
+                var form = new ClinicalProjectManagerForm(Globals.ThisAddIn.Application);
+                var result = form.ShowDialog();
+
+                if (result == DialogResult.OK)
+                {
+                    MessageBox.Show(
+                        "Clinical Project Manager completed successfully.\n\n" +
+                        "Your project configuration has been saved and tasks have been generated.",
+                        "Success",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening Clinical Project Manager: {ex.Message}",
+                    "Clinical Project Manager Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // NEW: TAG TASKS WITH ENTITIES BUTTON
+        private void btnTagTasks_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                var project = app.ActiveProject;
+
+                if (project == null)
+                {
+                    MessageBox.Show("No active project. Please open or create a project first.",
+                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Get selected tasks
+                var selectedTasks = new List<Microsoft.Office.Interop.MSProject.Task>();
+                var selection = app.ActiveSelection;
+
+                if (selection == null || selection.Tasks.Count == 0)
+                {
+                    MessageBox.Show("Please select one or more tasks to tag with clinical entities.",
+                        "No Tasks Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                foreach (Microsoft.Office.Interop.MSProject.Task task in selection.Tasks)
+                {
+                    if (task != null)
+                    {
+                        selectedTasks.Add(task);
+                    }
+                }
+
+                if (selectedTasks.Count == 0)
+                {
+                    MessageBox.Show("No valid tasks selected.",
+                        "No Tasks Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Open tagging form
+                var form = new ClinicalEntityTaggingForm();
+                form.LoadSelectedTasks(selectedTasks);
+                form.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error tagging tasks: {ex.Message}",
+                    "Tag Tasks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #region Reports Menu Event Handlers
+
+        // REPORTS: SITE STATUS DASHBOARD
+        private void btnSiteStatusDashboard_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                var project = app.ActiveProject;
+
+                if (project == null)
+                {
+                    MessageBox.Show("No active project. Please open or create a project first.",
+                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Track telemetry
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
+                    {
+                        { "feature", "SiteStatusDashboard" }
+                    });
+                }
+
+                // Launch Site Status Dashboard
+                var dashboardForm = new SiteStatusDashboardForm(app);
+                dashboardForm.ShowDialog();
+
+                // Track close
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
+                    {
+                        { "feature", "SiteStatusDashboard" }
+                    });
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening Site Status Dashboard: {ex.Message}",
+                    "Report Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // REPORTS: ESSENTIAL DOCUMENTS COMPLIANCE (HIDDEN - NOT IMPLEMENTED)
+        private void btnEssentialDocsCompliance_Click(object sender, RibbonControlEventArgs e)
+        {
+            MessageBox.Show("Essential Documents Compliance Report is not yet implemented.",
+                "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // REPORTS: STUDY TIMELINE STATUS (HIDDEN - NOT IMPLEMENTED)
+        private void btnStudyTimelineStatus_Click(object sender, RibbonControlEventArgs e)
+        {
+            MessageBox.Show("Study Timeline Status Report is not yet implemented.",
+                "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        // REPORTS: SITE ACTIVATION TIMELINE
+        private void btnSiteActivationTimeline_Click(object sender, RibbonControlEventArgs e)
+        {
+            try
+            {
+                var app = Globals.ThisAddIn.Application;
+                var project = app.ActiveProject;
+
+                if (project == null)
+                {
+                    MessageBox.Show("No active project. Please open or create a project first.",
+                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Track telemetry
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
+                    {
+                        { "feature", "SiteActivationTimelineReport" }
+                    });
+                }
+
+                // Launch Site Activation Timeline Report
+                var timelineForm = new SiteActivationTimelineForm(app);
+                timelineForm.ShowDialog();
+
+                // Track close
+                if (telemetryService != null)
+                {
+                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
+                    {
+                        { "feature", "SiteActivationTimelineReport" }
+                    });
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error opening Site Activation Timeline Report: {ex.Message}",
+                    "Report Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        #endregion
     }
 }

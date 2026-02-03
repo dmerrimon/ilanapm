@@ -1,15 +1,24 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
+<?xml version='1.0' encoding='utf-8'?>
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="IlanaPM.AddIn.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
     <Setting Name="ApiBaseUrl" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://ilanapm.azurewebsites.net</Value>
+      <Value Profile="(Default)">https://ilanapm.onrender.com</Value>
     </Setting>
     <Setting Name="TeamsWebhookUrl" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="AutoUpdateEnabled" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SubmittedFeedbackTasks" Type="System.Collections.Specialized.StringCollection" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="LastSubmissionDate" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="TelemetryConsent" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

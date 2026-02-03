@@ -264,6 +264,25 @@ namespace IlanaPM.AddIn
                 return;
             }
 
+            // Track calculation telemetry
+            try
+            {
+                var telemetryService = Globals.ThisAddIn.TelemetryService;
+                if (telemetryService != null)
+                {
+                    var properties = new System.Collections.Generic.Dictionary<string, object>
+                    {
+                        { "country_count", selectedCountries.Count },
+                        { "countries", string.Join(",", selectedCountries.Select(c => c.code)) }
+                    };
+                    telemetryService.TrackEvent(Models.TelemetryEventType.ButtonClicked, properties);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Telemetry error in calculation: {ex.Message}");
+            }
+
             // Generate analysis
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("══════════════════════════════════════════════════════════════════════════════");

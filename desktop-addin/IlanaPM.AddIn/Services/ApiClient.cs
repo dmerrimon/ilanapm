@@ -280,13 +280,14 @@ namespace IlanaPM.AddIn.Services
             return JsonConvert.DeserializeObject<Models.BaselineComparisonResult>(responseBody);
         }
 
-        public async Task<Models.CountriesResponse> GetCountriesAsync()
+        public async Task<System.Collections.Generic.List<Models.CountrySummary>> GetCountriesAsync()
         {
             AddAuthorizationHeader();
             HttpResponseMessage response = await httpClient.GetAsync(API_BASE_URL + "/api/v1/templates/countries");
             await HandleResponseAsync(response);
             string responseBody = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<Models.CountriesResponse>(responseBody);
+            var countriesResponse = JsonConvert.DeserializeObject<Models.CountriesResponse>(responseBody);
+            return countriesResponse.countries;
         }
 
         /// <summary>

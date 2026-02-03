@@ -1,0 +1,332 @@
+==============================================
+STUDY CLOSEOUT TASKS - REPLACE IN CountryTemplateLibrary.cs
+==============================================
+
+Replace the entire GetStudyCloseout() method (starting at line ~2969) with this:
+
+        public static SitePhaseTaskSet GetStudyCloseout()
+        {
+            var taskSet = new SitePhaseTaskSet
+            {
+                phase_name = "Study Closeout",
+                phase_type = "Study Closeout",
+                country_code = "GLOBAL",
+                country_name = "All Countries",
+                regulatory_authority = "Multiple"
+            };
+
+            taskSet.tasks.AddRange(new List<TemplateTask>
+            {
+                // PHASE 1: FINALIZE CLINICAL DATABASE
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-001",
+                    name = "Clinical data entry completed",
+                    description = "4 days after last subject, last visit",
+                    duration_days = 4,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-002",
+                    name = "Data cleaning and querying",
+                    description = "2 weeks after data entry completion",
+                    duration_days = 14,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-003",
+                    name = "Serious Adverse Event reconciliation",
+                    description = "3 weeks after data entry completion",
+                    duration_days = 21,
+                    category = "Safety",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-SAE-Reconciliation",
+                    parallel_group_id = 1,
+                    predecessors = new List<string> { "STUDY-CO-001" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-004",
+                    name = "Final monitoring visit",
+                    description = "5 weeks after last subject, last visit",
+                    duration_days = 35,
+                    category = "Monitoring",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Final-Monitoring",
+                    predecessors = new List<string> { "STUDY-CO-002", "STUDY-CO-003" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-005",
+                    name = "Resolution of all data management and monitoring queries",
+                    description = "1 day after final monitoring visit",
+                    duration_days = 1,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-004" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-006",
+                    name = "Clinical database lock",
+                    description = "1 day after resolution of all queries",
+                    duration_days = 1,
+                    category = "Data Management",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Clinical-DB",
+                    predecessors = new List<string> { "STUDY-CO-005" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+
+                // PHASE 2: FINALIZE CORE LABORATORY/IMMUNOLOGY DATA
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-007",
+                    name = "Assay completion and transfer of laboratory data to Emmes",
+                    description = "12 weeks after last specimen collection",
+                    duration_days = 84,
+                    category = "Laboratory",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-Lab-Data",
+                    parallel_group_id = 2,
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-008",
+                    name = "QC of laboratory data and distribution of queries to lab",
+                    description = "4 days after receipt of laboratory data",
+                    duration_days = 4,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-007" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-009",
+                    name = "Resolution of laboratory queries",
+                    description = "1 week after distribution of queries",
+                    duration_days = 7,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-008" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-010",
+                    name = "Laboratory database lock",
+                    description = "1 day after resolution of lab queries",
+                    duration_days = 1,
+                    category = "Laboratory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Lab-DB",
+                    predecessors = new List<string> { "STUDY-CO-009" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+
+                // PHASE 3: PREPARE DRAFT INTERIM CLINICAL STUDY REPORT
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-011",
+                    name = "Preparation of draft Interim CSR (analyses, TFLs, text)",
+                    description = "12 weeks after clinical AND laboratory database lock",
+                    duration_days = 84,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-CSR-Draft",
+                    predecessors = new List<string> { "STUDY-CO-006", "STUDY-CO-010" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-012",
+                    name = "PVG provides SAE narratives",
+                    description = "30 days after clinical database lock",
+                    duration_days = 30,
+                    category = "Safety",
+                    can_run_parallel = true,
+                    execution_group = "Parallel-SAE-Narratives",
+                    parallel_group_id = 3,
+                    predecessors = new List<string> { "STUDY-CO-006" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-013",
+                    name = "Distribute draft Interim CSR to PI for review",
+                    description = "1 day after draft CSR complete",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-CSR-Draft",
+                    predecessors = new List<string> { "STUDY-CO-011" },
+                    is_mandatory = true
+                },
+
+                // PHASE 4: PI COMPLETES DRAFT CLINICAL STUDY REPORT
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-014",
+                    name = "PI reviews and completes designated sections of Interim CSR",
+                    description = "4-6 weeks after distribution of draft CSR",
+                    duration_days = 35,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-013" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-015",
+                    name = "Incorporate PI text, address comments, format CSR",
+                    description = "1 week after receiving draft CSR from PI",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-014" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-016",
+                    name = "Distribute draft Interim CSR to DMID and PI for review",
+                    description = "1 day after draft CSR complete",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-PI-Review",
+                    predecessors = new List<string> { "STUDY-CO-015" },
+                    is_mandatory = true
+                },
+
+                // PHASE 5: REVIEW AND FINALIZE INTERIM CSR
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-017",
+                    name = "DMID reviews draft Interim CSR and provides comments",
+                    description = "4 weeks after distribution to DMID",
+                    duration_days = 28,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-DMID-Review",
+                    predecessors = new List<string> { "STUDY-CO-016" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-018",
+                    name = "Incorporate DMID comments and prepare final draft CSR",
+                    description = "1 week after receipt of DMID comments",
+                    duration_days = 7,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-DMID-Review",
+                    predecessors = new List<string> { "STUDY-CO-017" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-019",
+                    name = "Receive DMID and PI approval to finalize Interim CSR",
+                    description = "3 days after final draft distributed",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-018" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-020",
+                    name = "Prepare approved Interim CSR per regulatory requirements",
+                    description = "3 days after approval to finalize",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-019" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-021",
+                    name = "Lead PI signs signature page and returns to Emmes",
+                    description = "3 days after notification of approved CSR",
+                    duration_days = 3,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-020" },
+                    is_blocking = true,
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-022",
+                    name = "Distribute approved Interim CSR to CROMS portals",
+                    description = "1 day after receipt of PI signature",
+                    duration_days = 1,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-021" },
+                    is_mandatory = true
+                },
+                new TemplateTask
+                {
+                    task_id = "STUDY-CO-023",
+                    name = "RAS submits final, signed Interim CSR to FDA",
+                    description = "2-3 weeks after signature page posted",
+                    duration_days = 17,
+                    category = "Regulatory",
+                    can_run_parallel = false,
+                    execution_group = "Sequential-Finalization",
+                    predecessors = new List<string> { "STUDY-CO-022" },
+                    is_blocking = true,
+                    is_mandatory = true
+                }
+            });
+
+            taskSet.milestones.Add(new Milestone
+            {
+                milestone_id = "STUDY-MS-001",
+                name = "Study Closeout Complete",
+                description = "Final CSR submitted to FDA, study officially closed",
+                phase = "Study Closeout",
+                is_study_level = true
+            });
+
+            return taskSet;
+        }

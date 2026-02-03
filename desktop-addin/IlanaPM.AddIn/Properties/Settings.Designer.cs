@@ -58,5 +58,17 @@ namespace IlanaPM.AddIn.Properties {
                 this["AutoUpdateEnabled"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool TelemetryConsent {
+            get {
+                return ((bool)(this["TelemetryConsent"]));
+            }
+            set {
+                this["TelemetryConsent"] = value;
+            }
+        }
     }
 }
