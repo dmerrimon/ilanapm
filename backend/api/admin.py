@@ -151,7 +151,7 @@ async def create_organization(request: CreateOrgRequest, admin_verified: str = H
                 INSERT INTO license_keys (
                     license_key, org_id, tier, seats, is_active
                 )
-                VALUES (?, ?, ?, ?, 1)
+                VALUES (?, ?, ?, ?, TRUE)
             """, (license_key, org_id, request.tier, request.seats_purchased))
 
             logger.info(f"✅ Created organization: {org_id} ({request.org_name}) with license: {license_key}")

@@ -167,9 +167,10 @@ async def activate_license(request: ActivationRequest):
     6. Generate JWT token (90-day expiry)
     7. Return activation token
     """
-    logger.info(f"License activation request: email={request.user_email}, device={request.device_id[:8]}...")
+    try:
+        logger.info(f"License activation request: email={request.user_email}, device={request.device_id[:8]}...")
 
-    with get_db_connection() as conn:
+        with get_db_connection() as conn:
         cursor = conn.cursor()
 
         # Step 1: Validate license key
@@ -268,7 +269,7 @@ async def activate_license(request: ActivationRequest):
 
             cursor.execute("""
                 INSERT INTO users (user_id, org_id, email, first_name, last_name, role, is_active)
-                VALUES (?, ?, ?, ?, ?, 'user', 1)
+                VALUES (?, ?, ?, ?, ?, 'user', TRUE)
             """, (user_id, org_id, request.user_email, first_name, last_name))
 
             logger.info(f"Created new user: {user_id} ({request.user_email})")
@@ -301,7 +302,7 @@ async def activate_license(request: ActivationRequest):
                 UPDATE activations
                 SET activation_token = ?,
                     token_expires_at = ?,
-                    is_active = 1,
+                    is_active = TRUE,
                     activated_at = CURRENT_TIMESTAMP,
                     deactivated_at = NULL,
                     ms_project_version = ?,
@@ -328,7 +329,7 @@ async def activate_license(request: ActivationRequest):
                     activation_token, token_expires_at, is_active,
                     ms_project_version, addin_version
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?, ?)
             """, (
                 activation_id,
                 user_id,
