@@ -81,6 +81,19 @@ namespace IlanaPM.AddIn
                 {
                     ctrl.Top -= 35;
                 }
+
+                // Ensure DataGridView doesn't overlap buttons
+                if (ctrl == dgvSites)
+                {
+                    dgvSites.Size = new Size(540, 280);
+                    dgvSites.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+                }
+
+                // Ensure buttons are anchored at bottom
+                if (ctrl is Button)
+                {
+                    ctrl.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+                }
             }
 
             // AMENDMENTS TAB: Create new controls
