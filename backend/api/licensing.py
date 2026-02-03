@@ -216,8 +216,8 @@ async def activate_license(request: ActivationRequest):
             )
 
         # Check if subscription has expired
-        subscription_end = datetime.fromisoformat(license_row['subscription_end'])
-        if subscription_end < datetime.now():
+        subscription_end = datetime.fromisoformat(license_row['subscription_end']).date() if isinstance(license_row['subscription_end'], str) else license_row['subscription_end']
+        if subscription_end < datetime.now().date():
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail="Subscription has expired. Please renew to continue using Ilana PM."
@@ -442,8 +442,8 @@ async def validate_token(request: ValidationRequest):
             )
 
         # Check if subscription has expired
-        subscription_end = datetime.fromisoformat(org['subscription_end'])
-        if subscription_end < datetime.now():
+        subscription_end = datetime.fromisoformat(org['subscription_end']).date() if isinstance(org['subscription_end'], str) else org['subscription_end']
+        if subscription_end < datetime.now().date():
             return ValidationResponse(
                 user_id=user_id,
                 org_id=org_id,
