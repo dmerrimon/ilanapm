@@ -124,11 +124,7 @@ namespace IlanaPM.AddIn
             btnEditAmendment.Click += btnEditAmendment_Click;
             btnRemoveAmendment.Click += btnRemoveAmendment_Click;
 
-            // Setup Amendments DataGridView columns
-            dgvAmendments.Columns.Add("ID", "ID");
-            dgvAmendments.Columns.Add("Number", "Amendment Number");
-            dgvAmendments.Columns.Add("Date", "Effective Date");
-            dgvAmendments.Columns.Add("Description", "Description");
+            // Don't manually add columns - RefreshAmendmentsGrid will set DataSource
 
             tabAmendments.Controls.Add(dgvAmendments);
             tabAmendments.Controls.Add(btnAddAmendment);
@@ -171,11 +167,7 @@ namespace IlanaPM.AddIn
             btnEditCohort.Click += btnEditCohort_Click;
             btnRemoveCohort.Click += btnRemoveCohort_Click;
 
-            // Setup Cohorts DataGridView columns
-            dgvCohorts.Columns.Add("ID", "ID");
-            dgvCohorts.Columns.Add("Name", "Cohort Name");
-            dgvCohorts.Columns.Add("Size", "Target Size");
-            dgvCohorts.Columns.Add("Description", "Description");
+            // Don't manually add columns - RefreshCohortsGrid will set DataSource
 
             tabCohorts.Controls.Add(dgvCohorts);
             tabCohorts.Controls.Add(btnAddCohort);
@@ -938,7 +930,7 @@ namespace IlanaPM.AddIn
             dt.Columns.Add("ID", typeof(string));
             dt.Columns.Add("Name", typeof(string));
             dt.Columns.Add("Target Enrollment", typeof(int));
-            dt.Columns.Add("Sites", typeof(string));
+            dt.Columns.Add("Description", typeof(string));
 
             if (config.Cohorts != null && config.Cohorts.Count > 0)
             {
@@ -948,7 +940,7 @@ namespace IlanaPM.AddIn
                         cohort.id,
                         cohort.name,
                         cohort.enrollment_target,
-                        cohort.participating_sites != null ? string.Join(", ", cohort.participating_sites) : ""
+                        cohort.description ?? ""
                     );
                 }
             }
@@ -965,7 +957,8 @@ namespace IlanaPM.AddIn
                 {
                     id = dialog.Controls["txtCohortId"].Text,
                     name = dialog.Controls["txtCohortName"].Text,
-                    enrollment_target = int.TryParse(dialog.Controls["txtEnrollmentTarget"].Text, out int target) ? target : 0
+                    enrollment_target = int.TryParse(dialog.Controls["txtEnrollmentTarget"].Text, out int target) ? target : 0,
+                    description = dialog.Controls["txtDescription"].Text
                 };
                 config.Cohorts.Add(newCohort);
                 RefreshCohortsGrid();
@@ -991,6 +984,7 @@ namespace IlanaPM.AddIn
                     cohort.id = dialog.Controls["txtCohortId"].Text;
                     cohort.name = dialog.Controls["txtCohortName"].Text;
                     cohort.enrollment_target = int.TryParse(dialog.Controls["txtEnrollmentTarget"].Text, out int target) ? target : 0;
+                    cohort.description = dialog.Controls["txtDescription"].Text;
                     RefreshCohortsGrid();
                 }
             }
@@ -1029,7 +1023,7 @@ namespace IlanaPM.AddIn
             {
                 Text = existingCohort == null ? "Add Cohort" : "Edit Cohort",
                 Width = 450,
-                Height = 250,
+                Height = 330,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 StartPosition = FormStartPosition.CenterParent,
                 MaximizeBox = false,
@@ -1060,7 +1054,15 @@ namespace IlanaPM.AddIn
                 Text = existingCohort?.enrollment_target.ToString() ?? "15" };
             dialog.Controls.Add(lblTarget);
             dialog.Controls.Add(txtTarget);
-            yPos += 40;
+            yPos += 35;
+
+            // Description
+            var lblDescription = new Label { Text = "Description:", Left = 20, Top = yPos, Width = 120 };
+            var txtDescription = new TextBox { Name = "txtDescription", Left = 150, Top = yPos, Width = 250, Height = 60, Multiline = true,
+                Text = existingCohort?.description ?? "" };
+            dialog.Controls.Add(lblDescription);
+            dialog.Controls.Add(txtDescription);
+            yPos += 70;
 
             // Buttons
             var btnOk = new Button { Text = "OK", Left = 240, Top = yPos, Width = 80, DialogResult = DialogResult.OK };
