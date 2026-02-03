@@ -198,8 +198,8 @@ async def activate_license(request: ActivationRequest):
 
         # Check if license is expired
         if license_row['expires_at']:
-            expires_at = datetime.fromisoformat(license_row['expires_at'])
-            if expires_at < datetime.now():
+            expires_at = datetime.fromisoformat(license_row['expires_at']).date() if isinstance(license_row['expires_at'], str) else license_row['expires_at']
+            if expires_at < datetime.now().date():
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="License key has expired"
