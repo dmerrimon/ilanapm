@@ -85,7 +85,7 @@ namespace IlanaPM.AddIn
                     }).ConfigureAwait(false);
                 }
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 // Fail silently - don't interrupt save
                 System.Diagnostics.Debug.WriteLine($"Feedback collection error: {ex.Message}");

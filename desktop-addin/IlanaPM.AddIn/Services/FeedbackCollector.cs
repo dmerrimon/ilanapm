@@ -33,7 +33,7 @@ namespace IlanaPM.AddIn.Services
                 // Check if task is 100% complete
                 if (task.PercentComplete >= 100)
                 {
-                    var taskFeedback = ExtractTaskFeedback(task);
+                    var taskFeedback = ExtractTaskFeedback(task, project);
                     if (taskFeedback != null)
                     {
                         feedback.Add(taskFeedback);
@@ -48,7 +48,7 @@ namespace IlanaPM.AddIn.Services
         /// <summary>
         /// Extract feedback data from a completed MS Project task
         /// </summary>
-        private TaskCompletionFeedback ExtractTaskFeedback(MSProject.Task task)
+        private TaskCompletionFeedback ExtractTaskFeedback(MSProject.Task task, MSProject.Project project)
         {
             try
             {
@@ -87,11 +87,11 @@ namespace IlanaPM.AddIn.Services
                     study_phase = GetFieldSafe(task, MSProject.PjField.pjTaskText2),
                     therapeutic_area = GetFieldSafe(task, MSProject.PjField.pjTaskText3),
 
-                    project_id = task.Project.Name,
+                    project_id = project.Name,
                     recorded_by = Environment.UserName
                 };
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error extracting feedback for task {task.Name}: {ex.Message}");
                 return null;
