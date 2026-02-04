@@ -724,7 +724,7 @@ namespace IlanaPM.AddIn.Services
                                 msTask.Duration = $"{task.duration_days}d";
 
                                 // Populate custom fields
-                                msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days); // Store predicted duration for ML feedback
+                                msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days.ToString()); // Store predicted duration for ML feedback
                                 msTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty for Full Study Timeline)
                                 msTask.SetField(MSProject.PjField.pjTaskText9, ""); // Cohort IDs (empty for study-level tasks)
                                 msTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site Name (empty for Full Study Timeline - country-level, not site-specific)
@@ -989,7 +989,7 @@ namespace IlanaPM.AddIn.Services
 
                     var msTask = app.ActiveProject.Tasks.Add(task.name);  // Authority-specific name from API
                     msTask.Duration = $"{task.duration_days}d";
-                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days); // Store predicted duration for ML feedback
+                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days.ToString()); // Store predicted duration for ML feedback
 
                     // Site-specific fields (hybrid approach)
                     msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
@@ -1062,7 +1062,7 @@ namespace IlanaPM.AddIn.Services
 
                         var msTask = app.ActiveProject.Tasks.Add(task.name);
                         msTask.Duration = $"{task.duration_days}d";
-                        msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days); // Store predicted duration for ML feedback
+                        msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days.ToString()); // Store predicted duration for ML feedback
 
                         // Populate custom fields
                         msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
@@ -1243,7 +1243,7 @@ namespace IlanaPM.AddIn.Services
 
                     var msTask = app.ActiveProject.Tasks.Add(task.name);  // Authority-specific name from API
                     msTask.Duration = $"{task.duration_days}d";
-                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days); // Store predicted duration for ML feedback
+                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days.ToString()); // Store predicted duration for ML feedback
 
                     // Site-specific fields (hybrid approach)
                     msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
@@ -1298,7 +1298,7 @@ namespace IlanaPM.AddIn.Services
 
                     var msTask = app.ActiveProject.Tasks.Add(task.name);
                     msTask.Duration = $"{task.duration_days}d";
-                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days); // Store predicted duration for ML feedback
+                    msTask.SetField(MSProject.PjField.pjTaskNumber6, task.duration_days.ToString()); // Store predicted duration for ML feedback
 
                     // Populate custom fields (no site for study-level closeout)
                     msTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty - study-level)
