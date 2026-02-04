@@ -70,6 +70,13 @@ namespace IlanaPM.AddIn.Services
                 string errorBody = await response.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"API Error {response.StatusCode}: {errorBody}");
 
+                // Handle 422 Validation Errors (Pydantic)
+                if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity) // 422
+                {
+                    string friendlyError = ParseValidationError(errorBody);
+                    throw new HttpRequestException(friendlyError);
+                }
+
                 // Try to parse error message from JSON
                 try
                 {
@@ -89,6 +96,58 @@ namespace IlanaPM.AddIn.Services
                     $"API request failed: {response.StatusCode} - {errorBody}"
                 );
             }
+        }
+
+        /// <summary>
+        /// Parse Pydantic validation errors into user-friendly messages
+        /// </summary>
+        private string ParseValidationError(string errorBody)
+        {
+            try
+            {
+                // Pydantic returns: {"detail": [{"type": "...", "loc": ["body", "field"], "msg": "..."}]}
+                var errorObj = JsonConvert.DeserializeObject<dynamic>(errorBody);
+
+                if (errorObj?.detail != null && errorObj.detail is Newtonsoft.Json.Linq.JArray)
+                {
+                    var errors = new System.Collections.Generic.List<string>();
+
+                    foreach (var validationError in errorObj.detail)
+                    {
+                        // Extract field name from loc array (usually ["body", "field_name"])
+                        string fieldName = "Unknown field";
+                        if (validationError.loc != null && validationError.loc is Newtonsoft.Json.Linq.JArray)
+                        {
+                            var locArray = validationError.loc as Newtonsoft.Json.Linq.JArray;
+                            if (locArray.Count > 1)
+                            {
+                                fieldName = locArray[locArray.Count - 1].ToString();
+                            }
+                        }
+
+                        // Convert snake_case to Title Case for display
+                        string friendlyFieldName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                            fieldName.Replace("_", " ")
+                        );
+
+                        // Get error message
+                        string errorMessage = validationError.msg?.ToString() ?? "Invalid value";
+
+                        errors.Add($"• {friendlyFieldName}: {errorMessage}");
+                    }
+
+                    if (errors.Count > 0)
+                    {
+                        return "Please correct the following fields:\n\n" + string.Join("\n", errors);
+                    }
+                }
+            }
+            catch
+            {
+                // If parsing fails, return generic message
+            }
+
+            return "Please ensure all required fields are filled in correctly and try again.";
         }
 
         // ===================================================================

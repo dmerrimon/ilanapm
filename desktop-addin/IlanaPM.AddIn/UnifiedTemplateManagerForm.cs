@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using IlanaPM.AddIn.Models;
 using IlanaPM.AddIn.Services;
+using Site = IlanaPM.AddIn.Models.Site;
 
 namespace IlanaPM.AddIn
 {

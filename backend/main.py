@@ -12,7 +12,7 @@ import logging
 from jose import JWTError, jwt
 from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry
 from database import init_db
 
 # Configure logging
@@ -139,6 +139,7 @@ app.include_router(advisory.router, prefix="/api/v1", tags=["advisory"])
 app.include_router(teams.router, prefix="/api/v1", tags=["teams"])
 app.include_router(feedback.router, prefix="/api/v1", tags=["feedback"])
 app.include_router(templates.router, prefix="/api/v1", tags=["templates"])
+app.include_router(telemetry.router, prefix="/api/v1", tags=["telemetry"])  # ML feedback loop
 
 
 @app.on_event("startup")

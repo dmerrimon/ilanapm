@@ -208,6 +208,9 @@
     <Compile Include="ClinicalProjectManagerForm.Designer.cs">
       <DependentUpon>ClinicalProjectManagerForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ProgressForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="ClinicalEntityTaggingForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -289,6 +292,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Services\ApiClient.cs" />
+    <Compile Include="Services\TelemetryService.cs" />
     <Compile Include="Services\ClinicalMetadataManager.cs" />
     <Compile Include="Services\CountryTemplateLibrary.cs" />
     <Compile Include="Services\CustomFieldManager.cs" />
@@ -296,7 +300,6 @@
     <Compile Include="Services\ProjectDataExtractor.cs" />
     <Compile Include="Services\ProjectDataWriter.cs" />
     <Compile Include="Services\SecureStorage.cs" />
-    <Compile Include="Services\TelemetryService.cs" />
     <Compile Include="Services\TemplateLoader.cs" />
     <Compile Include="Services\UnifiedTemplateManager.cs" />
     <Compile Include="Services\ViewManager.cs" />

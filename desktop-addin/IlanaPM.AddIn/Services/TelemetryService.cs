@@ -3,243 +3,212 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
+using System.Timers;
 using IlanaPM.AddIn.Models;
+using MSProject = Microsoft.Office.Interop.MSProject;
 
 namespace IlanaPM.AddIn.Services
 {
     /// <summary>
-    /// Telemetry service for ML learning and usage analytics
-    /// Privacy-focused: Opt-in consent, anonymized user IDs, no PII collection
+    /// Telemetry service for ML feedback loop
+    /// Tracks user actions and project data to improve duration predictions and timeline recommendations
+    /// Privacy-focused: User IDs are hashed, no PII is collected
     /// </summary>
-    public class TelemetryService
+    public class TelemetryService : IDisposable
     {
-        private Queue<TelemetryEvent> eventQueue;
-        private string sessionId;
-        private bool userConsented;
-        private DateTime sessionStartTime;
-        private const int BATCH_SIZE = 10;  // Send batch when queue reaches this size
+        private readonly ApiClient apiClient;
+        private readonly List<TelemetryEvent> eventQueue;
+        private readonly Timer batchTimer;
+        private readonly string hashedUserId;
+        private readonly MSProject.Application msProjectApp;
 
-        /// <summary>
-        /// Initialize telemetry service
-        /// </summary>
-        public TelemetryService()
+        private const int BATCH_INTERVAL_MS = 60000; // Send batch every 60 seconds
+        private const int MAX_BATCH_SIZE = 50; // Max events per batch
+
+        public TelemetryService(MSProject.Application app)
         {
-            sessionId = Guid.NewGuid().ToString();
-            sessionStartTime = DateTime.UtcNow;
-            eventQueue = new Queue<TelemetryEvent>();
-            LoadUserConsent();
+            this.msProjectApp = app;
+            this.apiClient = new ApiClient();
+            this.eventQueue = new List<TelemetryEvent>();
 
-            // Note: Session tracking moved to ThisAddIn for consistency
+            // Generate hashed user ID (privacy-focused: no reversible PII)
+            this.hashedUserId = GenerateHashedUserId();
+
+            // Set up batch timer for periodic sending
+            this.batchTimer = new Timer(BATCH_INTERVAL_MS);
+            this.batchTimer.Elapsed += OnBatchTimerElapsed;
+            this.batchTimer.Start();
+
+            System.Diagnostics.Debug.WriteLine($"TelemetryService initialized for hashed user: {hashedUserId.Substring(0, 8)}...");
         }
 
         /// <summary>
-        /// Track a telemetry event
+        /// Generate hashed user ID from machine name and user name
+        /// Cannot be reversed to identify individual users (privacy-focused)
         /// </summary>
-        public void TrackEvent(TelemetryEventType type, Dictionary<string, object> properties = null)
+        private string GenerateHashedUserId()
         {
-            if (!userConsented)
+            string uniqueString = $"{Environment.MachineName}|{Environment.UserName}";
+            using (var sha256 = SHA256.Create())
             {
-                System.Diagnostics.Debug.WriteLine($"Telemetry: User has not consented - event {type} not tracked");
-                return;
+                byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(uniqueString));
+                return Convert.ToBase64String(hashBytes).Substring(0, 16); // 16 chars is sufficient
             }
+        }
 
+        /// <summary>
+        /// Track a user action event
+        /// </summary>
+        public void TrackEvent(TelemetryEventType eventType, Dictionary<string, object> properties = null)
+        {
             try
             {
-                var telemetryEvent = new TelemetryEvent(type)
+                var telemetryEvent = new TelemetryEvent
                 {
-                    session_id = sessionId,
-                    user_id = GetHashedUserId(),
-                    user_consented = true
+                    event_type = eventType.ToString(),
+                    timestamp = DateTime.UtcNow,
+                    user_id = hashedUserId,
+                    properties = properties ?? new Dictionary<string, object>()
                 };
 
-                // Add properties if provided
-                if (properties != null)
+                lock (eventQueue)
                 {
-                    foreach (var kvp in properties)
+                    eventQueue.Add(telemetryEvent);
+
+                    // Send immediately if batch is full
+                    if (eventQueue.Count >= MAX_BATCH_SIZE)
                     {
-                        telemetryEvent.AddProperty(kvp.Key, kvp.Value);
+                        SendBatch();
                     }
                 }
-
-                eventQueue.Enqueue(telemetryEvent);
-
-                System.Diagnostics.Debug.WriteLine($"Telemetry: Tracked {type} event (queue size: {eventQueue.Count})");
-
-                // Auto-flush if batch size reached
-                if (eventQueue.Count >= BATCH_SIZE)
-                {
-                    FlushEventsAsync();
-                }
             }
             catch (Exception ex)
             {
-                // Telemetry should never break user experience
-                System.Diagnostics.Debug.WriteLine($"Telemetry tracking error: {ex.Message}");
+                // Never let telemetry errors affect user experience
+                System.Diagnostics.Debug.WriteLine($"Telemetry error (event): {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Send queued events to API (async)
+        /// Track task completion for ML learning
+        /// Compares actual vs estimated duration
         /// </summary>
-        public async void FlushEventsAsync()
+        public void TrackTaskCompletion(MSProject.Task task)
         {
-            if (eventQueue.Count == 0)
-            {
-                return;
-            }
-
             try
             {
-                // Dequeue all events into batch
-                var batch = new TelemetryBatch();
-                while (eventQueue.Count > 0)
+                var properties = new Dictionary<string, object>
                 {
-                    batch.events.Add(eventQueue.Dequeue());
-                }
+                    { "task_name", task.Name },
+                    { "estimated_duration_days", task.Duration / 480.0 }, // Convert minutes to days
+                    { "actual_duration_days", task.ActualDuration / 480.0 },
+                    { "variance_days", (task.ActualDuration - task.Duration) / 480.0 },
+                    { "category", task.GetField(MSProject.PjField.pjTaskText4) ?? "" },
+                    { "phase", task.GetField(MSProject.PjField.pjTaskText12) ?? "" },
+                    { "country", task.GetField(MSProject.PjField.pjTaskText11) ?? "" }
+                };
 
-                System.Diagnostics.Debug.WriteLine($"Telemetry: Flushing {batch.events.Count} events to API");
-
-                // Send to backend API
-                var apiClient = new ApiClient();
-                await apiClient.SendTelemetryBatchAsync(batch);
-
-                System.Diagnostics.Debug.WriteLine($"Telemetry: Successfully sent {batch.events.Count} events");
+                TrackEvent(TelemetryEventType.TaskCompleted, properties);
             }
             catch (Exception ex)
             {
-                // Fail silently - telemetry should never break user experience
-                System.Diagnostics.Debug.WriteLine($"Telemetry send failed: {ex.Message}");
-                // Note: Events are lost on failure (by design - don't want to accumulate forever)
+                System.Diagnostics.Debug.WriteLine($"Telemetry error (task completion): {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Flush events synchronously (for app shutdown)
+        /// Track project metadata for ML context
         /// </summary>
-        public void FlushEventsSync()
+        public void TrackProjectMetadata(ClinicalProjectConfiguration config)
         {
-            if (eventQueue.Count == 0)
-            {
-                return;
-            }
-
             try
             {
-                // Send synchronously (blocking)
-                // Note: SessionEnded should already be tracked by caller (ThisAddIn_Shutdown)
-                FlushEventsAsync();
-                System.Threading.Thread.Sleep(1000); // Give it a second to send
+                var properties = new Dictionary<string, object>
+                {
+                    { "study_phase", config.StudyPhase },
+                    { "therapeutic_area", config.TherapeuticArea },
+                    { "country_count", config.Countries?.Count ?? 0 },
+                    { "site_count", config.Sites?.Count ?? 0 },
+                    { "cohort_count", config.Cohorts?.Count ?? 0 }
+                };
+
+                TrackEvent(TelemetryEventType.ProjectOpened, properties);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Telemetry flush on shutdown failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Telemetry error (project metadata): {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Get session duration in seconds
+        /// Periodic batch send timer
         /// </summary>
-        public double GetSessionDurationSeconds()
+        private void OnBatchTimerElapsed(object sender, ElapsedEventArgs e)
         {
-            return (DateTime.UtcNow - sessionStartTime).TotalSeconds;
+            SendBatch();
         }
 
         /// <summary>
-        /// Hash user email for privacy (SHA-256)
-        /// Irreversible - cannot recover email from hash
+        /// Send queued events to backend as batch
         /// </summary>
-        private string GetHashedUserId()
-        {
-            try
-            {
-                string email = SecureStorage.ReadUserEmail();
-                if (string.IsNullOrEmpty(email))
-                {
-                    return "anonymous";
-                }
-
-                using (SHA256 sha256 = SHA256.Create())
-                {
-                    byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(email));
-                    return Convert.ToBase64String(bytes);
-                }
-            }
-            catch
-            {
-                return "anonymous";
-            }
-        }
-
-        /// <summary>
-        /// Load user consent from settings
-        /// </summary>
-        private void LoadUserConsent()
+        private void SendBatch()
         {
             try
             {
-                // Check if user has consented to telemetry
-                // Default is FALSE (opt-in, not opt-out)
-                userConsented = Properties.Settings.Default.TelemetryConsent;
-                System.Diagnostics.Debug.WriteLine($"Telemetry: User consent = {userConsented}");
+                List<TelemetryEvent> eventsToSend;
+
+                lock (eventQueue)
+                {
+                    if (eventQueue.Count == 0)
+                        return;
+
+                    // Take all events from queue
+                    eventsToSend = new List<TelemetryEvent>(eventQueue);
+                    eventQueue.Clear();
+                }
+
+                // Create batch
+                var batch = new TelemetryBatch
+                {
+                    events = eventsToSend
+                };
+
+                // Send asynchronously (fire and forget - don't block user)
+                apiClient.SendTelemetryBatchAsync(batch).ContinueWith(task =>
+                {
+                    if (task.Exception != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Telemetry batch send error: {task.Exception.InnerException?.Message}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Telemetry batch sent: {eventsToSend.Count} events");
+                    }
+                });
             }
-            catch
+            catch (Exception ex)
             {
-                userConsented = false;
+                System.Diagnostics.Debug.WriteLine($"Telemetry error (send batch): {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Set user consent (called from Settings form)
+        /// Dispose and send remaining events
         /// </summary>
-        public void SetUserConsent(bool consent)
+        public void Dispose()
         {
-            userConsented = consent;
-            Properties.Settings.Default.TelemetryConsent = consent;
-            Properties.Settings.Default.Save();
-
-            System.Diagnostics.Debug.WriteLine($"Telemetry: User consent updated to {consent}");
-
-            // If user opted out, clear queue (don't send events without consent)
-            if (!consent)
+            try
             {
-                eventQueue.Clear();
+                batchTimer?.Stop();
+                batchTimer?.Dispose();
+
+                // Send any remaining events
+                SendBatch();
             }
-            // If user just opted in, queue starts fresh (don't retroactively track session start)
-        }
-
-        /// <summary>
-        /// Get current consent status
-        /// </summary>
-        public bool HasUserConsent()
-        {
-            return userConsented;
-        }
-
-        /// <summary>
-        /// Get current queue size (for debugging)
-        /// </summary>
-        public int GetQueueSize()
-        {
-            return eventQueue.Count;
-        }
-
-        /// <summary>
-        /// Track feature sequence (common workflow pattern)
-        /// Example: Template → Validate → Critical Path
-        /// </summary>
-        public void TrackFeatureSequence(string[] features)
-        {
-            if (!userConsented || features == null || features.Length == 0)
+            catch (Exception ex)
             {
-                return;
+                System.Diagnostics.Debug.WriteLine($"Telemetry error (dispose): {ex.Message}");
             }
-
-            TrackEvent(TelemetryEventType.FeatureSequence, new Dictionary<string, object>
-            {
-                { "sequence", string.Join(" → ", features) },
-                { "feature_count", features.Length }
-            });
         }
     }
 }

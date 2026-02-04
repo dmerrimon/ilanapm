@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Office.Interop.MSProject;
+using MSTask = Microsoft.Office.Interop.MSProject.Task;
 
 namespace IlanaPM.AddIn.Services
 {
@@ -56,11 +57,11 @@ namespace IlanaPM.AddIn.Services
             }
         }
 
-        private Task FindTaskById(Project project, string taskId)
+        private MSTask FindTaskById(Project project, string taskId)
         {
             if (int.TryParse(taskId, out int id))
             {
-                foreach (Task task in project.Tasks)
+                foreach (MSTask task in project.Tasks)
                 {
                     if (task != null && task.ID == id)
                         return task;

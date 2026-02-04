@@ -36,7 +36,11 @@ namespace IlanaPM.AddIn.Models
         // User Workflow
         SessionStarted,             // Add-in session started
         SessionEnded,               // Add-in session ended
-        FeatureSequence             // Track feature usage order
+        FeatureSequence,            // Track feature usage order
+
+        // ML Learning Events
+        TaskCompleted,              // Task marked complete (for ML learning)
+        ProjectOpened               // Project opened (for ML context)
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Office.Interop.MSProject;
+using IlanaPM.AddIn.Models;
 
 namespace IlanaPM.AddIn
 {
@@ -13,7 +14,7 @@ namespace IlanaPM.AddIn
             try
             {
                 // Initialize telemetry service
-                TelemetryService = new Services.TelemetryService();
+                TelemetryService = new Services.TelemetryService(Application);
                 System.Diagnostics.Debug.WriteLine("Telemetry service initialized");
 
                 // Track session start
@@ -24,7 +25,7 @@ namespace IlanaPM.AddIn
                         { "ms_project_version", Application.Version },
                         { "addin_version", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString() }
                     };
-                    TelemetryService.TrackEvent(Models.TelemetryEventType.SessionStarted, properties);
+                    TelemetryService.TrackEvent(TelemetryEventType.SessionStarted, properties);
                 }
 
                 System.Threading.Thread.Sleep(1000);
@@ -44,23 +45,16 @@ namespace IlanaPM.AddIn
         {
             try
             {
-                // Track session end before flushing
+                // Dispose telemetry service (flushes remaining events)
                 if (TelemetryService != null)
                 {
-                    var properties = new System.Collections.Generic.Dictionary<string, object>
-                    {
-                        { "session_duration_seconds", TelemetryService.GetSessionDurationSeconds() }
-                    };
-                    TelemetryService.TrackEvent(Models.TelemetryEventType.SessionEnded, properties);
-
-                    // Flush telemetry events before shutdown
-                    TelemetryService.FlushEventsSync();
-                    System.Diagnostics.Debug.WriteLine("Telemetry events flushed on shutdown");
+                    TelemetryService.Dispose();
+                    System.Diagnostics.Debug.WriteLine("Telemetry service disposed");
                 }
             }
             catch (System.Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error flushing telemetry on shutdown: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error disposing telemetry on shutdown: {ex.Message}");
             }
         }
 

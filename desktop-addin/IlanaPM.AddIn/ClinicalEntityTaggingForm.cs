@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using MSProject = Microsoft.Office.Interop.MSProject;
+using Site = IlanaPM.AddIn.Models.Site;
 
 namespace IlanaPM.AddIn
 {

@@ -1,5 +1,6 @@
 using IlanaPM.AddIn.Models;
 using System.Collections.Generic;
+using Site = IlanaPM.AddIn.Models.Site;
 
 namespace IlanaPM.AddIn.Services
 {

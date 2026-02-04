@@ -3,6 +3,8 @@ using Microsoft.Office.Interop.MSProject;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Site = IlanaPM.AddIn.Models.Site;
+using MSTask = Microsoft.Office.Interop.MSProject.Task;
 
 namespace IlanaPM.AddIn.Services
 {
@@ -15,7 +17,7 @@ namespace IlanaPM.AddIn.Services
         /// Build dependency map from template tasks
         /// Maps task_id to actual MS Project task UID
         /// </summary>
-        public Dictionary<string, int> BuildTaskMap(List<TemplateTask> templateTasks, List<Task> msTasks)
+        public Dictionary<string, int> BuildTaskMap(List<TemplateTask> templateTasks, List<MSTask> msTasks)
         {
             var taskMap = new Dictionary<string, int>();
 
@@ -76,11 +78,9 @@ namespace IlanaPM.AddIn.Services
                     }
                 }
 
-                // Mark as critical if blocking
-                if (templateTask.is_blocking)
-                {
-                    msTask.Critical = true;
-                }
+                // Note: Task.Critical is read-only in MS Project and automatically calculated
+                // based on the critical path. Cannot be manually set.
+                // If needed, use a custom field instead to mark priority/blocking tasks.
             }
         }
 
@@ -304,9 +304,9 @@ namespace IlanaPM.AddIn.Services
         /// <summary>
         /// Find MS Project task by UniqueID
         /// </summary>
-        private Task FindTaskByUID(Project project, int uniqueID)
+        private MSTask FindTaskByUID(Project project, int uniqueID)
         {
-            foreach (Task task in project.Tasks)
+            foreach (MSTask task in project.Tasks)
             {
                 if (task != null && task.UniqueID == uniqueID)
                     return task;

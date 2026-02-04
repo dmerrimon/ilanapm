@@ -4,6 +4,7 @@ using System.Linq;
 using IlanaPM.AddIn.Models;
 using Newtonsoft.Json;
 using MSProject = Microsoft.Office.Interop.MSProject;
+using Site = IlanaPM.AddIn.Models.Site;
 
 namespace IlanaPM.AddIn.Services
 {
