@@ -156,6 +156,15 @@ async def startup_event():
         import traceback
         logger.error(traceback.format_exc())
 
+    # Start scheduled tasks (ML model monitoring and retraining)
+    try:
+        from scheduled_tasks import setup_scheduled_tasks
+        scheduler = setup_scheduled_tasks()
+        app.state.scheduler = scheduler
+        logger.info("🔄 Scheduled tasks started (model monitoring & retraining)")
+    except Exception as e:
+        logger.warning(f"⚠️  Could not start scheduled tasks: {e}")
+
     logger.info("📍 API documentation available at: /docs")
     logger.info("🔐 Licensing endpoints: /api/v1/licensing/* (NEW)")
     logger.info("✅ Validation endpoints: /api/v1/validate")
@@ -175,6 +184,14 @@ async def startup_event():
 async def shutdown_event():
     """Run on application shutdown"""
     logger.info("👋 Ilana PM Intelligence API shutting down...")
+
+    # Shutdown scheduler if running
+    if hasattr(app.state, 'scheduler'):
+        try:
+            app.state.scheduler.shutdown()
+            logger.info("🔄 Scheduled tasks stopped")
+        except Exception as e:
+            logger.warning(f"⚠️  Error stopping scheduler: {e}")
 
 
 @app.get("/")
