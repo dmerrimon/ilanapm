@@ -19,8 +19,8 @@ namespace IlanaPM.AddIn.Models
 
         // Actual values (what really happened)
         public int actual_duration_days { get; set; }
-        public DateTime actual_start_date { get; set; }
-        public DateTime actual_end_date { get; set; }
+        public string actual_start_date { get; set; }  // YYYY-MM-DD format
+        public string actual_end_date { get; set; }    // YYYY-MM-DD format
 
         // Context for learning
         public string country_code { get; set; }
