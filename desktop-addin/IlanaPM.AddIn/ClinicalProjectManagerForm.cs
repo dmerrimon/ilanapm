@@ -1402,7 +1402,7 @@ namespace IlanaPM.AddIn
                             backgroundWorker.ReportProgress(50, new string[] { status, detail });
                         };
 
-                        tasksCreated = templateManager.GenerateTemplates(msProjectApp, config);
+                        tasksCreated = templateManager.GenerateTemplates(msProjectApp, config).Result;
                         args.Result = tasksCreated;
                     }
                     catch (Exception ex)

@@ -538,7 +538,7 @@ namespace IlanaPM.AddIn.Services
         /// Generate all selected templates based on ClinicalProjectConfiguration (unified wizard)
         /// This is the main entry point from ClinicalProjectManagerForm
         /// </summary>
-        public int GenerateTemplates(MSProject.Application app, ClinicalProjectConfiguration config)
+        public async System.Threading.Tasks.Task<int> GenerateTemplates(MSProject.Application app, ClinicalProjectConfiguration config)
         {
             if (app == null || config == null)
                 throw new ArgumentNullException("Application and configuration are required");
@@ -579,7 +579,7 @@ namespace IlanaPM.AddIn.Services
                 if (config.Templates.GenerateSiteStartup && config.Templates.SitesForStartup.Count > 0)
                 {
                     System.Diagnostics.Debug.WriteLine($">>> Calling GenerateSiteStartup with {config.Templates.SitesForStartup.Count} sites");
-                    totalTasksCreated += GenerateSiteStartup(app, config);
+                    totalTasksCreated += await GenerateSiteStartup(app, config);
                 }
 
                 if (config.Templates.GenerateSiteImplementation && config.Templates.SitesForImplementation.Count > 0)
@@ -589,7 +589,7 @@ namespace IlanaPM.AddIn.Services
 
                 if (config.Templates.GenerateSiteCloseout && config.Templates.SitesForCloseout.Count > 0)
                 {
-                    totalTasksCreated += GenerateSiteCloseout(app, config);
+                    totalTasksCreated += await GenerateSiteCloseout(app, config);
                 }
 
                 if (config.Templates.GenerateStudyCloseout)
@@ -932,13 +932,13 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
-        /// Generate Site Startup templates for selected sites
+        /// Generate Site Startup templates for selected sites using API for authority-specific details
         /// </summary>
-        private int GenerateSiteStartup(MSProject.Application app, ClinicalProjectConfiguration config)
+        private async System.Threading.Tasks.Task<int> GenerateSiteStartup(MSProject.Application app, ClinicalProjectConfiguration config)
         {
             int tasksCreated = 0;
 
-            System.Diagnostics.Debug.WriteLine($"=== GenerateSiteStartup START ===");
+            System.Diagnostics.Debug.WriteLine($"=== GenerateSiteStartup START (API-based) ===");
             System.Diagnostics.Debug.WriteLine($"Config.Sites: {config.Sites?.Count ?? 0}");
             System.Diagnostics.Debug.WriteLine($"Templates.SitesForStartup: {config.Templates.SitesForStartup?.Count ?? 0}");
 
@@ -960,51 +960,67 @@ namespace IlanaPM.AddIn.Services
 
                 System.Diagnostics.Debug.WriteLine($"FOUND Site: {site.SiteId} | Name: {site.SiteName} | Country: {site.CountryCode}");
 
-                // Get template for country
-                SitePhaseTaskSet taskSet = null;
-                var countryInfo = CountryRegulatoryInfo.GetCountryInfo(site.CountryCode);
+                // Call async API method for authority-specific template
+                var templateConfig = new TemplateConfiguration
+                {
+                    TemplateType = TemplateType.SiteStartup,
+                    CountryCode = site.CountryCode,
+                    SiteId = site.SiteId,
+                    StudyPhase = config.StudyPhase,
+                    TherapeuticArea = config.TherapeuticArea
+                };
 
-                if (site.CountryCode.ToUpper() == "USA")
-                {
-                    taskSet = CountryTemplateLibrary.GetUSA_SiteStartup();
-                }
-                else
-                {
-                    taskSet = CountryTemplateLibrary.GetInternational_SiteStartup(countryInfo);
-                }
+                TemplateResult result = await LoadSiteStartupTemplateAsync(templateConfig, config.Filters);
+                Timeline timeline = result.Timeline;
 
-                if (taskSet != null && taskSet.tasks != null)
+                System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {site.SiteId}");
+
+                // Create tasks with BOTH country-specific AND site-specific details
+                foreach (var task in timeline.tasks)
                 {
-                    // Create tasks in MS Project
-                    foreach (var task in taskSet.tasks)
+                    // Apply filters (if any)
+                    if (config.Filters != null && config.Filters.IncludedCategories.Count > 0 &&
+                        !string.IsNullOrEmpty(task.category) &&
+                        !config.Filters.IncludedCategories.Contains(task.category))
                     {
-                        // Apply filters
-                        if (config.Filters != null && !config.Filters.PassesFilter(task))
-                            continue;
-
-                        var msTask = app.ActiveProject.Tasks.Add(task.name);
-                        msTask.Duration = $"{task.duration_days}d";
-
-                        // Populate custom fields
-                        msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
-                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name (e.g., "Memorial Hospital")
-                        msTask.SetField(MSProject.PjField.pjTaskText4, task.category); // Category
-                        msTask.SetField(MSProject.PjField.pjTaskText12, "Site Activation"); // Stage
-                        msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase); // Substage
-                        msTask.SetField(MSProject.PjField.pjTaskText14, $"Library-{site.CountryCode}"); // Template Source
-
-                        // Set task properties
-                        msTask.Notes = task.description;
-                        if (task.is_mandatory)
-                        {
-                            msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
-                        }
-
-                        tasksCreated++;
+                        continue;
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Site Startup tasks for {site.SiteId}");
+                    var msTask = app.ActiveProject.Tasks.Add(task.name);  // Authority-specific name from API
+                    msTask.Duration = $"{task.duration_days}d";
+
+                    // Site-specific fields (hybrid approach)
+                    msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
+                    msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name
+
+                    // Authority-specific fields (from API)
+                    msTask.SetField(MSProject.PjField.pjTaskText1, task.authority ?? ""); // Regulatory Authority
+                    msTask.SetField(MSProject.PjField.pjTaskText16, task.authority_type ?? ""); // Authority Type
+                    msTask.SetField(MSProject.PjField.pjTaskText17, task.submission_form ?? ""); // Submission Form
+                    msTask.SetField(MSProject.PjField.pjTaskText4, task.category ?? ""); // Category
+                    msTask.SetField(MSProject.PjField.pjTaskText12, "Site Activation"); // Stage
+                    msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{site.CountryCode}"); // Template Source
+
+                    // Add authority info to notes
+                    if (!string.IsNullOrEmpty(task.authority_full_name))
+                    {
+                        string notes = $"Authority: {task.authority_full_name} ({task.authority})\n";
+                        if (!string.IsNullOrEmpty(task.authority_type))
+                            notes += $"Authority Type: {task.authority_type}\n";
+                        if (!string.IsNullOrEmpty(task.submission_form))
+                            notes += $"Submission Form: {task.submission_form}\n";
+                        msTask.Notes = notes;
+                    }
+
+                    if (task.is_mandatory)
+                    {
+                        msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                    }
+
+                    tasksCreated++;
                 }
+
+                System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Site Startup tasks for {site.SiteId}");
             }
 
             return tasksCreated;
@@ -1177,55 +1193,84 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
-        /// Generate Site Closeout templates for selected sites
+        /// Generate Site Closeout templates for selected sites using API for authority-specific details
         /// </summary>
-        private int GenerateSiteCloseout(MSProject.Application app, ClinicalProjectConfiguration config)
+        private async System.Threading.Tasks.Task<int> GenerateSiteCloseout(MSProject.Application app, ClinicalProjectConfiguration config)
         {
             int tasksCreated = 0;
+
+            System.Diagnostics.Debug.WriteLine($"=== GenerateSiteCloseout START (API-based) ===");
 
             foreach (string siteId in config.Templates.SitesForCloseout)
             {
                 var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                if (site == null) continue;
-
-                // Get template for country
-                SitePhaseTaskSet taskSet = null;
-                var countryInfo = CountryRegulatoryInfo.GetCountryInfo(site.CountryCode);
-
-                if (site.CountryCode.ToUpper() == "USA")
+                if (site == null)
                 {
-                    taskSet = CountryTemplateLibrary.GetUSA_SiteCloseout();
-                }
-                else
-                {
-                    taskSet = CountryTemplateLibrary.GetInternational_SiteCloseout(countryInfo);
+                    System.Diagnostics.Debug.WriteLine($"ERROR: Site {siteId} not found in config.Sites!");
+                    continue;
                 }
 
-                if (taskSet != null && taskSet.tasks != null)
+                System.Diagnostics.Debug.WriteLine($"FOUND Site: {site.SiteId} | Name: {site.SiteName} | Country: {site.CountryCode}");
+
+                // Call async API method for authority-specific template
+                var templateConfig = new TemplateConfiguration
                 {
-                    foreach (var task in taskSet.tasks)
+                    TemplateType = TemplateType.SiteCloseout,
+                    CountryCode = site.CountryCode,
+                    SiteId = site.SiteId,
+                    StudyPhase = config.StudyPhase,
+                    TherapeuticArea = config.TherapeuticArea
+                };
+
+                TemplateResult result = await LoadSiteCloseoutTemplateAsync(templateConfig, config.Filters);
+                Timeline timeline = result.Timeline;
+
+                System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {site.SiteId}");
+
+                // Create tasks with BOTH country-specific AND site-specific details
+                foreach (var task in timeline.tasks)
+                {
+                    // Apply filters (if any)
+                    if (config.Filters != null && config.Filters.IncludedCategories.Count > 0 &&
+                        !string.IsNullOrEmpty(task.category) &&
+                        !config.Filters.IncludedCategories.Contains(task.category))
                     {
-                        if (config.Filters != null && !config.Filters.PassesFilter(task))
-                            continue;
-
-                        var msTask = app.ActiveProject.Tasks.Add(task.name);
-                        msTask.Duration = $"{task.duration_days}d";
-
-                        // Populate custom fields
-                        msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
-                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name (e.g., "Memorial Hospital")
-                        msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
-                        msTask.SetField(MSProject.PjField.pjTaskText12, "Site Closeout");
-                        msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
-                        msTask.SetField(MSProject.PjField.pjTaskText14, $"Library-{site.CountryCode}");
-
-                        msTask.Notes = task.description;
-                        if (task.is_mandatory)
-                            msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
-
-                        tasksCreated++;
+                        continue;
                     }
+
+                    var msTask = app.ActiveProject.Tasks.Add(task.name);  // Authority-specific name from API
+                    msTask.Duration = $"{task.duration_days}d";
+
+                    // Site-specific fields (hybrid approach)
+                    msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
+                    msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name
+
+                    // Authority-specific fields (from API)
+                    msTask.SetField(MSProject.PjField.pjTaskText1, task.authority ?? ""); // Regulatory Authority
+                    msTask.SetField(MSProject.PjField.pjTaskText16, task.authority_type ?? ""); // Authority Type
+                    msTask.SetField(MSProject.PjField.pjTaskText17, task.submission_form ?? ""); // Submission Form
+                    msTask.SetField(MSProject.PjField.pjTaskText4, task.category ?? ""); // Category
+                    msTask.SetField(MSProject.PjField.pjTaskText12, "Site Closeout"); // Stage
+                    msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{site.CountryCode}"); // Template Source
+
+                    // Add authority info to notes
+                    if (!string.IsNullOrEmpty(task.authority_full_name))
+                    {
+                        string notes = $"Authority: {task.authority_full_name} ({task.authority})\n";
+                        if (!string.IsNullOrEmpty(task.authority_type))
+                            notes += $"Authority Type: {task.authority_type}\n";
+                        if (!string.IsNullOrEmpty(task.submission_form))
+                            notes += $"Submission Form: {task.submission_form}\n";
+                        msTask.Notes = notes;
+                    }
+
+                    if (task.is_mandatory)
+                        msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                    tasksCreated++;
                 }
+
+                System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Site Closeout tasks for {site.SiteId}");
             }
 
             return tasksCreated;
