@@ -9,6 +9,27 @@ from typing import List
 from datetime import datetime
 import logging
 
+
+def convert_date_to_iso(date_str: str) -> str:
+    """
+    Convert DD-MM-YYYY (clinical research standard) to YYYY-MM-DD (database format)
+
+    Args:
+        date_str: Date in DD-MM-YYYY format (e.g., "15-01-2025")
+
+    Returns:
+        Date in YYYY-MM-DD format (e.g., "2025-01-15")
+    """
+    if not date_str:
+        return None
+    try:
+        # Parse DD-MM-YYYY
+        dt = datetime.strptime(date_str, '%d-%m-%Y')
+        # Return as YYYY-MM-DD (ISO format for database)
+        return dt.strftime('%Y-%m-%d')
+    except ValueError:
+        return None
+
 from models.feedback import (
     TaskCompletionFeedback,
     TaskCompletionResponse,
@@ -68,6 +89,10 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                         f"task={feedback.task_id} - updating existing record"
                     )
                     # Update existing record instead of inserting new one
+                    # Convert DD-MM-YYYY to YYYY-MM-DD for database
+                    start_date_iso = convert_date_to_iso(feedback.actual_start_date)
+                    end_date_iso = convert_date_to_iso(feedback.actual_end_date)
+
                     cursor.execute("""
                         UPDATE task_outcomes
                         SET actual_duration_days=?, actual_start_date=?, actual_end_date=?,
@@ -77,8 +102,8 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                         WHERE project_id=? AND task_id=?
                     """, (
                         feedback.actual_duration_days,
-                        feedback.actual_start_date,
-                        feedback.actual_end_date,
+                        start_date_iso,
+                        end_date_iso,
                         variance_days,
                         variance_percent,
                         was_accurate,
@@ -123,6 +148,10 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                     )
 
             # No duplicate - insert new record
+            # Convert DD-MM-YYYY to YYYY-MM-DD for database
+            start_date_iso = convert_date_to_iso(feedback.actual_start_date)
+            end_date_iso = convert_date_to_iso(feedback.actual_end_date)
+
             cursor.execute("""
                 INSERT INTO task_outcomes (
                     task_id, task_name, category,
@@ -140,8 +169,8 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
                 feedback.predicted_confidence,
                 feedback.model_version,
                 feedback.actual_duration_days,
-                feedback.actual_start_date,
-                feedback.actual_end_date,
+                start_date_iso,
+                end_date_iso,
                 feedback.country_code,
                 feedback.authority,
                 feedback.study_phase,
@@ -245,6 +274,10 @@ async def record_multiple_completions(
                         logger.warning(
                             f"Duplicate in bulk: project={feedback.project_id}, task={feedback.task_id} - updating"
                         )
+                        # Convert DD-MM-YYYY to YYYY-MM-DD for database
+                        start_date_iso = convert_date_to_iso(feedback.actual_start_date)
+                        end_date_iso = convert_date_to_iso(feedback.actual_end_date)
+
                         cursor.execute("""
                             UPDATE task_outcomes
                             SET actual_duration_days=?, actual_start_date=?, actual_end_date=?,
@@ -254,8 +287,8 @@ async def record_multiple_completions(
                             WHERE project_id=? AND task_id=?
                         """, (
                             feedback.actual_duration_days,
-                            feedback.actual_start_date,
-                            feedback.actual_end_date,
+                            start_date_iso,
+                            end_date_iso,
                             variance_days,
                             variance_percent,
                             was_accurate,
@@ -271,6 +304,10 @@ async def record_multiple_completions(
                         recorded_count += 1
 
                 if not is_duplicate:
+                    # Convert DD-MM-YYYY to YYYY-MM-DD for database
+                    start_date_iso = convert_date_to_iso(feedback.actual_start_date)
+                    end_date_iso = convert_date_to_iso(feedback.actual_end_date)
+
                     cursor.execute("""
                         INSERT INTO task_outcomes (
                         task_id, task_name, category,
@@ -288,8 +325,8 @@ async def record_multiple_completions(
                     feedback.predicted_confidence,
                     feedback.model_version,
                     feedback.actual_duration_days,
-                    feedback.actual_start_date,
-                    feedback.actual_end_date,
+                    start_date_iso,
+                    end_date_iso,
                     feedback.country_code,
                     feedback.authority,
                     feedback.study_phase,
