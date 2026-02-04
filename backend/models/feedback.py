@@ -24,8 +24,8 @@ class TaskCompletionFeedback(BaseModel):
 
     # Actual outcome (what really happened)
     actual_duration_days: int = Field(..., ge=0, description="Actual duration from MS Project (must be >= 0)")
-    actual_start_date: Optional[str] = Field(None, description="Actual start date (YYYY-MM-DD)")
-    actual_end_date: Optional[str] = Field(None, description="Actual end date (YYYY-MM-DD)")
+    actual_start_date: Optional[str] = Field(None, description="Actual start date (DD-MM-YYYY)")
+    actual_end_date: Optional[str] = Field(None, description="Actual end date (DD-MM-YYYY)")
 
     # Context for learning
     country_code: Optional[str] = Field(None, description="ISO country code (US, KE, VN)")
@@ -40,12 +40,12 @@ class TaskCompletionFeedback(BaseModel):
     @field_validator('actual_start_date', 'actual_end_date')
     @classmethod
     def validate_date_format(cls, v):
-        """Validate date is in YYYY-MM-DD format"""
+        """Validate date is in DD-MM-YYYY format (clinical research standard)"""
         if v is not None:
             try:
-                datetime.strptime(v, '%Y-%m-%d')
+                datetime.strptime(v, '%d-%m-%Y')
             except ValueError:
-                raise ValueError('Date must be in YYYY-MM-DD format (e.g., 2025-01-15)')
+                raise ValueError('Date must be in DD-MM-YYYY format (e.g., 15-01-2025)')
         return v
 
 

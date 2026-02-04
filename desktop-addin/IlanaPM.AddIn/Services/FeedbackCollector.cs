@@ -100,8 +100,8 @@ namespace IlanaPM.AddIn.Services
                     model_version = "v1.0",
 
                     actual_duration_days = actualDuration,
-                    actual_start_date = task.Start.ToString("yyyy-MM-dd"),
-                    actual_end_date = task.Finish.ToString("yyyy-MM-dd"),
+                    actual_start_date = task.Start.ToString("dd-MM-yyyy"),  // Clinical research standard format
+                    actual_end_date = task.Finish.ToString("dd-MM-yyyy"),   // Clinical research standard format
 
                     country_code = ExtractCountryCode(task),
                     authority = GetFieldSafe(task, MSProject.PjField.pjTaskText1),
