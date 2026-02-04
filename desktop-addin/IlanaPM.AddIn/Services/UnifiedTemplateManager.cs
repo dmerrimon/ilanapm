@@ -971,7 +971,7 @@ namespace IlanaPM.AddIn.Services
                 };
 
                 TemplateResult result = await LoadSiteStartupTemplateAsync(templateConfig, config.Filters);
-                Timeline timeline = result.Timeline;
+                Models.Timeline timeline = result.Timeline;
 
                 System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {site.SiteId}");
 
@@ -1223,7 +1223,7 @@ namespace IlanaPM.AddIn.Services
                 };
 
                 TemplateResult result = await LoadSiteCloseoutTemplateAsync(templateConfig, config.Filters);
-                Timeline timeline = result.Timeline;
+                Models.Timeline timeline = result.Timeline;
 
                 System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {site.SiteId}");
 

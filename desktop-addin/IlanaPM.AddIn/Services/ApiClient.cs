@@ -71,7 +71,8 @@ namespace IlanaPM.AddIn.Services
                 System.Diagnostics.Debug.WriteLine($"API Error {response.StatusCode}: {errorBody}");
 
                 // Handle 422 Validation Errors (Pydantic)
-                if (response.StatusCode == System.Net.HttpStatusCode.UnprocessableEntity) // 422
+                // Note: UnprocessableEntity not available in .NET Framework 4.5.2, use numeric value
+                if ((int)response.StatusCode == 422) // 422 Unprocessable Entity
                 {
                     string friendlyError = ParseValidationError(errorBody);
                     throw new HttpRequestException(friendlyError);
