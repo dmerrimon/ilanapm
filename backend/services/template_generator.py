@@ -1438,7 +1438,7 @@ class TemplateGenerator:
         ec_authority = workflow.get('ethics_authority', {})
         ec_code = ec_authority.get('code', 'EC')
         ec_name = ec_authority.get('name', 'Ethics Committee')
-        ec_duration = ec_authority.get('review_days', 30)
+        ec_duration = ec_authority.get('review_days') or 30  # Default to 30 if None or missing
 
         # Determine submission form based on country
         if country_code == 'GB':
@@ -1472,7 +1472,7 @@ class TemplateGenerator:
         reg_authority = workflow.get('regulatory_authority', {})
         reg_code = reg_authority.get('code', 'REG')
         reg_name = reg_authority.get('name', 'Regulatory Authority')
-        reg_duration = reg_authority.get('review_days', 30)
+        reg_duration = reg_authority.get('review_days') or 30  # Default to 30 if None or missing
 
         # Determine submission form based on country
         if country_code == 'GB':
@@ -1509,7 +1509,7 @@ class TemplateGenerator:
         for auth in additional_bodies:
             auth_code = auth.get('code')
             auth_name = auth.get('name')
-            auth_duration = auth.get('review_days', 30)
+            auth_duration = auth.get('review_days') or 30  # Default to 30 if None or missing
             auth_type = auth.get('type', 'permits')
 
             # Country-specific task naming
