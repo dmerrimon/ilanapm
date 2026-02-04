@@ -244,7 +244,7 @@ namespace IlanaPM.AddIn
             this.cmbStudyPhase.DropDownStyle = ComboBoxStyle.DropDownList;
             this.cmbStudyPhase.Location = new Point(0, 125);
             this.cmbStudyPhase.Size = new Size(200, 25);
-            this.cmbStudyPhase.Items.AddRange(new object[] { "Phase I", "Phase II", "Phase III", "Phase IV", "Phase I/II" });
+            this.cmbStudyPhase.Items.AddRange(new object[] { "Phase I", "Phase II", "Phase III", "Phase IV" });
 
             // lblTherapeuticArea
             this.lblTherapeuticArea.Location = new Point(0, 160);
@@ -275,9 +275,15 @@ namespace IlanaPM.AddIn
             this.lstCountries.Location = new Point(0, 245);
             this.lstCountries.Size = new Size(350, 150);
             this.lstCountries.Items.AddRange(new object[] {
-                "USA", "Canada", "United Kingdom", "Germany", "France",
-                "Spain", "Italy", "Netherlands", "Belgium", "Switzerland",
-                "Japan", "Australia", "China", "India", "Brazil"
+                // Americas (3)
+                "United States", "Canada", "Mexico", "Peru",
+                // Europe (1)
+                "United Kingdom",
+                // Africa (11)
+                "South Africa", "Kenya", "Uganda", "Tanzania", "Zimbabwe",
+                "Malawi", "Liberia", "Mali", "Sierra Leone", "Guinea", "DRC",
+                // Asia-Pacific (7)
+                "Australia", "Bangladesh", "China", "India", "Thailand", "Vietnam"
             });
         }
 

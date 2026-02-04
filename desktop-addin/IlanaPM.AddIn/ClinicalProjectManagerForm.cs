@@ -6,6 +6,7 @@ using System.Data;
 using System.Linq;
 using System.Windows.Forms;
 using MSProject = Microsoft.Office.Interop.MSProject;
+using Site = IlanaPM.AddIn.Models.Site;
 
 namespace IlanaPM.AddIn
 {
@@ -208,12 +209,14 @@ namespace IlanaPM.AddIn
                     if (!string.IsNullOrEmpty(config.TherapeuticArea))
                         cmbTherapeuticArea.SelectedItem = config.TherapeuticArea;
 
-                    // Load countries
+                    // Load countries (convert ISO codes back to display names)
                     if (config.Countries != null)
                     {
-                        foreach (string country in config.Countries)
+                        foreach (string countryCode in config.Countries)
                         {
-                            int index = lstCountries.Items.IndexOf(country);
+                            // Convert ISO code to display name
+                            string displayName = ConvertISOCodeToCountryName(countryCode);
+                            int index = lstCountries.Items.IndexOf(displayName);
                             if (index >= 0)
                                 lstCountries.SetItemChecked(index, true);
                         }
@@ -455,12 +458,110 @@ namespace IlanaPM.AddIn
             config.StudyPhase = cmbStudyPhase.SelectedItem?.ToString() ?? "";
             config.TherapeuticArea = cmbTherapeuticArea.SelectedItem?.ToString() ?? "";
 
-            // Save selected countries
+            // Save selected countries (convert display names to 2-letter ISO codes for API)
             config.Countries.Clear();
             foreach (var item in lstCountries.CheckedItems)
             {
-                config.Countries.Add(item.ToString());
+                string isoCode = ConvertCountryNameToISOCode(item.ToString());
+                config.Countries.Add(isoCode);
             }
+        }
+
+        /// <summary>
+        /// Convert country display name to 2-letter ISO code required by API
+        /// Supports all 23 countries from task ontology
+        /// </summary>
+        private string ConvertCountryNameToISOCode(string countryName)
+        {
+            var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // Americas (4)
+                { "United States", "US" },
+                { "Canada", "CA" },
+                { "Mexico", "MX" },
+                { "Peru", "PE" },
+
+                // Europe (1)
+                { "United Kingdom", "GB" },
+
+                // Africa (11)
+                { "South Africa", "ZA" },
+                { "Kenya", "KE" },
+                { "Uganda", "UG" },
+                { "Tanzania", "TZ" },
+                { "Zimbabwe", "ZW" },
+                { "Malawi", "MW" },
+                { "Liberia", "LR" },
+                { "Mali", "ML" },
+                { "Sierra Leone", "SL" },
+                { "Guinea", "GN" },
+                { "DRC", "CD" },
+
+                // Asia-Pacific (7)
+                { "Australia", "AU" },
+                { "Bangladesh", "BD" },
+                { "China", "CN" },
+                { "India", "IN" },
+                { "Thailand", "TH" },
+                { "Vietnam", "VN" }
+            };
+
+            if (mapping.ContainsKey(countryName))
+            {
+                return mapping[countryName];
+            }
+
+            // If not in mapping, return as-is (shouldn't happen with dropdown)
+            System.Diagnostics.Debug.WriteLine($"Warning: Unknown country name '{countryName}', returning as-is");
+            return countryName;
+        }
+
+        /// <summary>
+        /// Convert 2-letter ISO code back to display name for loading
+        /// Supports all 23 countries from task ontology
+        /// </summary>
+        private string ConvertISOCodeToCountryName(string isoCode)
+        {
+            var reverseMapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // Americas (4)
+                { "US", "United States" },
+                { "CA", "Canada" },
+                { "MX", "Mexico" },
+                { "PE", "Peru" },
+
+                // Europe (1)
+                { "GB", "United Kingdom" },
+
+                // Africa (11)
+                { "ZA", "South Africa" },
+                { "KE", "Kenya" },
+                { "UG", "Uganda" },
+                { "TZ", "Tanzania" },
+                { "ZW", "Zimbabwe" },
+                { "MW", "Malawi" },
+                { "LR", "Liberia" },
+                { "ML", "Mali" },
+                { "SL", "Sierra Leone" },
+                { "GN", "Guinea" },
+                { "CD", "DRC" },
+
+                // Asia-Pacific (7)
+                { "AU", "Australia" },
+                { "BD", "Bangladesh" },
+                { "CN", "China" },
+                { "IN", "India" },
+                { "TH", "Thailand" },
+                { "VN", "Vietnam" }
+            };
+
+            if (reverseMapping.ContainsKey(isoCode))
+            {
+                return reverseMapping[isoCode];
+            }
+
+            // If code not in mapping, try to find in forward mapping (for backward compatibility)
+            return isoCode;
         }
 
         private void SaveStep3Data()
@@ -547,7 +648,7 @@ namespace IlanaPM.AddIn
                 // Get values from dialog
                 var siteId = dialog.Controls["txtSiteId"].Text;
                 var siteName = dialog.Controls["txtSiteName"].Text;
-                var country = dialog.Controls["txtCountry"].Text;
+                var countryCode = ((ComboBox)dialog.Controls["cmbCountry"]).SelectedItem?.ToString() ?? "US";
                 var status = ((ComboBox)dialog.Controls["cmbStatus"]).SelectedItem?.ToString() ?? "Pending";
                 var pi = dialog.Controls["txtPI"].Text;
                 var irbDateStr = dialog.Controls["dtpIRB"].Text;
@@ -557,8 +658,8 @@ namespace IlanaPM.AddIn
                 {
                     SiteId = siteId,
                     SiteName = siteName,
-                    CountryCode = country,
-                    CountryName = country,
+                    CountryCode = countryCode,
+                    CountryName = ConvertISOCodeToCountryName(countryCode),
                     Status = status,
                     PrincipalInvestigator = pi,
                     IrbApprovalDate = DateTime.TryParse(irbDateStr, out DateTime irbDate) ? irbDate : (DateTime?)null
@@ -590,8 +691,8 @@ namespace IlanaPM.AddIn
                     // Update site with new values
                     site.SiteId = dialog.Controls["txtSiteId"].Text;
                     site.SiteName = dialog.Controls["txtSiteName"].Text;
-                    site.CountryCode = dialog.Controls["txtCountry"].Text;
-                    site.CountryName = dialog.Controls["txtCountry"].Text;
+                    site.CountryCode = ((ComboBox)dialog.Controls["cmbCountry"]).SelectedItem?.ToString() ?? "US";
+                    site.CountryName = ConvertISOCodeToCountryName(site.CountryCode);
                     site.Status = ((ComboBox)dialog.Controls["cmbStatus"]).SelectedItem?.ToString() ?? "Pending";
                     site.PrincipalInvestigator = dialog.Controls["txtPI"].Text;
 
@@ -659,11 +760,20 @@ namespace IlanaPM.AddIn
             dialog.Controls.Add(txtSiteName);
             yPos += 35;
 
-            // Country
-            var lblCountry = new Label { Text = "Country:", Left = 20, Top = yPos, Width = 120 };
-            var txtCountry = new TextBox { Name = "txtCountry", Left = 150, Top = yPos, Width = 250, Text = existingSite?.CountryCode ?? "USA" };
+            // Country (Dropdown with ISO codes)
+            var lblCountry = new Label { Text = "Country Code:", Left = 20, Top = yPos, Width = 120 };
+            var cmbCountry = new ComboBox { Name = "cmbCountry", Left = 150, Top = yPos, Width = 250, DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbCountry.Items.AddRange(new object[] {
+                "US", "CA", "MX", "PE",           // Americas
+                "GB",                              // Europe
+                "ZA", "KE", "UG", "TZ", "ZW",     // Africa 1
+                "MW", "LR", "ML", "SL", "GN", "CD", // Africa 2
+                "AU", "BD", "CN", "IN", "TH", "VN" // Asia-Pacific
+            });
+            cmbCountry.SelectedItem = existingSite?.CountryCode ?? "US";
+            if (cmbCountry.SelectedItem == null) cmbCountry.SelectedIndex = 0; // Default to US
             dialog.Controls.Add(lblCountry);
-            dialog.Controls.Add(txtCountry);
+            dialog.Controls.Add(cmbCountry);
             yPos += 35;
 
             // Status
@@ -1174,6 +1284,17 @@ namespace IlanaPM.AddIn
             // Show summary of what will be generated
             // Note: Actual task count may vary based on country-specific regulations
 
+            // Full Study Timeline (API-based)
+            if (config.Templates.GenerateFullStudyTimeline)
+            {
+                string countries = config.Countries.Count > 0
+                    ? string.Join(", ", config.Countries)
+                    : "No countries selected";
+                dt.Rows.Add("Full Study Timeline", "All Countries",
+                    $"Complete regulatory timeline via API ({config.StudyPhase}, {config.TherapeuticArea}) - Countries: {countries}",
+                    "~100-150 per country");
+            }
+
             if (config.Templates.GenerateSiteStartup)
             {
                 foreach (var siteId in config.Templates.SitesForStartup)
@@ -1250,41 +1371,107 @@ namespace IlanaPM.AddIn
                 SaveCurrentStepData();
                 config.SaveToProject(msProjectApp);
 
-                // Show progress
-                this.Cursor = Cursors.WaitCursor;
+                // Disable generate button
                 btnGenerate.Enabled = false;
-                btnGenerate.Text = "Generating...";
 
-                // Call UnifiedTemplateManager to generate templates
-                var templateManager = new UnifiedTemplateManager();
-                int tasksCreated = templateManager.GenerateTemplates(msProjectApp, config);
+                // Create and show progress form
+                var progressForm = new ProgressForm("Generating Templates");
+                progressForm.Show(this);
+                progressForm.UpdateStatus("Preparing template generation...", "This may take up to 60 seconds for API cold start.");
 
-                this.Cursor = Cursors.Default;
+                // Use BackgroundWorker to run generation asynchronously (prevents "Server Busy" dialog)
+                var backgroundWorker = new System.ComponentModel.BackgroundWorker();
+                backgroundWorker.WorkerReportsProgress = true;
 
-                MessageBox.Show(
-                    $"Successfully generated {tasksCreated} tasks!\n\n" +
-                    "NEXT STEP - Add custom columns to view the data:\n\n" +
-                    "1. Right-click any column header (like 'Duration')\n" +
-                    "2. Click 'Insert Column'\n" +
-                    "3. Type 'Text11' and press Enter (this adds Site column)\n" +
-                    "4. Repeat for 'Text12' (Stage) and 'Text4' (Category)\n\n" +
-                    "The custom fields are already on all tasks - you just need to make the columns visible.",
-                    "Generation Complete",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                int tasksCreated = 0;
+                Exception generationError = null;
 
-                this.DialogResult = DialogResult.OK;
-                this.Close();
+                backgroundWorker.DoWork += (s, args) =>
+                {
+                    try
+                    {
+                        // Report initial progress
+                        backgroundWorker.ReportProgress(10, "Calling API to generate templates...");
+
+                        // Call UnifiedTemplateManager to generate templates
+                        var templateManager = new UnifiedTemplateManager();
+
+                        // Pass progress callback to template manager
+                        templateManager.ProgressCallback = (status, detail) =>
+                        {
+                            backgroundWorker.ReportProgress(50, new string[] { status, detail });
+                        };
+
+                        tasksCreated = templateManager.GenerateTemplates(msProjectApp, config);
+                        args.Result = tasksCreated;
+                    }
+                    catch (Exception ex)
+                    {
+                        generationError = ex;
+                        args.Result = 0;
+                    }
+                };
+
+                backgroundWorker.ProgressChanged += (s, args) =>
+                {
+                    if (args.UserState is string[] statusArray && statusArray.Length == 2)
+                    {
+                        progressForm.UpdateStatus(statusArray[0], statusArray[1]);
+                    }
+                    else if (args.UserState is string status)
+                    {
+                        progressForm.UpdateStatus(status);
+                    }
+                    progressForm.SetProgress(args.ProgressPercentage);
+                };
+
+                backgroundWorker.RunWorkerCompleted += (s, args) =>
+                {
+                    // Close progress form
+                    progressForm.Close();
+                    progressForm.Dispose();
+
+                    // Re-enable button
+                    btnGenerate.Enabled = true;
+                    btnGenerate.Text = "Generate";
+
+                    if (generationError != null)
+                    {
+                        MessageBox.Show(
+                            $"Error generating templates: {generationError.Message}\n\n" +
+                            "Please check the error and try again.",
+                            "Generation Error",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    MessageBox.Show(
+                        $"Successfully generated {tasksCreated} tasks!\n\n" +
+                        "NEXT STEP - Add custom columns to view the data:\n\n" +
+                        "1. Right-click any column header (like 'Duration')\n" +
+                        "2. Click 'Insert Column'\n" +
+                        "3. Type 'Text11' and press Enter (this adds Site column)\n" +
+                        "4. Repeat for 'Text12' (Stage) and 'Text4' (Category)\n\n" +
+                        "The custom fields are already on all tasks - you just need to make the columns visible.",
+                        "Generation Complete",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                };
+
+                // Start background work
+                backgroundWorker.RunWorkerAsync();
             }
             catch (Exception ex)
             {
-                this.Cursor = Cursors.Default;
                 btnGenerate.Enabled = true;
                 btnGenerate.Text = "Generate";
 
                 MessageBox.Show(
-                    $"Error generating templates: {ex.Message}\n\n" +
-                    "Please check the error and try again.",
+                    $"Error starting template generation: {ex.Message}",
                     "Generation Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

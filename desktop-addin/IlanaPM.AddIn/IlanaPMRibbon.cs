@@ -155,6 +155,10 @@ namespace IlanaPM.AddIn
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText13, "Subphase");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText14, "Template Source");
 
+                // NEW: Authority-specific fields (Text16-17)
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText16, "Authority Type");
+                app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskText17, "Submission Form");
+
                 // Number fields
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber1, "Checklist Completion %");
                 app.CustomFieldRename(Microsoft.Office.Interop.MSProject.PjCustomField.pjCustomTaskNumber2, "Risk Score");

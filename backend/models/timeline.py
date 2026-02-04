@@ -102,6 +102,12 @@ class Task(BaseModel):
     country: Optional[str] = Field(None, description="Country code (ISO 3166-1 alpha-2, e.g., 'US', 'KE', 'VN') for country-specific regulatory workflows")
     therapeutic_area: Optional[str] = Field(None, description="Therapeutic area (e.g., Oncology, Cardiology)")
 
+    # Authority-specific metadata (for rich ontology templates)
+    authority_full_name: Optional[str] = Field(None, description="Full authority name (e.g., 'National Drug Authority')")
+    authority_type: Optional[str] = Field(None, description="Authority type: 'regulatory', 'ethics', 'permits'")
+    submission_form: Optional[str] = Field(None, description="Specific submission form (e.g., 'IRAS Application', 'IND', 'CTA')")
+    required_documents: Optional[List[str]] = Field(None, description="Authority-specific required documents")
+
     # Validation fields
     is_mandatory: bool = Field(default=False, description="Whether task is mandatory")
     gating_status: GatingStatus = Field(default=GatingStatus.NOT_APPLICABLE, description="Gating/blocking status")

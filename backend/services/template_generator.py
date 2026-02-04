@@ -1279,3 +1279,762 @@ class TemplateGenerator:
             return 'REG-001'  # IND/CTA Submission & Review
 
         return None
+
+    def generate_site_startup(
+        self,
+        country_code: str,
+        site_id: str,
+        study_phase: str,
+        therapeutic_area: str,
+        include_optional: bool = True
+    ) -> Timeline:
+        """
+        Generate site startup template with authority-specific details
+
+        Creates tasks specific to activating a clinical trial site, including:
+        - Authority-specific regulatory submissions (e.g., "Submit IRAS Application to MHRA" for UK)
+        - Multi-authority workflows (e.g., NDA + UNCST + EC for Uganda)
+        - Site readiness and training tasks
+        - GCP compliance and monitoring setup
+
+        Args:
+            country_code: ISO country code (e.g., "UG", "GB")
+            site_id: Site identifier (e.g., "SITE-001")
+            study_phase: Study phase
+            therapeutic_area: Therapeutic area
+            include_optional: Include optional tasks
+
+        Returns:
+            Timeline with authority-rich site startup tasks
+        """
+        workflow = self._get_workflow(country_code)
+        logger.info(f"Generating site startup template for {site_id} in {workflow['country_name']}")
+
+        tasks = []
+
+        # ===== REGULATORY TASKS (AUTHORITY-SPECIFIC) =====
+        regulatory_tasks = self._build_site_regulatory_tasks(
+            workflow, site_id, study_phase, therapeutic_area
+        )
+        tasks.extend(regulatory_tasks)
+
+        # ===== SITE READINESS TASKS =====
+        site_readiness_tasks = [
+            Task(
+                id=f"{site_id}-READY-001",
+                name=f"Site Assessment Visit - {site_id}",
+                duration_days=1,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-READY-002",
+                name=f"Essential Documents Collection - {site_id}",
+                duration_days=14,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-READY-003",
+                name=f"Site Initiation Visit (SIV) - {site_id}",
+                duration_days=3,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-READY-004",
+                name=f"GCP Training Completion - {site_id}",
+                duration_days=2,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-READY-005",
+                name=f"Site Activation - {site_id}",
+                duration_days=1,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+        ]
+        tasks.extend(site_readiness_tasks)
+
+        # Build dependencies
+        dependencies = self._build_site_startup_dependencies(tasks, workflow, site_id)
+
+        # Create timeline
+        timeline = Timeline(
+            study_name=f"{workflow['country_name']} Site Startup - {site_id}",
+            phase=study_phase,
+            authority=self._map_authority(
+                workflow['regulatory_authority']['code'],
+                workflow['country_code'],
+                workflow['country_name']
+            ),
+            therapeutic_area=therapeutic_area,
+            tasks=tasks,
+            dependencies=dependencies
+        )
+
+        logger.info(f"Site startup template generated: {len(tasks)} tasks, {len(dependencies)} dependencies")
+        return timeline
+
+    def _build_site_regulatory_tasks(
+        self,
+        workflow: Dict,
+        site_id: str,
+        phase: str,
+        therapeutic_area: str
+    ) -> List[Task]:
+        """
+        Build authority-specific regulatory tasks for site startup
+
+        Returns tasks with full authority metadata (authority_full_name, authority_type, submission_form)
+        """
+        tasks = []
+        country_code = workflow['country_code']
+        country_name = workflow['country_name']
+
+        # ===== ETHICS COMMITTEE SUBMISSION =====
+        ec_authority = workflow.get('ethics_authority', {})
+        ec_code = ec_authority.get('code', 'EC')
+        ec_name = ec_authority.get('name', 'Ethics Committee')
+        ec_duration = ec_authority.get('review_days', 30)
+
+        # Determine submission form based on country
+        if country_code == 'GB':
+            ec_submission_form = "IRAS Application" if phase in ["Phase II", "Phase III", "Phase IV"] else "REC Application"
+            ec_task_name = f"Submit {ec_submission_form} to REC"
+        elif country_code == 'UG':
+            ec_submission_form = "Ethics Application"
+            ec_task_name = f"Submit to {ec_name}"
+        else:
+            ec_submission_form = "Ethics Application"
+            ec_task_name = f"Submit to {ec_name}"
+
+        ec_task = Task(
+            id=f"{site_id}-REG-EC",
+            name=ec_task_name,
+            duration_days=ec_duration,
+            category='Regulatory',
+            phase=phase,
+            authority=self._map_authority(ec_code, country_code, country_name),
+            country=country_code,
+            therapeutic_area=therapeutic_area,
+            is_mandatory=True
+        )
+        # Add authority-specific metadata
+        ec_task.authority_full_name = ec_name
+        ec_task.authority_type = "ethics"
+        ec_task.submission_form = ec_submission_form
+        tasks.append(ec_task)
+
+        # ===== REGULATORY AUTHORITY SUBMISSION =====
+        reg_authority = workflow.get('regulatory_authority', {})
+        reg_code = reg_authority.get('code', 'REG')
+        reg_name = reg_authority.get('name', 'Regulatory Authority')
+        reg_duration = reg_authority.get('review_days', 30)
+
+        # Determine submission form based on country
+        if country_code == 'GB':
+            reg_submission_form = "Clinical Trial Authorization (CTA)"
+            reg_task_name = f"Submit {reg_submission_form} to MHRA"
+        elif country_code == 'UG':
+            reg_submission_form = "Clinical Trial Application"
+            reg_task_name = f"Submit to National Drug Authority (NDA)"
+        elif country_code == 'US':
+            reg_submission_form = "Investigational New Drug (IND) Application"
+            reg_task_name = f"Submit {reg_submission_form} to FDA"
+        else:
+            reg_submission_form = "Clinical Trial Application"
+            reg_task_name = f"Submit to {reg_name}"
+
+        reg_task = Task(
+            id=f"{site_id}-REG-AUTH",
+            name=reg_task_name,
+            duration_days=reg_duration,
+            category='Regulatory',
+            phase=phase,
+            authority=self._map_authority(reg_code, country_code, country_name),
+            country=country_code,
+            therapeutic_area=therapeutic_area,
+            is_mandatory=True
+        )
+        reg_task.authority_full_name = reg_name
+        reg_task.authority_type = "regulatory"
+        reg_task.submission_form = reg_submission_form
+        tasks.append(reg_task)
+
+        # ===== ADDITIONAL AUTHORITIES (MULTI-LAYER WORKFLOWS) =====
+        additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
+        for auth in additional_bodies:
+            auth_code = auth.get('code')
+            auth_name = auth.get('name')
+            auth_duration = auth.get('review_days', 30)
+            auth_type = auth.get('type', 'permits')
+
+            # Country-specific task naming
+            if country_code == 'UG' and auth_code == 'UNCST':
+                task_name = f"Obtain UNCST Research Permit"
+                submission_form = "UNCST Research Permit Application"
+            elif country_code == 'GB' and 'NHS' in auth_code:
+                task_name = f"Obtain NHS R&D Approval"
+                submission_form = "NHS R&D Application"
+            elif country_code == 'KE' and auth_code == 'NACOSTI':
+                task_name = f"Obtain NACOSTI Research Clearance"
+                submission_form = "NACOSTI Application"
+            else:
+                task_name = f"Submit to {auth_name}"
+                submission_form = f"{auth_name} Application"
+
+            auth_task = Task(
+                id=f"{site_id}-REG-{auth_code}",
+                name=task_name,
+                duration_days=auth_duration,
+                category='Regulatory',
+                phase=phase,
+                authority=self._map_authority(auth_code, country_code, country_name),
+                country=country_code,
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            )
+            auth_task.authority_full_name = auth_name
+            auth_task.authority_type = auth_type
+            auth_task.submission_form = submission_form
+            tasks.append(auth_task)
+
+        logger.info(f"Built {len(tasks)} authority-specific regulatory tasks for {country_name}")
+        return tasks
+
+    def _build_site_startup_dependencies(
+        self,
+        tasks: List[Task],
+        workflow: Dict,
+        site_id: str
+    ) -> List[Dependency]:
+        """Build dependencies for site startup tasks"""
+        dependencies = []
+        task_map = {t.id: t for t in tasks}
+
+        # Sequential regulatory approval workflow
+        workflow_type = workflow.get('workflow_type')
+
+        if workflow_type in ['three_layer_sequential', 'four_layer_sequential', 'sequential']:
+            # EC → Regulatory Authority
+            if f"{site_id}-REG-EC" in task_map and f"{site_id}-REG-AUTH" in task_map:
+                dependencies.append(Dependency(
+                    predecessor_id=f"{site_id}-REG-EC",
+                    successor_id=f"{site_id}-REG-AUTH",
+                    type='finish-to-start',
+                    lag_days=0
+                ))
+
+            # Regulatory Authority → Additional bodies (sequential)
+            additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
+            predecessor_id = f"{site_id}-REG-AUTH"
+            for auth in additional_bodies:
+                auth_id = f"{site_id}-REG-{auth['code']}"
+                if predecessor_id in task_map and auth_id in task_map:
+                    dependencies.append(Dependency(
+                        predecessor_id=predecessor_id,
+                        successor_id=auth_id,
+                        type='finish-to-start',
+                        lag_days=0
+                    ))
+                    predecessor_id = auth_id
+
+        # Site readiness workflow
+        readiness_chain = [
+            (f"{site_id}-READY-001", f"{site_id}-READY-002"),  # Assessment → Documents
+            (f"{site_id}-READY-002", f"{site_id}-READY-003"),  # Documents → SIV
+            (f"{site_id}-READY-003", f"{site_id}-READY-004"),  # SIV → Training
+            (f"{site_id}-READY-004", f"{site_id}-READY-005"),  # Training → Activation
+        ]
+
+        for pred, succ in readiness_chain:
+            if pred in task_map and succ in task_map:
+                dependencies.append(Dependency(
+                    predecessor_id=pred,
+                    successor_id=succ,
+                    type='finish-to-start',
+                    lag_days=0
+                ))
+
+        # Regulatory approval gates site activation
+        final_reg_task = self._get_final_site_regulatory_task(workflow, site_id, task_map)
+        if final_reg_task and final_reg_task in task_map and f"{site_id}-READY-005" in task_map:
+            dependencies.append(Dependency(
+                predecessor_id=final_reg_task,
+                successor_id=f"{site_id}-READY-005",
+                type='finish-to-start',
+                lag_days=0
+            ))
+
+        return dependencies
+
+    def _get_final_site_regulatory_task(self, workflow: Dict, site_id: str, task_map: Dict) -> Optional[str]:
+        """Get the final regulatory approval task for a site"""
+        # Check for additional bodies (multi-layer)
+        additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
+        if additional_bodies:
+            last_auth_id = f"{site_id}-REG-{additional_bodies[-1]['code']}"
+            if last_auth_id in task_map:
+                return last_auth_id
+
+        # Fallback to regulatory authority
+        if f"{site_id}-REG-AUTH" in task_map:
+            return f"{site_id}-REG-AUTH"
+
+        # Fallback to EC
+        if f"{site_id}-REG-EC" in task_map:
+            return f"{site_id}-REG-EC"
+
+        return None
+
+    def generate_site_closeout(
+        self,
+        country_code: str,
+        site_id: str,
+        study_phase: str,
+        therapeutic_area: str,
+        include_optional: bool = True
+    ) -> Timeline:
+        """
+        Generate site closeout template with authority-specific details
+
+        Creates tasks for closing a clinical trial site, including:
+        - Final monitoring visits
+        - IP accountability
+        - Authority-specific closeout reporting
+        - Essential document archiving
+
+        Args:
+            country_code: ISO country code
+            site_id: Site identifier
+            study_phase: Study phase
+            therapeutic_area: Therapeutic area
+            include_optional: Include optional tasks
+
+        Returns:
+            Timeline with authority-rich site closeout tasks
+        """
+        workflow = self._get_workflow(country_code)
+        logger.info(f"Generating site closeout template for {site_id} in {workflow['country_name']}")
+
+        tasks = []
+
+        # ===== CLOSEOUT MONITORING TASKS =====
+        monitoring_tasks = [
+            Task(
+                id=f"{site_id}-CLOSE-001",
+                name=f"Final Monitoring Visit - {site_id}",
+                duration_days=5,
+                category='Site',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-CLOSE-002",
+                name=f"IP Accountability & Return - {site_id}",
+                duration_days=7,
+                category='Pharmacy',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id=f"{site_id}-CLOSE-003",
+                name=f"Essential Documents Archiving - {site_id}",
+                duration_days=14,
+                category='Documents',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+        ]
+        tasks.extend(monitoring_tasks)
+
+        # ===== AUTHORITY-SPECIFIC CLOSEOUT REPORTING =====
+        closeout_reporting_tasks = self._build_site_closeout_reporting_tasks(
+            workflow, site_id, study_phase, therapeutic_area
+        )
+        tasks.extend(closeout_reporting_tasks)
+
+        # Build dependencies
+        dependencies = self._build_site_closeout_dependencies(tasks, site_id)
+
+        # Create timeline
+        timeline = Timeline(
+            study_name=f"{workflow['country_name']} Site Closeout - {site_id}",
+            phase=study_phase,
+            authority=self._map_authority(
+                workflow['regulatory_authority']['code'],
+                workflow['country_code'],
+                workflow['country_name']
+            ),
+            therapeutic_area=therapeutic_area,
+            tasks=tasks,
+            dependencies=dependencies
+        )
+
+        logger.info(f"Site closeout template generated: {len(tasks)} tasks")
+        return timeline
+
+    def _build_site_closeout_reporting_tasks(
+        self,
+        workflow: Dict,
+        site_id: str,
+        phase: str,
+        therapeutic_area: str
+    ) -> List[Task]:
+        """Build authority-specific closeout reporting tasks"""
+        tasks = []
+        country_code = workflow['country_code']
+        country_name = workflow['country_name']
+
+        # ===== REGULATORY AUTHORITY CLOSEOUT =====
+        reg_authority = workflow.get('regulatory_authority', {})
+        reg_code = reg_authority.get('code', 'REG')
+        reg_name = reg_authority.get('name', 'Regulatory Authority')
+
+        if country_code == 'GB':
+            task_name = f"Submit Study Completion Notice to MHRA"
+            submission_form = "MHRA End of Trial Declaration"
+        elif country_code == 'UG':
+            task_name = f"Submit Completion Report to NDA"
+            submission_form = "NDA Study Completion Report"
+        elif country_code == 'US':
+            task_name = f"Submit Final Report to FDA"
+            submission_form = "FDA Final Study Report"
+        else:
+            task_name = f"Submit Completion Report to {reg_name}"
+            submission_form = f"{reg_name} Completion Report"
+
+        reg_task = Task(
+            id=f"{site_id}-REPORT-REG",
+            name=task_name,
+            duration_days=15,
+            category='Regulatory',
+            phase=phase,
+            authority=self._map_authority(reg_code, country_code, country_name),
+            country=country_code,
+            therapeutic_area=therapeutic_area,
+            is_mandatory=True
+        )
+        reg_task.authority_full_name = reg_name
+        reg_task.authority_type = "regulatory"
+        reg_task.submission_form = submission_form
+        tasks.append(reg_task)
+
+        # ===== ETHICS COMMITTEE CLOSEOUT =====
+        ec_authority = workflow.get('ethics_authority', {})
+        ec_code = ec_authority.get('code', 'EC')
+        ec_name = ec_authority.get('name', 'Ethics Committee')
+
+        if country_code == 'GB':
+            task_name = f"Submit Final Report to REC"
+            submission_form = "REC End of Study Notification"
+        else:
+            task_name = f"Submit Final Report to {ec_name}"
+            submission_form = f"{ec_name} Final Report"
+
+        ec_task = Task(
+            id=f"{site_id}-REPORT-EC",
+            name=task_name,
+            duration_days=7,
+            category='Regulatory',
+            phase=phase,
+            authority=self._map_authority(ec_code, country_code, country_name),
+            country=country_code,
+            therapeutic_area=therapeutic_area,
+            is_mandatory=True
+        )
+        ec_task.authority_full_name = ec_name
+        ec_task.authority_type = "ethics"
+        ec_task.submission_form = submission_form
+        tasks.append(ec_task)
+
+        # ===== ADDITIONAL AUTHORITIES =====
+        additional_bodies = workflow.get('additional_bodies', workflow.get('additional_authorities', []))
+        for auth in additional_bodies:
+            auth_code = auth.get('code')
+            auth_name = auth.get('name')
+            auth_type = auth.get('type', 'permits')
+
+            if country_code == 'UG' and auth_code == 'UNCST':
+                task_name = f"Submit Final Report to UNCST"
+                submission_form = "UNCST Final Research Report"
+            else:
+                task_name = f"Notify {auth_name} of Study Completion"
+                submission_form = f"{auth_name} Completion Notice"
+
+            auth_task = Task(
+                id=f"{site_id}-REPORT-{auth_code}",
+                name=task_name,
+                duration_days=7,
+                category='Regulatory',
+                phase=phase,
+                authority=self._map_authority(auth_code, country_code, country_name),
+                country=country_code,
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            )
+            auth_task.authority_full_name = auth_name
+            auth_task.authority_type = auth_type
+            auth_task.submission_form = submission_form
+            tasks.append(auth_task)
+
+        return tasks
+
+    def _build_site_closeout_dependencies(self, tasks: List[Task], site_id: str) -> List[Dependency]:
+        """Build dependencies for site closeout tasks"""
+        dependencies = []
+        task_map = {t.id: t for t in tasks}
+
+        # Closeout workflow
+        closeout_chain = [
+            (f"{site_id}-CLOSE-001", f"{site_id}-CLOSE-002"),  # Monitoring → IP Return
+            (f"{site_id}-CLOSE-002", f"{site_id}-CLOSE-003"),  # IP Return → Archiving
+            (f"{site_id}-CLOSE-003", f"{site_id}-REPORT-REG"), # Archiving → Regulatory Report
+            (f"{site_id}-REPORT-REG", f"{site_id}-REPORT-EC"), # Regulatory → Ethics
+        ]
+
+        for pred, succ in closeout_chain:
+            if pred in task_map and succ in task_map:
+                dependencies.append(Dependency(
+                    predecessor_id=pred,
+                    successor_id=succ,
+                    type='finish-to-start',
+                    lag_days=0
+                ))
+
+        return dependencies
+
+    def generate_study_closeout(
+        self,
+        country_code: str,
+        study_phase: str,
+        therapeutic_area: str,
+        include_optional: bool = True
+    ) -> Timeline:
+        """
+        Generate study-wide closeout template
+
+        Creates study-level closeout tasks that occur after all sites are closed:
+        - Database lock
+        - Statistical analysis
+        - Clinical Study Report (CSR)
+        - Final regulatory submissions
+        - Study archiving
+
+        Args:
+            country_code: ISO country code
+            study_phase: Study phase
+            therapeutic_area: Therapeutic area
+            include_optional: Include optional tasks
+
+        Returns:
+            Timeline with study-level closeout tasks
+        """
+        workflow = self._get_workflow(country_code)
+        logger.info(f"Generating study closeout template for {workflow['country_name']}")
+
+        tasks = []
+
+        # ===== DATABASE LOCK & ANALYSIS =====
+        analysis_tasks = [
+            Task(
+                id='STUDY-CLOSE-001',
+                name='All Sites Closed',
+                duration_days=1,
+                category='Closeout',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id='STUDY-CLOSE-002',
+                name='Database Lock',
+                duration_days=1,
+                category='Data',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id='STUDY-CLOSE-003',
+                name='Statistical Analysis',
+                duration_days=28,
+                category='Data',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id='STUDY-CLOSE-004',
+                name='Clinical Study Report (CSR) Preparation',
+                duration_days=56,
+                category='Regulatory',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id='STUDY-CLOSE-005',
+                name='Final Regulatory Submissions (All Authorities)',
+                duration_days=30,
+                category='Regulatory',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+            Task(
+                id='STUDY-CLOSE-006',
+                name='Study Master File Archiving',
+                duration_days=14,
+                category='Documents',
+                phase=study_phase,
+                authority=self._map_authority(
+                    workflow['regulatory_authority']['code'],
+                    workflow['country_code'],
+                    workflow['country_name']
+                ),
+                country=workflow['country_code'],
+                therapeutic_area=therapeutic_area,
+                is_mandatory=True
+            ),
+        ]
+        tasks.extend(analysis_tasks)
+
+        # Build dependencies
+        dependencies = self._build_study_closeout_dependencies(tasks)
+
+        # Create timeline
+        timeline = Timeline(
+            study_name=f"{workflow['country_name']} Study Closeout",
+            phase=study_phase,
+            authority=self._map_authority(
+                workflow['regulatory_authority']['code'],
+                workflow['country_code'],
+                workflow['country_name']
+            ),
+            therapeutic_area=therapeutic_area,
+            tasks=tasks,
+            dependencies=dependencies
+        )
+
+        logger.info(f"Study closeout template generated: {len(tasks)} tasks")
+        return timeline
+
+    def _build_study_closeout_dependencies(self, tasks: List[Task]) -> List[Dependency]:
+        """Build dependencies for study closeout tasks"""
+        dependencies = []
+        task_map = {t.id: t for t in tasks}
+
+        # Study closeout workflow
+        closeout_chain = [
+            ('STUDY-CLOSE-001', 'STUDY-CLOSE-002'),  # All Sites Closed → DB Lock
+            ('STUDY-CLOSE-002', 'STUDY-CLOSE-003'),  # DB Lock → Analysis
+            ('STUDY-CLOSE-003', 'STUDY-CLOSE-004'),  # Analysis → CSR
+            ('STUDY-CLOSE-004', 'STUDY-CLOSE-005'),  # CSR → Final Submissions
+            ('STUDY-CLOSE-005', 'STUDY-CLOSE-006'),  # Submissions → Archiving
+        ]
+
+        for pred, succ in closeout_chain:
+            if pred in task_map and succ in task_map:
+                dependencies.append(Dependency(
+                    predecessor_id=pred,
+                    successor_id=succ,
+                    type='finish-to-start',
+                    lag_days=0
+                ))
+
+        return dependencies

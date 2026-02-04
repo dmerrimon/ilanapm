@@ -129,16 +129,21 @@ namespace IlanaPM.AddIn.Services
 
         /// <summary>
         /// Get license information for current user
-        /// Requires valid JWT token
+        /// Requires valid JWT token (passed as query parameter)
         /// </summary>
         public async Task<Models.LicenseInfo> GetLicenseInfoAsync()
         {
             try
             {
-                AddAuthorizationHeader();
+                string token = SecureStorage.ReadToken();
+                if (string.IsNullOrEmpty(token))
+                {
+                    throw new Models.UnauthorizedException("No token available");
+                }
 
+                // License info endpoint expects token as query parameter
                 HttpResponseMessage response = await httpClient.GetAsync(
-                    API_BASE_URL + "/api/v1/licensing/info"
+                    API_BASE_URL + $"/api/v1/licensing/info?token={Uri.EscapeDataString(token)}"
                 );
 
                 await HandleResponseAsync(response);
@@ -309,6 +314,51 @@ namespace IlanaPM.AddIn.Services
             string jsonContent = JsonConvert.SerializeObject(request);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/templates/generate", content);
+            await HandleResponseAsync(response);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.Timeline>(responseBody);
+        }
+
+        /// <summary>
+        /// Generate site startup template with authority-specific details
+        /// Returns tasks for activating a clinical trial site with multi-authority workflows
+        /// </summary>
+        public async Task<Models.Timeline> GenerateSiteStartupTemplateAsync(Models.SiteTemplateRequest request)
+        {
+            AddAuthorizationHeader();
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/templates/generate-site-startup", content);
+            await HandleResponseAsync(response);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.Timeline>(responseBody);
+        }
+
+        /// <summary>
+        /// Generate site closeout template with authority-specific details
+        /// Returns tasks for closing a clinical trial site with regulatory closeout reporting
+        /// </summary>
+        public async Task<Models.Timeline> GenerateSiteCloseoutTemplateAsync(Models.SiteTemplateRequest request)
+        {
+            AddAuthorizationHeader();
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/templates/generate-site-closeout", content);
+            await HandleResponseAsync(response);
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.Timeline>(responseBody);
+        }
+
+        /// <summary>
+        /// Generate study-wide closeout template
+        /// Returns study-level closeout tasks (database lock, CSR, final submissions)
+        /// </summary>
+        public async Task<Models.Timeline> GenerateStudyCloseoutTemplateAsync(Models.SiteTemplateRequest request)
+        {
+            AddAuthorizationHeader();
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await httpClient.PostAsync(API_BASE_URL + "/api/v1/templates/generate-study-closeout", content);
             await HandleResponseAsync(response);
             string responseBody = await response.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<Models.Timeline>(responseBody);

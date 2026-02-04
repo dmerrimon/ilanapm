@@ -4,6 +4,8 @@ using System.Linq;
 using System.Windows.Forms;
 using IlanaPM.AddIn.Models;
 using MSProject = Microsoft.Office.Interop.MSProject;
+using Site = IlanaPM.AddIn.Models.Site;
+using Exception = System.Exception;
 
 namespace IlanaPM.AddIn.Services
 {
@@ -16,10 +18,24 @@ namespace IlanaPM.AddIn.Services
         private ApiClient apiClient;
         private CustomFieldManager fieldManager;
 
+        /// <summary>
+        /// Progress callback for reporting generation status
+        /// Parameters: (statusMessage, detailMessage)
+        /// </summary>
+        public Action<string, string> ProgressCallback { get; set; }
+
         public UnifiedTemplateManager()
         {
             apiClient = new ApiClient();
             fieldManager = new CustomFieldManager();
+        }
+
+        /// <summary>
+        /// Report progress to callback if available
+        /// </summary>
+        private void ReportProgress(string status, string detail = "")
+        {
+            ProgressCallback?.Invoke(status, detail);
         }
 
         /// <summary>
@@ -35,16 +51,16 @@ namespace IlanaPM.AddIn.Services
                     return await LoadFullStudyTimelineAsync(config, filters);
 
                 case TemplateType.SiteStartup:
-                    return LoadSiteStartupTemplate(config, filters);
+                    return await LoadSiteStartupTemplateAsync(config, filters);
 
                 case TemplateType.SiteImplementation:
                     return LoadSiteImplementationTemplate(config, filters);
 
                 case TemplateType.SiteCloseout:
-                    return LoadSiteCloseoutTemplate(config, filters);
+                    return await LoadSiteCloseoutTemplateAsync(config, filters);
 
                 case TemplateType.StudyCloseout:
-                    return LoadStudyCloseoutTemplate(filters);
+                    return await LoadStudyCloseoutTemplateAsync(config, filters);
 
                 case TemplateType.AmendmentWorkflow:
                     throw new NotImplementedException("Amendment workflow templates will be available in Phase 2");
@@ -93,45 +109,41 @@ namespace IlanaPM.AddIn.Services
         /// <summary>
         /// Load site startup template from CountryTemplateLibrary
         /// </summary>
-        private TemplateResult LoadSiteStartupTemplate(
+        /// <summary>
+        /// Load site startup template from API with authority-specific details
+        /// </summary>
+        private async System.Threading.Tasks.Task<TemplateResult> LoadSiteStartupTemplateAsync(
             TemplateConfiguration config,
             FilterOptions filters)
         {
-            // Get country info
-            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+            ReportProgress("Generating Site Startup Template", $"Requesting template for {config.CountryCode}...");
 
-            // Load template based on country
-            SitePhaseTaskSet taskSet;
-            if (config.CountryCode.ToUpper() == "USA")
+            // Call API to generate authority-rich site startup template
+            var request = new SiteTemplateRequest
             {
-                taskSet = CountryTemplateLibrary.GetUSA_SiteStartup();
-            }
-            else
-            {
-                taskSet = CountryTemplateLibrary.GetInternational_SiteStartup(countryInfo);
-            }
+                country_code = config.CountryCode,
+                template_type = "site_startup",
+                site_id = config.SiteId ?? "SITE-001",
+                study_phase = config.StudyPhase,
+                therapeutic_area = config.TherapeuticArea,
+                include_optional = filters?.IncludeOptional ?? true
+            };
 
-            // Apply filters if provided (before conversion)
-            int originalTaskCount = taskSet.tasks.Count;
-            if (filters != null)
-            {
-                taskSet.tasks = taskSet.tasks
-                    .Where(t => filters.PassesFilter(t))
-                    .ToList();
-            }
+            Models.Timeline timeline = await apiClient.GenerateSiteStartupTemplateAsync(request);
 
-            // Convert to Timeline
-            var timeline = ConvertTaskSetToTimeline(taskSet, config.SiteId);
+            ReportProgress("Template Generated", $"Received {timeline.tasks.Count} tasks from API");
+
+            int originalTaskCount = timeline.tasks.Count;
 
             return new TemplateResult
             {
                 TemplateType = TemplateType.SiteStartup,
                 Timeline = timeline,
                 TaskCount = timeline.tasks.Count,
-                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                EstimatedDuration = CalculateEstimatedDurationFromApiTasks(timeline.tasks),
                 SiteId = config.SiteId,
                 CountryCode = config.CountryCode,
-                TemplateSource = config.CountryCode.ToUpper() == "USA" ? "Library-USA" : $"Library-{config.CountryCode}",
+                TemplateSource = $"API-{config.CountryCode}",
                 PhaseType = "Site Activation",
                 FiltersApplied = filters != null,
                 TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
@@ -187,47 +199,40 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
-        /// Load site closeout template from CountryTemplateLibrary
+        /// Load site closeout template from API with authority-specific details
         /// </summary>
-        private TemplateResult LoadSiteCloseoutTemplate(
+        private async System.Threading.Tasks.Task<TemplateResult> LoadSiteCloseoutTemplateAsync(
             TemplateConfiguration config,
             FilterOptions filters)
         {
-            // Get country info
-            var countryInfo = CountryRegulatoryInfo.GetCountryInfo(config.CountryCode);
+            ReportProgress("Generating Site Closeout Template", $"Requesting template for {config.CountryCode}...");
 
-            // Load template based on country
-            SitePhaseTaskSet taskSet;
-            if (config.CountryCode.ToUpper() == "USA")
+            // Call API to generate authority-rich site closeout template
+            var request = new SiteTemplateRequest
             {
-                taskSet = CountryTemplateLibrary.GetUSA_SiteCloseout();
-            }
-            else
-            {
-                taskSet = CountryTemplateLibrary.GetInternational_SiteCloseout(countryInfo);
-            }
+                country_code = config.CountryCode,
+                template_type = "site_closeout",
+                site_id = config.SiteId ?? "SITE-001",
+                study_phase = config.StudyPhase,
+                therapeutic_area = config.TherapeuticArea,
+                include_optional = filters?.IncludeOptional ?? true
+            };
 
-            // Apply filters if provided (before conversion)
-            int originalTaskCount = taskSet.tasks.Count;
-            if (filters != null)
-            {
-                taskSet.tasks = taskSet.tasks
-                    .Where(t => filters.PassesFilter(t))
-                    .ToList();
-            }
+            Models.Timeline timeline = await apiClient.GenerateSiteCloseoutTemplateAsync(request);
 
-            // Convert to Timeline
-            var timeline = ConvertTaskSetToTimeline(taskSet, config.SiteId);
+            ReportProgress("Template Generated", $"Received {timeline.tasks.Count} tasks from API");
+
+            int originalTaskCount = timeline.tasks.Count;
 
             return new TemplateResult
             {
                 TemplateType = TemplateType.SiteCloseout,
                 Timeline = timeline,
                 TaskCount = timeline.tasks.Count,
-                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                EstimatedDuration = CalculateEstimatedDurationFromApiTasks(timeline.tasks),
                 SiteId = config.SiteId,
                 CountryCode = config.CountryCode,
-                TemplateSource = config.CountryCode.ToUpper() == "USA" ? "Library-USA" : $"Library-{config.CountryCode}",
+                TemplateSource = $"API-{config.CountryCode}",
                 PhaseType = "Site Closeout",
                 FiltersApplied = filters != null,
                 TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
@@ -235,34 +240,40 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
-        /// Load study closeout template (study-level, no site)
+        /// Load study closeout template from API (study-level, no site)
         /// </summary>
-        private TemplateResult LoadStudyCloseoutTemplate(FilterOptions filters)
+        private async System.Threading.Tasks.Task<TemplateResult> LoadStudyCloseoutTemplateAsync(
+            TemplateConfiguration config,
+            FilterOptions filters)
         {
-            // Load study closeout template
-            var taskSet = CountryTemplateLibrary.GetStudyCloseout();
+            ReportProgress("Generating Study Closeout Template", "Requesting study-level closeout tasks...");
 
-            // Apply filters if provided (before conversion)
-            int originalTaskCount = taskSet.tasks.Count;
-            if (filters != null)
+            // Call API to generate study closeout template
+            var request = new SiteTemplateRequest
             {
-                taskSet.tasks = taskSet.tasks
-                    .Where(t => filters.PassesFilter(t))
-                    .ToList();
-            }
+                country_code = config.CountryCode ?? "US",  // Default to US if no country specified
+                template_type = "study_closeout",
+                site_id = "STUDY-LEVEL",  // Study-level (not site-specific)
+                study_phase = config.StudyPhase,
+                therapeutic_area = config.TherapeuticArea,
+                include_optional = filters?.IncludeOptional ?? true
+            };
 
-            // Convert to Timeline
-            var timeline = ConvertTaskSetToTimeline(taskSet, siteId: null);
+            Models.Timeline timeline = await apiClient.GenerateStudyCloseoutTemplateAsync(request);
+
+            ReportProgress("Template Generated", $"Received {timeline.tasks.Count} study-level closeout tasks");
+
+            int originalTaskCount = timeline.tasks.Count;
 
             return new TemplateResult
             {
                 TemplateType = TemplateType.StudyCloseout,
                 Timeline = timeline,
                 TaskCount = timeline.tasks.Count,
-                EstimatedDuration = CalculateEstimatedDuration(taskSet.tasks),
+                EstimatedDuration = CalculateEstimatedDurationFromApiTasks(timeline.tasks),
                 SiteId = null,  // Study-level, no site
-                CountryCode = null,  // Study-level, no country
-                TemplateSource = "Library-Study",
+                CountryCode = config.CountryCode,
+                TemplateSource = $"API-Study",
                 PhaseType = "Study Closeout",
                 FiltersApplied = filters != null,
                 TaskCountBeforeFiltering = filters != null ? originalTaskCount : (int?)null
@@ -532,6 +543,25 @@ namespace IlanaPM.AddIn.Services
             if (app == null || config == null)
                 throw new ArgumentNullException("Application and configuration are required");
 
+            System.Diagnostics.Debug.WriteLine("=== GenerateTemplates (PUBLIC) START ===");
+            System.Diagnostics.Debug.WriteLine($"Config.Sites count: {config.Sites?.Count ?? 0}");
+            if (config.Sites != null)
+            {
+                foreach (var site in config.Sites)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Site: {site.SiteId} | Name: '{site.SiteName}' | Country: {site.CountryCode}");
+                }
+            }
+            System.Diagnostics.Debug.WriteLine($"Templates.GenerateSiteStartup: {config.Templates?.GenerateSiteStartup}");
+            System.Diagnostics.Debug.WriteLine($"Templates.SitesForStartup count: {config.Templates?.SitesForStartup?.Count ?? 0}");
+            if (config.Templates?.SitesForStartup != null)
+            {
+                foreach (var siteId in config.Templates.SitesForStartup)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  SitesForStartup includes: '{siteId}'");
+                }
+            }
+
             int totalTasksCreated = 0;
 
             try
@@ -548,6 +578,7 @@ namespace IlanaPM.AddIn.Services
 
                 if (config.Templates.GenerateSiteStartup && config.Templates.SitesForStartup.Count > 0)
                 {
+                    System.Diagnostics.Debug.WriteLine($">>> Calling GenerateSiteStartup with {config.Templates.SitesForStartup.Count} sites");
                     totalTasksCreated += GenerateSiteStartup(app, config);
                 }
 
@@ -564,6 +595,12 @@ namespace IlanaPM.AddIn.Services
                 if (config.Templates.GenerateStudyCloseout)
                 {
                     totalTasksCreated += GenerateStudyCloseout(app, config);
+                }
+
+                // Generate cohort milestone tasks if cohorts are defined
+                if (config.Cohorts != null && config.Cohorts.Count > 0)
+                {
+                    totalTasksCreated += GenerateCohortMilestones(app, config);
                 }
 
                 // Apply custom column configuration once after all tasks generated
@@ -586,14 +623,56 @@ namespace IlanaPM.AddIn.Services
         {
             int tasksCreated = 0;
 
+            System.Diagnostics.Debug.WriteLine("=== GenerateFullStudyTimeline START ===");
+            System.Diagnostics.Debug.WriteLine($"Config.Sites count: {config.Sites?.Count ?? 0}");
+            if (config.Sites != null && config.Sites.Count > 0)
+            {
+                foreach (var site in config.Sites)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  Site available: {site.SiteId} | {site.SiteName} | {site.CountryCode}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine("  WARNING: No sites in config!");
+            }
+
             try
             {
+                // Check if user has activated license
+                string token = Services.SecureStorage.ReadToken();
+                if (string.IsNullOrEmpty(token))
+                {
+                    throw new InvalidOperationException("License not activated. Please activate your license in Settings before generating templates.");
+                }
+
+                // Validate study phase format (backend requires "Phase I", "Phase II", "Phase III", or "Phase IV")
+                if (config.StudyPhase == "Phase I/II")
+                {
+                    throw new InvalidOperationException("Study phase 'Phase I/II' is not supported by the API. Please select either 'Phase I' or 'Phase II'.");
+                }
+
+                // Validate country codes (must be 2-letter ISO codes)
+                foreach (string code in config.Countries)
+                {
+                    if (code.Length > 2)
+                    {
+                        throw new InvalidOperationException($"Invalid country code '{code}'. API requires 2-letter ISO codes (e.g., 'US', 'CA', 'GB').");
+                    }
+                }
+
                 // Call API to generate full study timeline
                 var apiClient = new ApiClient();
 
                 // Create template request for each selected country
+                int countryIndex = 0;
                 foreach (string countryCode in config.Countries)
                 {
+                    countryIndex++;
+                    ReportProgress(
+                        $"Generating timeline for {countryCode} ({countryIndex}/{config.Countries.Count})",
+                        "Calling API... This may take 30-60 seconds on first request (cold start)");
+
                     var templateRequest = new Models.TemplateRequest
                     {
                         country_code = countryCode,
@@ -602,7 +681,10 @@ namespace IlanaPM.AddIn.Services
                         include_optional = config.Filters?.IncludeOptional ?? true
                     };
 
-                    System.Diagnostics.Debug.WriteLine($"Calling API for Full Study Timeline: {countryCode}");
+                    System.Diagnostics.Debug.WriteLine($"[Full Study Timeline] Calling API for {countryCode}");
+                    System.Diagnostics.Debug.WriteLine($"  Study Phase: {config.StudyPhase}");
+                    System.Diagnostics.Debug.WriteLine($"  Therapeutic Area: {config.TherapeuticArea}");
+                    System.Diagnostics.Debug.WriteLine($"  Include Optional: {templateRequest.include_optional}");
 
                     // Call API to generate timeline
                     var timeline = apiClient.GenerateTemplateAsync(templateRequest).Result;
@@ -610,41 +692,190 @@ namespace IlanaPM.AddIn.Services
                     if (timeline != null && timeline.tasks != null && timeline.tasks.Count > 0)
                     {
                         System.Diagnostics.Debug.WriteLine($"Received {timeline.tasks.Count} tasks from API for {countryCode}");
+                        System.Diagnostics.Debug.WriteLine($"Received {timeline.dependencies?.Count ?? 0} dependencies from API");
 
-                        // Create tasks in MS Project
-                        foreach (var task in timeline.tasks)
+                        ReportProgress(
+                            $"Creating {timeline.tasks.Count} tasks for {countryCode}",
+                            "Adding tasks to MS Project...");
+
+                        // Disable screen updating for performance
+                        app.ScreenUpdating = false;
+
+                        try
                         {
-                            // API already applied filters based on include_optional parameter
-                            // Additional filtering based on category if specified
-                            if (config.Filters != null &&
-                                config.Filters.IncludedCategories.Count > 0 &&
-                                !string.IsNullOrEmpty(task.category) &&
-                                !config.Filters.IncludedCategories.Contains(task.category))
+                            // Map task IDs to MS Project task objects for dependency creation
+                            var taskIdToMsTask = new Dictionary<string, MSProject.Task>();
+
+                            // Create tasks in MS Project
+                            int taskIndex = 0;
+                            foreach (var task in timeline.tasks)
                             {
-                                continue;
+                                // API already applied filters based on include_optional parameter
+                                // Additional filtering based on category if specified
+                                if (config.Filters != null &&
+                                    config.Filters.IncludedCategories.Count > 0 &&
+                                    !string.IsNullOrEmpty(task.category) &&
+                                    !config.Filters.IncludedCategories.Contains(task.category))
+                                {
+                                    continue;
+                                }
+
+                                var msTask = app.ActiveProject.Tasks.Add(task.name);
+                                msTask.Duration = $"{task.duration_days}d";
+
+                                // Populate custom fields
+                                msTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty for Full Study Timeline)
+                                msTask.SetField(MSProject.PjField.pjTaskText9, ""); // Cohort IDs (empty for study-level tasks)
+                                msTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site Name (empty for Full Study Timeline - country-level, not site-specific)
+                                msTask.SetField(MSProject.PjField.pjTaskText1, task.authority ?? ""); // Regulatory Authority (NEW)
+                                msTask.SetField(MSProject.PjField.pjTaskText4, task.category ?? ""); // Category
+                                msTask.SetField(MSProject.PjField.pjTaskText12, task.phase ?? ""); // Stage/Phase
+                                msTask.SetField(MSProject.PjField.pjTaskText13, ""); // Substage (not provided by API)
+                                msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{countryCode}"); // Template Source
+                                msTask.SetField(MSProject.PjField.pjTaskText16, task.authority_type ?? ""); // Authority Type (NEW)
+                                msTask.SetField(MSProject.PjField.pjTaskText17, task.submission_form ?? ""); // Submission Form (NEW)
+
+                                // Add authority info to task notes if available
+                                if (!string.IsNullOrEmpty(task.authority_full_name))
+                                {
+                                    string notes = msTask.Notes ?? "";
+                                    msTask.Notes = $"Authority: {task.authority_full_name} ({task.authority})\n\n{notes}";
+                                }
+
+                                // Set task properties
+                                msTask.Notes = ""; // Task model doesn't have description field
+                                if (task.is_mandatory)
+                                {
+                                    msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+                                }
+
+                                // Store mapping for dependency creation
+                                if (!string.IsNullOrEmpty(task.id))
+                                {
+                                    taskIdToMsTask[task.id] = msTask;
+                                }
+
+                                tasksCreated++;
+                                taskIndex++;
+
+                                // Process Windows messages every 20 tasks to prevent "Server Busy" dialog
+                                if (taskIndex % 20 == 0)
+                                {
+                                    System.Windows.Forms.Application.DoEvents();
+                                }
                             }
 
-                            var msTask = app.ActiveProject.Tasks.Add(task.name);
-                            msTask.Duration = $"{task.duration_days}d";
-
-                            // Populate custom fields
-                            msTask.SetField(MSProject.PjField.pjTaskText11, countryCode); // Site/Country
-                            msTask.SetField(MSProject.PjField.pjTaskText4, task.category ?? ""); // Category
-                            msTask.SetField(MSProject.PjField.pjTaskText12, task.phase ?? ""); // Stage/Phase
-                            msTask.SetField(MSProject.PjField.pjTaskText13, ""); // Substage (not provided by API)
-                            msTask.SetField(MSProject.PjField.pjTaskText14, $"API-{countryCode}"); // Template Source
-
-                            // Set task properties
-                            msTask.Notes = ""; // Task model doesn't have description field
-                            if (task.is_mandatory)
+                            // Create dependencies (predecessors) after all tasks are created
+                            if (timeline.dependencies != null && timeline.dependencies.Count > 0)
                             {
-                                msTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
-                            }
+                                ReportProgress(
+                                    $"Creating {timeline.dependencies.Count} dependencies for {countryCode}",
+                                    "Establishing critical path relationships...");
 
-                            tasksCreated++;
+                                System.Diagnostics.Debug.WriteLine($"Creating {timeline.dependencies.Count} dependencies");
+
+                                int dependenciesCreated = 0;
+                                foreach (var dep in timeline.dependencies)
+                                {
+                                    try
+                                    {
+                                        if (taskIdToMsTask.ContainsKey(dep.predecessor_id) &&
+                                            taskIdToMsTask.ContainsKey(dep.successor_id))
+                                        {
+                                            var predecessorTask = taskIdToMsTask[dep.predecessor_id];
+                                            var successorTask = taskIdToMsTask[dep.successor_id];
+
+                                            // Add predecessor relationship (format: "TaskID" or "TaskID+lag" for lag days)
+                                            string predecessorString = predecessorTask.ID.ToString();
+                                            if (dep.lag_days != 0)
+                                            {
+                                                predecessorString += (dep.lag_days > 0 ? "+" : "") + dep.lag_days;
+                                            }
+
+                                            // Append to existing predecessors (if any)
+                                            string existingPreds = successorTask.Predecessors;
+                                            if (string.IsNullOrEmpty(existingPreds))
+                                            {
+                                                successorTask.Predecessors = predecessorString;
+                                            }
+                                            else
+                                            {
+                                                successorTask.Predecessors = existingPreds + "," + predecessorString;
+                                            }
+
+                                            dependenciesCreated++;
+                                        }
+                                        else
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"Warning: Could not find tasks for dependency {dep.predecessor_id} -> {dep.successor_id}");
+                                        }
+                                    }
+                                    catch (Exception depEx)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine($"Error creating dependency: {depEx.Message}");
+                                    }
+                                }
+
+                                System.Diagnostics.Debug.WriteLine($"Created {dependenciesCreated} dependencies for {countryCode}");
+                            }
+                        }
+                        finally
+                        {
+                            // Re-enable screen updating
+                            app.ScreenUpdating = true;
                         }
 
                         System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Full Study Timeline tasks for {countryCode}");
+
+                        // NOW ADD SITE-SPECIFIC TASKS FOR THIS COUNTRY
+                        System.Diagnostics.Debug.WriteLine($"Checking for sites in country: {countryCode}");
+                        if (config.Sites != null && config.Sites.Count > 0)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Total sites in config: {config.Sites.Count}");
+                            foreach (var s in config.Sites)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"  Site {s.SiteId}: CountryCode='{s.CountryCode}' vs searching for '{countryCode}'");
+                            }
+
+                            var sitesInCountry = config.Sites.Where(s => s.CountryCode.Equals(countryCode, StringComparison.OrdinalIgnoreCase)).ToList();
+                            System.Diagnostics.Debug.WriteLine($"Found {sitesInCountry.Count} sites matching country code '{countryCode}'");
+
+                            if (sitesInCountry.Count > 0)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Generating site-specific tasks for {sitesInCountry.Count} sites in {countryCode}");
+
+                                foreach (var site in sitesInCountry)
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"  Creating site tasks for: {site.SiteId} ({site.SiteName})");
+
+                                    // Create site activation task
+                                    var siteActivationTask = app.ActiveProject.Tasks.Add($"Site Activation - {site.SiteName}");
+                                    siteActivationTask.Duration = "60d"; // Typical site activation duration
+                                    siteActivationTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
+                                    siteActivationTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name
+                                    siteActivationTask.SetField(MSProject.PjField.pjTaskText4, "Site Management");
+                                    siteActivationTask.SetField(MSProject.PjField.pjTaskText12, "Site Activation");
+                                    siteActivationTask.SetField(MSProject.PjField.pjTaskText14, $"FullStudy-{countryCode}");
+                                    siteActivationTask.Notes = $"Site activation for {site.SiteName} ({site.SiteId})";
+                                    tasksCreated++;
+
+                                    // Create first patient enrolled task
+                                    var firstPatientTask = app.ActiveProject.Tasks.Add($"First Patient Enrolled - {site.SiteName}");
+                                    firstPatientTask.Duration = "0d";
+                                    firstPatientTask.Milestone = true;
+                                    firstPatientTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs
+                                    firstPatientTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name
+                                    firstPatientTask.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                                    firstPatientTask.SetField(MSProject.PjField.pjTaskText12, "Patient Enrollment");
+                                    firstPatientTask.SetField(MSProject.PjField.pjTaskText14, $"FullStudy-{countryCode}");
+                                    firstPatientTask.Notes = $"First patient enrolled at {site.SiteName} ({site.SiteId})";
+                                    firstPatientTask.Predecessors = siteActivationTask.ID.ToString();
+                                    tasksCreated++;
+                                }
+
+                                System.Diagnostics.Debug.WriteLine($"Created {sitesInCountry.Count * 2} site-specific tasks for {countryCode}");
+                            }
+                        }
                     }
                     else
                     {
@@ -652,10 +883,49 @@ namespace IlanaPM.AddIn.Services
                     }
                 }
             }
+            catch (System.AggregateException aggEx)
+            {
+                // Handle async exceptions from .Result
+                var innerEx = aggEx.InnerException ?? aggEx;
+                System.Diagnostics.Debug.WriteLine($"[Full Study Timeline ERROR] {innerEx.GetType().Name}: {innerEx.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {innerEx.StackTrace}");
+
+                string errorMessage = innerEx.Message;
+
+                // Check for specific error types
+                if (innerEx is System.Net.Http.HttpRequestException)
+                {
+                    errorMessage = "Network error - unable to connect to API. Check your internet connection.";
+                }
+                else if (innerEx is Models.UnauthorizedException ||
+                         innerEx.Message.Contains("401") ||
+                         innerEx.Message.Contains("Unauthorized"))
+                {
+                    errorMessage = "License authentication failed. Please reactivate your license in Settings.";
+                }
+                else if (innerEx.Message.Contains("422") || innerEx.Message.Contains("validation"))
+                {
+                    errorMessage = $"API validation error: {innerEx.Message}\n\nPlease check that:\n" +
+                                 $"- Study Phase is 'Phase I', 'Phase II', 'Phase III', or 'Phase IV'\n" +
+                                 $"- Country codes are valid 2-letter ISO codes\n" +
+                                 $"- Therapeutic area is specified";
+                }
+                else if (innerEx.Message.Contains("400"))
+                {
+                    errorMessage = $"Invalid request: {innerEx.Message}\n\nThe selected country or study configuration may not be supported.";
+                }
+                else if (innerEx.Message.Contains("500"))
+                {
+                    errorMessage = "API server error. The backend service encountered an error. Please try again later.";
+                }
+
+                throw new InvalidOperationException($"Failed to generate Full Study Timeline:\n\n{errorMessage}", innerEx);
+            }
             catch (System.Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error generating Full Study Timeline: {ex.Message}");
-                throw new InvalidOperationException($"Failed to generate Full Study Timeline from API: {ex.Message}", ex);
+                System.Diagnostics.Debug.WriteLine($"[Full Study Timeline ERROR] {ex.GetType().Name}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new InvalidOperationException($"Failed to generate Full Study Timeline:\n\n{ex.Message}", ex);
             }
 
             return tasksCreated;
@@ -668,10 +938,27 @@ namespace IlanaPM.AddIn.Services
         {
             int tasksCreated = 0;
 
+            System.Diagnostics.Debug.WriteLine($"=== GenerateSiteStartup START ===");
+            System.Diagnostics.Debug.WriteLine($"Config.Sites: {config.Sites?.Count ?? 0}");
+            System.Diagnostics.Debug.WriteLine($"Templates.SitesForStartup: {config.Templates.SitesForStartup?.Count ?? 0}");
+
+            if (config.Templates.SitesForStartup == null || config.Templates.SitesForStartup.Count == 0)
+            {
+                System.Diagnostics.Debug.WriteLine("ERROR: No sites selected for startup!");
+                return 0;
+            }
+
             foreach (string siteId in config.Templates.SitesForStartup)
             {
+                System.Diagnostics.Debug.WriteLine($"Looking for site: {siteId}");
                 var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                if (site == null) continue;
+                if (site == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERROR: Site {siteId} not found in config.Sites!");
+                    continue;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"FOUND Site: {site.SiteId} | Name: {site.SiteName} | Country: {site.CountryCode}");
 
                 // Get template for country
                 SitePhaseTaskSet taskSet = null;
@@ -699,7 +986,8 @@ namespace IlanaPM.AddIn.Services
                         msTask.Duration = $"{task.duration_days}d";
 
                         // Populate custom fields
-                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId); // Site
+                        msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name (e.g., "Memorial Hospital")
                         msTask.SetField(MSProject.PjField.pjTaskText4, task.category); // Category
                         msTask.SetField(MSProject.PjField.pjTaskText12, "Site Activation"); // Stage
                         msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase); // Substage
@@ -758,7 +1046,8 @@ namespace IlanaPM.AddIn.Services
                         msTask.Duration = $"{task.duration_days}d";
 
                         // Populate custom fields
-                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId);
+                        msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name (e.g., "Memorial Hospital")
                         msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
                         msTask.SetField(MSProject.PjField.pjTaskText12, "Implementation");
                         msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
@@ -923,7 +1212,8 @@ namespace IlanaPM.AddIn.Services
                         msTask.Duration = $"{task.duration_days}d";
 
                         // Populate custom fields
-                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteId);
+                        msTask.SetField(MSProject.PjField.pjTaskText7, site.SiteId); // Site IDs (e.g., "SITE-001")
+                        msTask.SetField(MSProject.PjField.pjTaskText11, site.SiteName); // Site Name (e.g., "Memorial Hospital")
                         msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
                         msTask.SetField(MSProject.PjField.pjTaskText12, "Site Closeout");
                         msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
@@ -961,7 +1251,8 @@ namespace IlanaPM.AddIn.Services
                     msTask.Duration = $"{task.duration_days}d";
 
                     // Populate custom fields (no site for study-level closeout)
-                    msTask.SetField(MSProject.PjField.pjTaskText11, ""); // No site
+                    msTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty - study-level)
+                    msTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site (empty - study-level)
                     msTask.SetField(MSProject.PjField.pjTaskText4, task.category);
                     msTask.SetField(MSProject.PjField.pjTaskText12, "Study Closeout");
                     msTask.SetField(MSProject.PjField.pjTaskText13, task.subphase);
@@ -975,6 +1266,101 @@ namespace IlanaPM.AddIn.Services
                 }
 
                 System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} Study Closeout tasks");
+            }
+
+            return tasksCreated;
+        }
+
+        /// <summary>
+        /// Generate cohort milestone tasks for tracking enrollment phases
+        /// Creates key milestones for each cohort: First Patient Dosed, Enrollment Complete, Safety Review
+        /// </summary>
+        private int GenerateCohortMilestones(MSProject.Application app, ClinicalProjectConfiguration config)
+        {
+            int tasksCreated = 0;
+
+            try
+            {
+                ReportProgress("Generating cohort milestones", $"Creating milestones for {config.Cohorts.Count} cohorts");
+
+                MSProject.Task previousCohortSafetyReview = null;
+
+                foreach (var cohort in config.Cohorts.OrderBy(c => c.id))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Creating milestones for cohort: {cohort.id} ({cohort.name})");
+
+                    // Milestone 1: First Patient Dosed
+                    var firstPatientTask = app.ActiveProject.Tasks.Add($"{cohort.name} - First Patient Dosed");
+                    firstPatientTask.Duration = "0d"; // Milestone (zero duration)
+                    firstPatientTask.Milestone = true;
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty - cohort is multi-site)
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText9, cohort.id); // Cohort IDs (visible column)
+                    System.Diagnostics.Debug.WriteLine($"  Set Text9 (Cohort IDs) = {cohort.id} on task: {firstPatientTask.Name}");
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site Name (empty - cohort is multi-site)
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText12, "Patient Enrollment");
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText13, "First Patient");
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText14, "Cohort Milestone");
+                    firstPatientTask.SetField(MSProject.PjField.pjTaskText15, cohort.id); // Cohort ID (internal reference)
+                    firstPatientTask.Notes = $"First patient dosed in {cohort.name}. Target enrollment: {cohort.enrollment_target} patients.";
+                    firstPatientTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                    // Create dependency on previous cohort's safety review (if exists)
+                    if (previousCohortSafetyReview != null)
+                    {
+                        firstPatientTask.Predecessors = previousCohortSafetyReview.ID.ToString();
+                    }
+
+                    tasksCreated++;
+
+                    // Milestone 2: Enrollment Complete
+                    var enrollmentCompleteTask = app.ActiveProject.Tasks.Add($"{cohort.name} - Enrollment Complete");
+                    enrollmentCompleteTask.Duration = $"{cohort.enrollment_target * 7}d"; // Estimate: 7 days per patient
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty)
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText9, cohort.id); // Cohort IDs (visible column)
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site Name (empty)
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText4, "Enrollment");
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText12, "Patient Enrollment");
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText13, "Enrollment Complete");
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText14, "Cohort Milestone");
+                    enrollmentCompleteTask.SetField(MSProject.PjField.pjTaskText15, cohort.id); // Cohort ID (internal reference)
+                    enrollmentCompleteTask.Notes = $"All {cohort.enrollment_target} patients enrolled in {cohort.name}.";
+                    enrollmentCompleteTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                    // Enrollment complete depends on first patient dosed
+                    enrollmentCompleteTask.Predecessors = firstPatientTask.ID.ToString();
+
+                    tasksCreated++;
+
+                    // Milestone 3: Safety Review Complete
+                    var safetyReviewTask = app.ActiveProject.Tasks.Add($"{cohort.name} - Safety Review Complete");
+                    safetyReviewTask.Duration = "14d"; // Typical safety review period
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText7, ""); // Site IDs (empty)
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText9, cohort.id); // Cohort IDs (visible column)
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText11, ""); // Site Name (empty)
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText4, "Safety");
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText12, "Safety Review");
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText13, "DSMB Review");
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText14, "Cohort Milestone");
+                    safetyReviewTask.SetField(MSProject.PjField.pjTaskText15, cohort.id); // Cohort ID (internal reference)
+                    safetyReviewTask.Notes = $"Data Safety Monitoring Board (DSMB) review for {cohort.name}. Required before next cohort can begin.";
+                    safetyReviewTask.Priority = (int)MSProject.PjPriority.pjPriorityHigh;
+
+                    // Safety review depends on enrollment complete
+                    safetyReviewTask.Predecessors = enrollmentCompleteTask.ID.ToString();
+
+                    // Store for next cohort's dependency
+                    previousCohortSafetyReview = safetyReviewTask;
+
+                    tasksCreated++;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Created {tasksCreated} cohort milestone tasks");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error generating cohort milestones: {ex.Message}");
+                // Don't throw - cohort milestones are optional
             }
 
             return tasksCreated;

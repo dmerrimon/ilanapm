@@ -35,6 +35,12 @@ namespace IlanaPM.AddIn.Models
         // Summary task fields (for category dividers)
         public bool is_summary { get; set; }
         public int outline_level { get; set; } = 2; // Default to level 2 (normal task)
+
+        // NEW: Authority-specific fields for rich ontology
+        public string authority_full_name { get; set; }    // "National Drug Authority"
+        public string authority_type { get; set; }         // "regulatory", "ethics", "permits"
+        public string submission_form { get; set; }        // "IRAS", "IND", "CTA"
+        public List<string> required_documents { get; set; }  // Authority-specific docs
     }
 
     public class Dependency
@@ -71,5 +77,30 @@ namespace IlanaPM.AddIn.Models
         public string detail { get; set; }
         public string suggested_fix { get; set; }
         public double confidence { get; set; }
+    }
+
+    /// <summary>
+    /// Regulatory workflow metadata for multi-authority systems
+    /// </summary>
+    public class RegulatoryWorkflow
+    {
+        public string workflow_type { get; set; }  // "parallel", "sequential", "multi_layer_sequential"
+        public List<Authority> authorities { get; set; }
+
+        public RegulatoryWorkflow()
+        {
+            authorities = new List<Authority>();
+        }
+    }
+
+    /// <summary>
+    /// Regulatory authority metadata
+    /// </summary>
+    public class Authority
+    {
+        public string code { get; set; }           // "NDA", "MHRA", "FDA"
+        public string name { get; set; }           // "National Drug Authority"
+        public string type { get; set; }           // "regulatory", "ethics", "permits"
+        public int review_duration_days { get; set; }
     }
 }

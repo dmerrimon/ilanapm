@@ -10,10 +10,16 @@ from typing import Optional
 from models.timeline import Timeline
 from services.template_generator import TemplateGenerator
 import logging
+import hashlib
+import json
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# In-memory cache for template generation (reduces response time for repeated requests)
+_template_cache = {}
+_CACHE_MAX_SIZE = 100  # Limit cache to 100 entries to prevent memory issues
 
 
 class TemplateRequest(BaseModel):
@@ -171,3 +177,209 @@ async def get_supported_countries():
     except Exception as e:
         logger.error(f"Failed to get countries: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class SiteTemplateRequest(BaseModel):
+    """Request model for site-specific template generation"""
+    country_code: str = Field(
+        ...,
+        description="ISO country code (e.g., 'US', 'KE', 'VN')",
+        min_length=2,
+        max_length=2
+    )
+    template_type: str = Field(
+        ...,
+        description="Template type: 'site_startup', 'site_closeout', 'study_closeout'",
+        pattern="^(site_startup|site_closeout|study_closeout)$"
+    )
+    site_id: str = Field(
+        ...,
+        description="Site identifier (e.g., 'SITE-001')",
+        min_length=1
+    )
+    study_phase: str = Field(
+        ...,
+        description="Study phase",
+        pattern="^Phase (I|II|III|IV)$"
+    )
+    therapeutic_area: str = Field(
+        ...,
+        description="Therapeutic area (e.g., 'Oncology', 'Infectious Disease')",
+        min_length=1
+    )
+    include_optional: bool = Field(
+        default=True,
+        description="Include optional tasks in the template"
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "country_code": "UG",
+                "template_type": "site_startup",
+                "site_id": "SITE-001",
+                "study_phase": "Phase III",
+                "therapeutic_area": "Oncology",
+                "include_optional": True
+            }
+        }
+
+
+@router.post("/templates/generate-site-startup", response_model=Timeline)
+async def generate_site_startup_template(request: SiteTemplateRequest) -> Timeline:
+    """
+    Generate site startup timeline template with authority-specific details
+
+    Returns tasks specific to activating a clinical trial site, including:
+    - Authority-specific regulatory submissions (e.g., "Submit IRAS Application to MHRA" for UK)
+    - Multi-authority workflows (e.g., NDA + UNCST for Uganda)
+    - Site readiness and training tasks
+    - GCP compliance and monitoring setup
+
+    **Example for Uganda (UG):**
+    - Submit to National Drug Authority (NDA) - 7 days preparation
+    - Obtain UNCST Research Permit - 30 days (gated by NDA approval)
+    - Submit to Ethics Committee - 30-60 days
+    - Site Initiation Visit - 3 days
+
+    **Example for UK (GB):**
+    - Submit IRAS Application to MHRA - 14 days preparation
+    - REC (Research Ethics Committee) Review - 60 days
+    - NHS R&D Approval - 30 days
+    - Site Initiation Visit - 3 days
+
+    Raises:
+        HTTPException: 400 if country_code not supported
+        HTTPException: 500 if template generation fails
+    """
+    try:
+        logger.info(f"Generating site startup template: {request.country_code} site {request.site_id}")
+
+        generator = TemplateGenerator()
+        timeline = generator.generate_site_startup(
+            country_code=request.country_code.upper(),
+            site_id=request.site_id,
+            study_phase=request.study_phase,
+            therapeutic_area=request.therapeutic_area,
+            include_optional=request.include_optional
+        )
+
+        # Log authority information for debugging
+        authorities = set()
+        for task in timeline.tasks:
+            if hasattr(task, 'authority') and task.authority:
+                authorities.add(f"{task.authority} ({task.authority_full_name})" if hasattr(task, 'authority_full_name') else task.authority)
+
+        logger.info(f"Site startup template generated: {len(timeline.tasks)} tasks, "
+                   f"Authorities involved: {', '.join(authorities) if authorities else 'None'}")
+
+        return timeline
+
+    except ValueError as e:
+        logger.error(f"Site startup template generation failed (validation): {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Site startup template generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Template generation failed: {str(e)}")
+
+
+@router.post("/templates/generate-site-closeout", response_model=Timeline)
+async def generate_site_closeout_template(request: SiteTemplateRequest) -> Timeline:
+    """
+    Generate site closeout timeline template with authority-specific details
+
+    Returns tasks specific to closing a clinical trial site, including:
+    - Final monitoring visits
+    - IP accountability and destruction
+    - Essential document archiving
+    - Authority-specific closeout reporting (e.g., "Submit Study Completion Notice to MHRA" for UK)
+    - Site closure letters
+
+    **Example for Uganda (UG):**
+    - Submit Completion Report to NDA - 7 days
+    - Submit Final Report to UNCST - 7 days
+    - Notify Ethics Committee - 3 days
+    - Close-out monitoring visit - 5 days
+
+    **Example for UK (GB):**
+    - Submit Study Completion Notice to MHRA - 15 days
+    - Final REC Report - 7 days
+    - NHS R&D Notification - 3 days
+    - Site closure visit - 5 days
+
+    Raises:
+        HTTPException: 400 if country_code not supported
+        HTTPException: 500 if template generation fails
+    """
+    try:
+        logger.info(f"Generating site closeout template: {request.country_code} site {request.site_id}")
+
+        generator = TemplateGenerator()
+        timeline = generator.generate_site_closeout(
+            country_code=request.country_code.upper(),
+            site_id=request.site_id,
+            study_phase=request.study_phase,
+            therapeutic_area=request.therapeutic_area,
+            include_optional=request.include_optional
+        )
+
+        # Log authority information
+        authorities = set()
+        for task in timeline.tasks:
+            if hasattr(task, 'authority') and task.authority:
+                authorities.add(f"{task.authority} ({task.authority_full_name})" if hasattr(task, 'authority_full_name') else task.authority)
+
+        logger.info(f"Site closeout template generated: {len(timeline.tasks)} tasks, "
+                   f"Authorities involved: {', '.join(authorities) if authorities else 'None'}")
+
+        return timeline
+
+    except ValueError as e:
+        logger.error(f"Site closeout template generation failed (validation): {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Site closeout template generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Template generation failed: {str(e)}")
+
+
+@router.post("/templates/generate-study-closeout", response_model=Timeline)
+async def generate_study_closeout_template(request: SiteTemplateRequest) -> Timeline:
+    """
+    Generate study-wide closeout timeline template
+
+    Returns study-level closeout tasks that occur after all sites are closed, including:
+    - Database lock and data analysis
+    - Clinical Study Report (CSR) preparation
+    - Final regulatory submissions to all authorities
+    - Study archiving
+
+    **Study-level tasks apply across all sites/countries.**
+
+    Raises:
+        HTTPException: 400 if country_code not supported
+        HTTPException: 500 if template generation fails
+    """
+    try:
+        logger.info(f"Generating study closeout template: {request.country_code}")
+
+        generator = TemplateGenerator()
+        timeline = generator.generate_study_closeout(
+            country_code=request.country_code.upper(),
+            study_phase=request.study_phase,
+            therapeutic_area=request.therapeutic_area,
+            include_optional=request.include_optional
+        )
+
+        logger.info(f"Study closeout template generated: {len(timeline.tasks)} tasks")
+
+        return timeline
+
+    except ValueError as e:
+        logger.error(f"Study closeout template generation failed (validation): {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    except Exception as e:
+        logger.error(f"Study closeout template generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Template generation failed: {str(e)}")
