@@ -95,6 +95,18 @@ namespace IlanaPM.AddIn.Services
                 // Text4: Task Category
                 msTask.SetField(PjField.pjTaskText4, templateTask.category ?? "");
 
+                // Text16: Authority Type (NEW - authority-specific ontology)
+                if (!string.IsNullOrEmpty(templateTask.authority_type))
+                {
+                    msTask.SetField(PjField.pjTaskText16, templateTask.authority_type);
+                }
+
+                // Text17: Submission Form (NEW - authority-specific ontology)
+                if (!string.IsNullOrEmpty(templateTask.submission_form))
+                {
+                    msTask.SetField(PjField.pjTaskText17, templateTask.submission_form);
+                }
+
                 // Flag1: Is Mandatory
                 msTask.SetField(PjField.pjTaskFlag1, templateTask.is_mandatory ? "Yes" : "No");
 
@@ -102,6 +114,15 @@ namespace IlanaPM.AddIn.Services
                 string notes = $"Template Task ID: {templateTask.id}\n";
                 if (!string.IsNullOrEmpty(templateTask.authority))
                     notes += $"Authority: {templateTask.authority}\n";
+
+                // Add authority-specific details to notes (NEW)
+                if (!string.IsNullOrEmpty(templateTask.authority_full_name))
+                    notes += $"Authority Full Name: {templateTask.authority_full_name}\n";
+                if (!string.IsNullOrEmpty(templateTask.authority_type))
+                    notes += $"Authority Type: {templateTask.authority_type}\n";
+                if (!string.IsNullOrEmpty(templateTask.submission_form))
+                    notes += $"Submission Form: {templateTask.submission_form}\n";
+
                 notes += $"Category: {templateTask.category}\n";
                 notes += $"Mandatory: {(templateTask.is_mandatory ? "Yes" : "No")}\n";
 

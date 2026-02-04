@@ -1466,6 +1466,11 @@ class TemplateGenerator:
         ec_task.authority_full_name = ec_name
         ec_task.authority_type = "ethics"
         ec_task.submission_form = ec_submission_form
+
+        # OVERRIDE: Use authority code directly for Text1 field (not enum)
+        # This ensures EC shows as "EC" not "FDA" in MS Project
+        ec_task.authority = ec_code
+
         tasks.append(ec_task)
 
         # ===== REGULATORY AUTHORITY SUBMISSION =====
@@ -1502,6 +1507,11 @@ class TemplateGenerator:
         reg_task.authority_full_name = reg_name
         reg_task.authority_type = "regulatory"
         reg_task.submission_form = reg_submission_form
+
+        # OVERRIDE: Use authority code directly for Text1 field (not enum)
+        # This ensures NDA shows as "NDA" not "NDA Uganda" enum in MS Project
+        reg_task.authority = reg_code
+
         tasks.append(reg_task)
 
         # ===== ADDITIONAL AUTHORITIES (MULTI-LAYER WORKFLOWS) =====
@@ -1540,6 +1550,11 @@ class TemplateGenerator:
             auth_task.authority_full_name = auth_name
             auth_task.authority_type = auth_type
             auth_task.submission_form = submission_form
+
+            # OVERRIDE: Use authority code directly for Text1 field (not enum)
+            # This ensures UNCST shows as "UNCST" not "NDA Uganda" in MS Project
+            auth_task.authority = auth_code
+
             tasks.append(auth_task)
 
         logger.info(f"Built {len(tasks)} authority-specific regulatory tasks for {country_name}")
@@ -1782,6 +1797,7 @@ class TemplateGenerator:
         reg_task.authority_full_name = reg_name
         reg_task.authority_type = "regulatory"
         reg_task.submission_form = submission_form
+        reg_task.authority = reg_code  # Use code directly
         tasks.append(reg_task)
 
         # ===== ETHICS COMMITTEE CLOSEOUT =====
@@ -1810,6 +1826,7 @@ class TemplateGenerator:
         ec_task.authority_full_name = ec_name
         ec_task.authority_type = "ethics"
         ec_task.submission_form = submission_form
+        ec_task.authority = ec_code  # Use code directly
         tasks.append(ec_task)
 
         # ===== ADDITIONAL AUTHORITIES =====
@@ -1840,6 +1857,7 @@ class TemplateGenerator:
             auth_task.authority_full_name = auth_name
             auth_task.authority_type = auth_type
             auth_task.submission_form = submission_form
+            auth_task.authority = auth_code  # Use code directly
             tasks.append(auth_task)
 
         return tasks
