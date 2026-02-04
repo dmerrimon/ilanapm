@@ -440,12 +440,8 @@ namespace IlanaPM.AddIn.Services
 
                 AddAuthorizationHeader();
 
-                var request = new Models.TaskCompletionBatchRequest
-                {
-                    task_completions = feedback
-                };
-
-                string jsonContent = JsonConvert.SerializeObject(request);
+                // API expects a direct list, not wrapped in an object
+                string jsonContent = JsonConvert.SerializeObject(feedback);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                 HttpResponseMessage response = await httpClient.PostAsync(
