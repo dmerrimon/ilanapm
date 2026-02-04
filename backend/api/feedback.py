@@ -58,10 +58,11 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
             # Check for duplicate submission (if project_id and task_id provided)
             if feedback.project_id and feedback.task_id:
                 cursor.execute(
-                    "SELECT COUNT(*) FROM task_outcomes WHERE project_id=? AND task_id=?",
+                    "SELECT COUNT(*) as count FROM task_outcomes WHERE project_id=? AND task_id=?",
                     (feedback.project_id, feedback.task_id)
                 )
-                if cursor.fetchone()[0] > 0:
+                result = cursor.fetchone()
+                if result['count'] > 0:
                     logger.warning(
                         f"Duplicate feedback attempt: project={feedback.project_id}, "
                         f"task={feedback.task_id} - updating existing record"
@@ -153,8 +154,8 @@ async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskComple
             ))
 
             # Get total count
-            cursor.execute("SELECT COUNT(*) FROM task_outcomes")
-            total_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) as count FROM task_outcomes")
+            total_count = cursor.fetchone()['count']
 
         # Build accuracy summary if we have a prediction
         accuracy_summary = None
@@ -235,10 +236,11 @@ async def record_multiple_completions(
                 is_duplicate = False
                 if feedback.project_id and feedback.task_id:
                     cursor.execute(
-                        "SELECT COUNT(*) FROM task_outcomes WHERE project_id=? AND task_id=?",
+                        "SELECT COUNT(*) as count FROM task_outcomes WHERE project_id=? AND task_id=?",
                         (feedback.project_id, feedback.task_id)
                     )
-                    if cursor.fetchone()[0] > 0:
+                    result = cursor.fetchone()
+                    if result['count'] > 0:
                         is_duplicate = True
                         logger.warning(
                             f"Duplicate in bulk: project={feedback.project_id}, task={feedback.task_id} - updating"
@@ -301,8 +303,8 @@ async def record_multiple_completions(
                     recorded_count += 1
 
             # Get total count
-            cursor.execute("SELECT COUNT(*) FROM task_outcomes")
-            total_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) as count FROM task_outcomes")
+            total_count = cursor.fetchone()['count']
 
         # Log bulk submission
         logger.info(
