@@ -21,8 +21,14 @@ namespace IlanaPM.AddIn.Services
             var feedback = new List<TaskCompletionFeedback>();
 
             if (project == null || project.Tasks == null)
+            {
+                System.Diagnostics.Debug.WriteLine("FeedbackCollector: project or tasks null");
                 return feedback;
+            }
 
+            System.Diagnostics.Debug.WriteLine($"FeedbackCollector: Scanning {project.Tasks.Count} tasks for completion");
+
+            int completedCount = 0;
             foreach (MSProject.Task task in project.Tasks)
             {
                 if (task == null) continue;
@@ -33,15 +39,24 @@ namespace IlanaPM.AddIn.Services
                 // Check if task is 100% complete
                 if (task.PercentComplete >= 100)
                 {
+                    completedCount++;
+                    System.Diagnostics.Debug.WriteLine($"  Found completed task: {task.ID} - {task.Name} ({task.PercentComplete}%)");
+
                     var taskFeedback = ExtractTaskFeedback(task, project);
                     if (taskFeedback != null)
                     {
                         feedback.Add(taskFeedback);
                         reportedTaskIds.Add(task.ID);
+                        System.Diagnostics.Debug.WriteLine($"    ✓ Feedback extracted successfully");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"    ✗ Feedback extraction failed (null result)");
                     }
                 }
             }
 
+            System.Diagnostics.Debug.WriteLine($"FeedbackCollector: Found {completedCount} completed tasks, extracted {feedback.Count} valid feedback entries");
             return feedback;
         }
 
@@ -54,17 +69,23 @@ namespace IlanaPM.AddIn.Services
             {
                 // Extract predicted duration from custom field (Number6) or calculate from original duration
                 int? predictedDuration = ExtractPredictedDuration(task);
+                System.Diagnostics.Debug.WriteLine($"      Predicted duration: {predictedDuration?.ToString() ?? "null"}");
+
                 if (!predictedDuration.HasValue || predictedDuration.Value <= 0)
                 {
                     // Skip tasks without predicted durations
+                    System.Diagnostics.Debug.WriteLine($"      Skipping: No valid predicted duration");
                     return null;
                 }
 
                 // Calculate actual duration
                 int actualDuration = CalculateActualDuration(task);
+                System.Diagnostics.Debug.WriteLine($"      Actual duration: {actualDuration} days (Start: {task.Start}, Finish: {task.Finish})");
+
                 if (actualDuration <= 0)
                 {
                     // Skip tasks with invalid actual durations
+                    System.Diagnostics.Debug.WriteLine($"      Skipping: No valid actual duration");
                     return null;
                 }
 
