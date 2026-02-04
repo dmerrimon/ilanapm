@@ -9,6 +9,10 @@ namespace IlanaPM.AddIn
         // Telemetry service for ML learning (opt-in consent required)
         public Services.TelemetryService TelemetryService { get; private set; }
 
+        // Feedback collector for ML model improvement
+        private Services.FeedbackCollector feedbackCollector;
+        private Services.ApiClient apiClient;
+
         private void ThisAddIn_Startup(object sender, System.EventArgs e)
         {
             try
@@ -16,6 +20,15 @@ namespace IlanaPM.AddIn
                 // Initialize telemetry service
                 TelemetryService = new Services.TelemetryService(Application);
                 System.Diagnostics.Debug.WriteLine("Telemetry service initialized");
+
+                // Initialize feedback collector
+                feedbackCollector = new Services.FeedbackCollector();
+                apiClient = new Services.ApiClient();
+                System.Diagnostics.Debug.WriteLine("Feedback collector initialized");
+
+                // Subscribe to ProjectBeforeSave event for automatic feedback collection
+                Application.ProjectBeforeSave += Application_ProjectBeforeSave;
+                System.Diagnostics.Debug.WriteLine("ProjectBeforeSave event subscribed");
 
                 // Track session start
                 if (TelemetryService != null)
@@ -38,6 +51,44 @@ namespace IlanaPM.AddIn
                     "Ilana PM Startup",
                     System.Windows.Forms.MessageBoxButtons.OK,
                     System.Windows.Forms.MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Event handler for project save - collects completed task feedback for ML learning
+        /// </summary>
+        private void Application_ProjectBeforeSave(
+            Microsoft.Office.Interop.MSProject.Project project,
+            bool saveAsUi,
+            ref bool cancel)
+        {
+            try
+            {
+                if (project == null || feedbackCollector == null || apiClient == null)
+                    return;
+
+                // Collect completed tasks
+                var completedTasks = feedbackCollector.CollectCompletedTasks(project);
+
+                if (completedTasks != null && completedTasks.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Collecting feedback for {completedTasks.Count} completed tasks");
+
+                    // Send feedback asynchronously (non-blocking)
+                    System.Threading.Tasks.Task.Run(async () =>
+                    {
+                        bool success = await apiClient.SendTaskCompletionFeedbackAsync(completedTasks);
+                        if (success)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"✓ Feedback submitted: {completedTasks.Count} tasks");
+                        }
+                    }).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fail silently - don't interrupt save
+                System.Diagnostics.Debug.WriteLine($"Feedback collection error: {ex.Message}");
             }
         }
 

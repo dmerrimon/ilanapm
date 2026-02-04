@@ -425,6 +425,52 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
+        /// Send task completion feedback to backend for ML learning
+        /// Automatically collects predicted vs actual durations for model improvement
+        /// </summary>
+        public async Task<bool> SendTaskCompletionFeedbackAsync(List<Models.TaskCompletionFeedback> feedback)
+        {
+            try
+            {
+                if (feedback == null || feedback.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("No feedback to submit");
+                    return true;
+                }
+
+                AddAuthorizationHeader();
+
+                var request = new Models.TaskCompletionBatchRequest
+                {
+                    task_completions = feedback
+                };
+
+                string jsonContent = JsonConvert.SerializeObject(request);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await httpClient.PostAsync(
+                    API_BASE_URL + "/api/v1/feedback/task-completions",
+                    content
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorBody = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"Feedback submission failed: {response.StatusCode} - {errorBody}");
+                    return false;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"✓ Feedback submitted successfully: {feedback.Count} tasks");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Feedback error: {ex.Message}");
+                return false; // Fail silently - don't interrupt user workflow
+            }
+        }
+
+        /// <summary>
         /// Send telemetry batch to backend for ML learning
         /// Privacy-focused: User IDs are hashed, no PII collected
         /// </summary>
