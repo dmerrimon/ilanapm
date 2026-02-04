@@ -15,6 +15,7 @@ from models.feedback import (
     AccuracyReport
 )
 from database import get_db_connection
+from database.connection import DB_TYPE
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -555,14 +556,19 @@ async def get_accuracy_trends() -> AccuracyTrends:
             }
 
             # Last 7 days
-            cursor.execute("""
+            if DB_TYPE == "postgresql":
+                date_7_days = "NOW() - INTERVAL '7 days'"
+            else:
+                date_7_days = "datetime('now', '-7 days')"
+
+            cursor.execute(f"""
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
                     AVG(ABS(variance_days)) as avg_error_days
                 FROM task_outcomes
                 WHERE predicted_duration_days IS NOT NULL
-                AND recorded_at >= datetime('now', '-7 days')
+                AND recorded_at >= {date_7_days}
             """)
             last_7 = cursor.fetchone()
 
@@ -574,14 +580,19 @@ async def get_accuracy_trends() -> AccuracyTrends:
             }
 
             # Last 30 days
-            cursor.execute("""
+            if DB_TYPE == "postgresql":
+                date_30_days = "NOW() - INTERVAL '30 days'"
+            else:
+                date_30_days = "datetime('now', '-30 days')"
+
+            cursor.execute(f"""
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
                     AVG(ABS(variance_days)) as avg_error_days
                 FROM task_outcomes
                 WHERE predicted_duration_days IS NOT NULL
-                AND recorded_at >= datetime('now', '-30 days')
+                AND recorded_at >= {date_30_days}
             """)
             last_30 = cursor.fetchone()
 
@@ -593,14 +604,19 @@ async def get_accuracy_trends() -> AccuracyTrends:
             }
 
             # Last 90 days
-            cursor.execute("""
+            if DB_TYPE == "postgresql":
+                date_90_days = "NOW() - INTERVAL '90 days'"
+            else:
+                date_90_days = "datetime('now', '-90 days')"
+
+            cursor.execute(f"""
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
                     AVG(ABS(variance_days)) as avg_error_days
                 FROM task_outcomes
                 WHERE predicted_duration_days IS NOT NULL
-                AND recorded_at >= datetime('now', '-90 days')
+                AND recorded_at >= {date_90_days}
             """)
             last_90 = cursor.fetchone()
 
@@ -612,14 +628,21 @@ async def get_accuracy_trends() -> AccuracyTrends:
             }
 
             # Previous 30 days (for comparison)
-            cursor.execute("""
+            if DB_TYPE == "postgresql":
+                date_60_days = "NOW() - INTERVAL '60 days'"
+                date_30_days_cmp = "NOW() - INTERVAL '30 days'"
+            else:
+                date_60_days = "datetime('now', '-60 days')"
+                date_30_days_cmp = "datetime('now', '-30 days')"
+
+            cursor.execute(f"""
                 SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate
                 FROM task_outcomes
                 WHERE predicted_duration_days IS NOT NULL
-                AND recorded_at >= datetime('now', '-60 days')
-                AND recorded_at < datetime('now', '-30 days')
+                AND recorded_at >= {date_60_days}
+                AND recorded_at < {date_30_days_cmp}
             """)
             prev_30 = cursor.fetchone()
 
@@ -637,16 +660,23 @@ async def get_accuracy_trends() -> AccuracyTrends:
             }
 
             # Monthly breakdown (last 6 months)
-            cursor.execute("""
+            if DB_TYPE == "postgresql":
+                month_format = "to_char(recorded_at, 'YYYY-MM')"
+                date_6_months = "NOW() - INTERVAL '6 months'"
+            else:
+                month_format = "strftime('%Y-%m', recorded_at)"
+                date_6_months = "datetime('now', '-6 months')"
+
+            cursor.execute(f"""
                 SELECT
-                    strftime('%Y-%m', recorded_at) as month,
+                    {month_format} as month,
                     COUNT(*) as total,
                     SUM(CASE WHEN was_accurate THEN 1 ELSE 0 END) as accurate,
                     AVG(ABS(variance_days)) as avg_error_days
                 FROM task_outcomes
                 WHERE predicted_duration_days IS NOT NULL
-                AND recorded_at >= datetime('now', '-6 months')
-                GROUP BY strftime('%Y-%m', recorded_at)
+                AND recorded_at >= {date_6_months}
+                GROUP BY {month_format}
                 ORDER BY month DESC
             """)
             monthly_breakdown = [
