@@ -19,8 +19,8 @@ namespace IlanaPM.AddIn.Models
 
         // Actual values (what really happened)
         public int actual_duration_days { get; set; }
-        public string actual_start_date { get; set; }  // DD-MM-YYYY format (clinical research standard)
-        public string actual_end_date { get; set; }    // DD-MM-YYYY format (clinical research standard)
+        public string actual_start_date { get; set; }  // YYYY-MM-DD format (ISO 8601)
+        public string actual_end_date { get; set; }    // YYYY-MM-DD format (ISO 8601)
 
         // Context for learning
         public string country_code { get; set; }
