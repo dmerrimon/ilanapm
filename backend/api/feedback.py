@@ -45,6 +45,19 @@ from pydantic import BaseModel
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+# Version marker for deployment verification
+FEEDBACK_API_VERSION = "2.1-DD-MM-YYYY"
+
+
+@router.get("/feedback/version")
+async def get_feedback_version():
+    """Get feedback API version for deployment verification"""
+    return {
+        "version": FEEDBACK_API_VERSION,
+        "date_format": "DD-MM-YYYY",
+        "status": "ready"
+    }
+
 
 @router.post("/feedback/task-completion", response_model=TaskCompletionResponse)
 async def record_task_completion(feedback: TaskCompletionFeedback) -> TaskCompletionResponse:
