@@ -26,8 +26,11 @@ def convert_date_to_iso(date_str: str) -> str:
         # Parse DD-MM-YYYY
         dt = datetime.strptime(date_str, '%d-%m-%Y')
         # Return as YYYY-MM-DD (ISO format for database)
-        return dt.strftime('%Y-%m-%d')
-    except ValueError:
+        iso_date = dt.strftime('%Y-%m-%d')
+        logger.debug(f"Date conversion: {date_str} -> {iso_date}")
+        return iso_date
+    except ValueError as e:
+        logger.error(f"Failed to convert date '{date_str}': {e}")
         return None
 
 from models.feedback import (
