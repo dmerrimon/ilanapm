@@ -12,7 +12,7 @@ import logging
 from jose import JWTError, jwt
 from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal
 from database import init_db
 
 # Configure logging
@@ -111,9 +111,12 @@ app = FastAPI(
 # Configure CORS for web add-in and admin portals
 # NOTE: For development, we allow localhost. In production, use specific domains.
 allowed_origins = [
-    "https://portal.ilanapm.com",  # Customer admin portal
-    "https://admin.ilanapm.com",   # Internal super admin portal
-    "https://ilanapm.com",          # Marketing website
+    "https://app.seleen.com",       # Customer admin portal (NEW)
+    "https://admin.seleen.com",     # Founder admin portal (NEW)
+    "https://seleen.com",            # Marketing website
+    "https://portal.ilanapm.com",  # Legacy customer portal
+    "https://admin.ilanapm.com",   # Legacy admin portal
+    "https://ilanapm.com",          # Legacy website
     "http://localhost:3000",        # Local development (Next.js)
     "http://localhost:5173",        # Local development (Vite)
     "http://127.0.0.1:3000",        # Local development (Next.js)
@@ -131,6 +134,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(licensing.router, prefix="/api/v1", tags=["licensing"])  # NEW: License activation & validation
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])  # NEW: Admin endpoints for org/license management
+app.include_router(portal.router, prefix="/api/v1", tags=["portal"])  # NEW: Customer & Founder portals
 app.include_router(debug.router, prefix="/api/v1", tags=["debug"])  # Debug endpoints
 app.include_router(validate.router, prefix="/api/v1", tags=["validation"])
 app.include_router(config.router, prefix="/api/v1", tags=["configuration"])
