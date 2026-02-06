@@ -13,7 +13,7 @@ from jose import JWTError, jwt
 from datetime import datetime
 
 from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal
-from database import init_db
+from database import init_db, run_migrations
 
 # Configure logging
 logging.basicConfig(
@@ -159,6 +159,15 @@ async def startup_event():
         logger.info("💾 Database initialized successfully")
     except Exception as e:
         logger.error(f"❌ Database initialization failed: {type(e).__name__}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+    # Run database migrations
+    try:
+        run_migrations()
+        logger.info("🔄 Database migrations completed successfully")
+    except Exception as e:
+        logger.error(f"❌ Database migrations failed: {type(e).__name__}: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
 

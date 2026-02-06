@@ -85,6 +85,83 @@ def init_db():
         conn.close()
 
 
+def run_migrations():
+    """Run all SQL migrations in order"""
+    migrations_dir = Path(__file__).parent / "migrations"
+
+    if not migrations_dir.exists():
+        print("No migrations directory found, skipping migrations")
+        return
+
+    # Get all .sql files in migrations directory, sorted by name
+    migration_files = sorted(migrations_dir.glob("*.sql"))
+
+    if not migration_files:
+        print("No migration files found")
+        return
+
+    print(f"Found {len(migration_files)} migration file(s)")
+
+    if DB_TYPE == "postgresql":
+        conn = psycopg.connect(DATABASE_URL)
+
+        for migration_file in migration_files:
+            print(f"Running migration: {migration_file.name}")
+
+            with open(migration_file, 'r') as f:
+                migration_sql = f.read()
+
+            # Replace SQLite-specific syntax
+            migration_sql = migration_sql.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+            migration_sql = migration_sql.replace("AUTOINCREMENT", "")
+
+            # Split into statements
+            lines = []
+            for line in migration_sql.split('\n'):
+                if not line.strip().startswith('--'):
+                    lines.append(line)
+
+            cleaned_sql = '\n'.join(lines)
+            statements = [s.strip() for s in cleaned_sql.split(';') if s.strip()]
+
+            for statement in statements:
+                if statement.strip():
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(statement)
+                        conn.commit()
+                        cursor.close()
+                    except Exception as e:
+                        conn.rollback()
+                        if "already exists" not in str(e).lower() and "duplicate column" not in str(e).lower():
+                            print(f"Migration warning: {e}")
+
+            print(f"✅ Completed: {migration_file.name}")
+
+        conn.close()
+    else:
+        # SQLite
+        conn = sqlite3.connect(DB_PATH)
+
+        for migration_file in migration_files:
+            print(f"Running migration: {migration_file.name}")
+
+            with open(migration_file, 'r') as f:
+                migration_sql = f.read()
+
+            try:
+                conn.executescript(migration_sql)
+                conn.commit()
+                print(f"✅ Completed: {migration_file.name}")
+            except Exception as e:
+                conn.rollback()
+                print(f"Migration error: {e}")
+
+        conn.close()
+
+    print("✅ All migrations completed")
+
+
 class PostgreSQLCursor:
     """Wrapper cursor that converts SQLite ? placeholders to PostgreSQL %s"""
     def __init__(self, cursor):
@@ -196,4 +273,4 @@ def get_db():
         return conn
 
 
-__all__ = ["get_db_connection", "get_db", "init_db", "DB_TYPE"]
+__all__ = ["get_db_connection", "get_db", "init_db", "run_migrations", "DB_TYPE"]
