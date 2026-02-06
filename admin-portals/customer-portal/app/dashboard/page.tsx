@@ -1,7 +1,7 @@
 'use client';
 
-import Image from "next/image";
 import Link from "next/link";
+import Header from "@/components/Header";
 
 export default function DashboardPage() {
   // TODO: Fetch actual data from FastAPI backend
@@ -21,44 +21,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard">
-                <Image
-                  src="/logo.png"
-                  alt="Seleen Logo"
-                  width={120}
-                  height={32}
-                  priority
-                />
-              </Link>
-              <nav className="flex gap-6">
-                <Link href="/dashboard" className="text-black font-medium">
-                  Dashboard
-                </Link>
-                <Link href="/users" className="text-gray-600 hover:text-black transition-colors">
-                  Users
-                </Link>
-                <Link href="/billing" className="text-gray-600 hover:text-black transition-colors">
-                  Billing
-                </Link>
-                <Link href="/analytics" className="text-gray-600 hover:text-black transition-colors">
-                  Analytics
-                </Link>
-                <Link href="/settings" className="text-gray-600 hover:text-black transition-colors">
-                  Settings
-                </Link>
-              </nav>
-            </div>
-            <button className="px-4 py-2 text-gray-600 hover:text-black transition-colors">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
