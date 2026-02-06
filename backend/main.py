@@ -117,9 +117,11 @@ allowed_origins = [
     "https://portal.ilanapm.com",  # Legacy customer portal
     "https://admin.ilanapm.com",   # Legacy admin portal
     "https://ilanapm.com",          # Legacy website
-    "http://localhost:3000",        # Local development (Next.js)
+    "http://localhost:3000",        # Local development (Customer portal)
+    "http://localhost:3001",        # Local development (Founder portal)
     "http://localhost:5173",        # Local development (Vite)
     "http://127.0.0.1:3000",        # Local development (Next.js)
+    "http://127.0.0.1:3001",        # Local development (Founder portal)
 ]
 
 app.add_middleware(
