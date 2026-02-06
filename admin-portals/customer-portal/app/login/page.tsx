@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { login, APIError } from "@/lib/api-client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,23 +18,26 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // TODO: Implement authentication with FastAPI backend
     try {
-      // const response = await fetch('https://ilanapm.onrender.com/api/v1/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
+      // Authenticate with FastAPI backend
+      const response = await login({ email, password });
 
-      // For now, just simulate login
-      setTimeout(() => {
+      // Check if user has admin role for customer portal
+      if (response.user.role !== 'admin' && response.user.role !== 'super_admin') {
+        setError("You don't have permission to access the customer portal.");
         setLoading(false);
-        // Redirect to dashboard
-        window.location.href = "/dashboard";
-      }, 1000);
+        return;
+      }
+
+      // Redirect to dashboard on success
+      router.push("/dashboard");
     } catch (err) {
       setLoading(false);
-      setError("Login failed. Please check your credentials.");
+      if (err instanceof APIError) {
+        setError(err.message || "Login failed. Please check your credentials.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     }
   };
 

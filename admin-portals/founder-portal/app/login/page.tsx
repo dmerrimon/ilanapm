@@ -3,27 +3,42 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { login, APIError } from "@/lib/api-client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // TODO: Implement authentication with FastAPI backend
-    // const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/portal/founder/login`, {
-    //   method: 'POST',
-    //   body: JSON.stringify({ email, password })
-    // });
+    try {
+      // Authenticate with FastAPI backend
+      const response = await login({ email, password });
 
-    setTimeout(() => {
-      setLoading(false);
+      // Check if user has super_admin role for founder portal
+      if (response.user.role !== 'super_admin') {
+        setError("You don't have permission to access the founder portal.");
+        setLoading(false);
+        return;
+      }
+
       // Redirect to dashboard on success
-      // router.push('/dashboard');
-    }, 1000);
+      router.push("/dashboard");
+    } catch (err) {
+      setLoading(false);
+      if (err instanceof APIError) {
+        setError(err.message || "Login failed. Please check your credentials.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    }
   };
 
   return (
@@ -43,6 +58,11 @@ export default function LoginPage() {
         <p className="text-center mb-8 text-black">Sign in to access system administration</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2 text-black">
               Email Address

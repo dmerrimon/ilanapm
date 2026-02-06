@@ -13,8 +13,10 @@ from typing import Optional, List
 import secrets
 import json
 import logging
+import hashlib
 
 from database.connection import get_db_connection
+from api.licensing import create_access_token, decode_token
 
 logger = logging.getLogger(__name__)
 
@@ -86,29 +88,61 @@ class CustomerListItem(BaseModel):
     last_active: Optional[datetime]
 
 
+class LoginRequest(BaseModel):
+    """Login request for portal access"""
+    email: EmailStr
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Login response with JWT token"""
+    access_token: str
+    token_type: str
+    user: dict
+
+
 # ============================================================================
 # Authentication Helpers
 # ============================================================================
 
+def hash_password(password: str) -> str:
+    """Hash password using SHA-256 (simple hashing for MVP)"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
 def verify_user_token(authorization: str = Header(None)):
     """
     Verify JWT token from Authorization header
-    Returns user_id and org_id from token
-
-    TODO: Implement proper JWT validation with existing licensing.py logic
+    Returns user_id, org_id, role from token
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
 
     token = authorization.replace("Bearer ", "")
 
-    # TODO: Validate JWT token and extract user_id, org_id, role
-    # For now, return mock data for development
-    return {
-        "user_id": "user_123",
-        "org_id": "org_abc",
-        "role": "admin"
-    }
+    try:
+        # Decode and validate JWT token using licensing.py function
+        payload = decode_token(token)
+
+        # Extract user data from payload
+        user_id = payload.get("user_id")
+        org_id = payload.get("org_id")
+        role = payload.get("role", "user")
+
+        if not user_id or not org_id:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+
+        return {
+            "user_id": user_id,
+            "org_id": org_id,
+            "role": role,
+            "email": payload.get("email")
+        }
+    except HTTPException:
+        # Re-raise HTTP exceptions from decode_token
+        raise
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        raise HTTPException(status_code=401, detail="Token verification failed")
 
 
 def require_admin_role(user_data: dict = Depends(verify_user_token)):
@@ -123,6 +157,85 @@ def require_super_admin_role(user_data: dict = Depends(verify_user_token)):
     if user_data.get("role") != "super_admin":
         raise HTTPException(status_code=403, detail="Super admin access required")
     return user_data
+
+
+# ============================================================================
+# AUTHENTICATION ENDPOINTS
+# ============================================================================
+
+@router.post("/portal/login", response_model=LoginResponse)
+async def portal_login(request: LoginRequest):
+    """
+    Authenticate user and return JWT token
+    Works for both customer portal (admins) and founder portal (super_admins)
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        try:
+            # Look up user by email
+            cursor.execute("""
+                SELECT user_id, email, password_hash, role, org_id, first_name, last_name, is_active,
+                       customer_portal_access, founder_portal_access
+                FROM users
+                WHERE email = ?
+            """, (request.email,))
+
+            user = cursor.fetchone()
+
+            if not user:
+                # Generic error to prevent email enumeration
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+
+            # Check if user is active
+            if not user["is_active"]:
+                raise HTTPException(status_code=401, detail="Account is inactive")
+
+            # Verify password
+            password_hash = hash_password(request.password)
+            if user["password_hash"] != password_hash:
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+
+            # Check portal access
+            # Note: For MVP, we'll allow any user with a role to access portals
+            # In production, you'd check customer_portal_access and founder_portal_access flags
+
+            # Create JWT token with user data
+            token_data = {
+                "user_id": user["user_id"],
+                "org_id": user["org_id"],
+                "email": user["email"],
+                "role": user["role"]
+            }
+
+            access_token = create_access_token(token_data)
+
+            # Update last_login timestamp
+            cursor.execute("""
+                UPDATE users
+                SET last_login = CURRENT_TIMESTAMP
+                WHERE user_id = ?
+            """, (user["user_id"],))
+            conn.commit()
+
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user": {
+                    "user_id": user["user_id"],
+                    "email": user["email"],
+                    "first_name": user["first_name"],
+                    "last_name": user["last_name"],
+                    "role": user["role"],
+                    "org_id": user["org_id"]
+                }
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            raise HTTPException(status_code=500, detail="Login failed")
 
 
 # ============================================================================
