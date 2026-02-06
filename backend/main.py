@@ -111,9 +111,9 @@ app = FastAPI(
 # Configure CORS for web add-in and admin portals
 # NOTE: For development, we allow localhost. In production, use specific domains.
 allowed_origins = [
-    "https://app.seleen.com",       # Customer admin portal (NEW)
-    "https://admin.seleen.com",     # Founder admin portal (NEW)
-    "https://seleen.com",            # Marketing website
+    "https://app.seleen.io",        # Customer admin portal
+    "https://admin.seleen.io",      # Founder admin portal
+    "https://seleen.io",             # Marketing website
     "https://portal.ilanapm.com",  # Legacy customer portal
     "https://admin.ilanapm.com",   # Legacy admin portal
     "https://ilanapm.com",          # Legacy website
