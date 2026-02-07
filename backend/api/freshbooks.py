@@ -328,6 +328,17 @@ async def get_invoice(
             detail="Account ID not found. Please reconnect your FreshBooks account."
         )
 
+    # Get FreshBooks customer ID mapping for this organization
+    customer_mapping = freshbooks_service.get_customer_mapping(org_id)
+
+    if not customer_mapping:
+        raise HTTPException(
+            status_code=403,
+            detail="No FreshBooks customer mapping found for this organization"
+        )
+
+    freshbooks_customer_id = customer_mapping["freshbooks_customer_id"]
+
     try:
         # Fetch invoice from FreshBooks
         invoice_response = await freshbooks_service.get_invoice(
@@ -340,6 +351,14 @@ async def get_invoice(
 
         if not invoice:
             raise HTTPException(status_code=404, detail="Invoice not found")
+
+        # SECURITY: Validate invoice belongs to this organization
+        invoice_customer_id = str(invoice.get("customerid", ""))
+        if invoice_customer_id != freshbooks_customer_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: Invoice does not belong to your organization"
+            )
 
         # Transform to match frontend interface
         transformed_invoice = {
@@ -405,8 +424,39 @@ async def download_invoice_pdf(
             detail="Account ID not found. Please reconnect your FreshBooks account."
         )
 
+    # Get FreshBooks customer ID mapping for this organization
+    customer_mapping = freshbooks_service.get_customer_mapping(org_id)
+
+    if not customer_mapping:
+        raise HTTPException(
+            status_code=403,
+            detail="No FreshBooks customer mapping found for this organization"
+        )
+
+    freshbooks_customer_id = customer_mapping["freshbooks_customer_id"]
+
     try:
-        # Download PDF from FreshBooks
+        # SECURITY: First fetch the invoice to validate ownership
+        invoice_response = await freshbooks_service.get_invoice(
+            access_token=access_token,
+            account_id=account_id,
+            invoice_id=invoice_id
+        )
+
+        invoice = invoice_response.get("response", {}).get("result", {}).get("invoice", {})
+
+        if not invoice:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        # Validate invoice belongs to this organization
+        invoice_customer_id = str(invoice.get("customerid", ""))
+        if invoice_customer_id != freshbooks_customer_id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied: Invoice does not belong to your organization"
+            )
+
+        # Now download the PDF
         pdf_content = await freshbooks_service.download_invoice_pdf(
             access_token=access_token,
             account_id=account_id,
