@@ -1,9 +1,9 @@
 'use client';
-import Header from "@/components/Header";
 
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useRef } from "react";
+import Header from "@/components/Header";
+import { exportMultipleSectionsToCSV, generateFilename } from "@/lib/export-utils";
+import { exportUsageAnalyticsPDF } from "@/lib/pdf-export-utils";
 
 interface TemplateUsage {
   template_name: string;
@@ -22,6 +22,12 @@ interface CountryData {
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+
+  // Refs for capturing chart elements
+  const dailyActivityRef = useRef<HTMLDivElement>(null);
+  const templateUsageRef = useRef<HTMLDivElement>(null);
+  const userActivityRef = useRef<HTMLDivElement>(null);
+  const countryDataRef = useRef<HTMLDivElement>(null);
 
   const stats = {
     templates_generated: 1247,
@@ -69,46 +75,72 @@ export default function AnalyticsPage() {
   const maxCountry = Math.max(...countryData.map(c => c.count));
   const maxDaily = Math.max(...dailyActivity.map(d => d.count));
 
+  const handleExportCSV = () => {
+    const sections = [
+      {
+        title: 'Overview Statistics',
+        data: [{
+          metric: 'Templates Generated',
+          value: stats.templates_generated,
+          time_range: timeRange
+        }, {
+          metric: 'Feedback Submissions',
+          value: stats.feedback_submissions,
+          time_range: timeRange
+        }, {
+          metric: 'Active Users',
+          value: stats.active_users,
+          time_range: timeRange
+        }, {
+          metric: 'Avg Response Time (seconds)',
+          value: stats.avg_response_time,
+          time_range: timeRange
+        }]
+      },
+      {
+        title: 'Daily Template Generation',
+        data: dailyActivity
+      },
+      {
+        title: 'Most Used Templates',
+        data: templateUsage
+      },
+      {
+        title: 'Most Active Users',
+        data: userActivity
+      },
+      {
+        title: 'Templates by Regulatory Authority',
+        data: countryData
+      }
+    ];
+
+    const filename = generateFilename(`usage-analytics-${timeRange}`);
+    exportMultipleSectionsToCSV(sections, filename);
+  };
+
+  const handleExportPDF = async () => {
+    await exportUsageAnalyticsPDF({
+      timeRange,
+      stats,
+      chartElements: {
+        dailyActivity: dailyActivityRef.current,
+        templateUsage: templateUsageRef.current,
+        userActivity: userActivityRef.current,
+        countryData: countryDataRef.current
+      },
+      tableData: {
+        templateUsage,
+        userActivity,
+        countryData,
+        dailyActivity
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard">
-                <Image
-                  src="/logo.png"
-                  alt="Seleen Logo"
-                  width={120}
-                  height={32}
-                  priority
-                />
-              </Link>
-              <nav className="flex gap-6">
-                <Link href="/dashboard" className="text-gray-600 hover:text-black transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/users" className="text-gray-600 hover:text-black transition-colors">
-                  Users
-                </Link>
-                <Link href="/billing" className="text-gray-600 hover:text-black transition-colors">
-                  Billing
-                </Link>
-                <Link href="/analytics" className="text-black font-medium">
-                  Analytics
-                </Link>
-                <Link href="/settings" className="text-gray-600 hover:text-black transition-colors">
-                  Settings
-                </Link>
-              </nav>
-            </div>
-            <button className="px-4 py-2 text-gray-600 hover:text-black transition-colors">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -176,7 +208,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Daily Activity Chart */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div ref={dailyActivityRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl mb-6 text-black">Daily Template Generation</h2>
           <div className="space-y-3">
             {dailyActivity.map((day) => (
@@ -197,7 +229,7 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Most Used Templates */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div ref={templateUsageRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl mb-6 text-black">Most Used Templates</h2>
             <div className="space-y-4">
               {templateUsage.map((template, index) => (
@@ -218,7 +250,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Most Active Users */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div ref={userActivityRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl mb-6 text-black">Most Active Users</h2>
             <div className="space-y-4">
               {userActivity.map((user, index) => (
@@ -247,7 +279,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Regulatory Authority Distribution */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div ref={countryDataRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl mb-6 text-black">Templates by Regulatory Authority</h2>
           <div className="space-y-4">
             {countryData.map((country) => (
@@ -275,10 +307,16 @@ export default function AnalyticsPage() {
               <p className="text-black text-sm">Download your usage data for custom analysis</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black">
+              <button
+                onClick={handleExportCSV}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black"
+              >
                 Export CSV
               </button>
-              <button className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors">
+              <button
+                onClick={handleExportPDF}
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+              >
                 Export PDF Report
               </button>
             </div>

@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import { useState, useRef } from "react";
+import Header from "@/components/Header";
+import { exportMultipleSectionsToCSV, generateFilename } from "@/lib/export-utils";
+import { exportSystemAnalyticsPDF } from "@/lib/pdf-export-utils";
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+
+  // Refs for capturing chart elements
+  const dailyUsageRef = useRef<HTMLDivElement>(null);
+  const mlPerformanceRef = useRef<HTMLDivElement>(null);
+  const apiEndpointsRef = useRef<HTMLDivElement>(null);
 
   const systemMetrics = {
     total_templates: 24567,
@@ -42,43 +48,74 @@ export default function AnalyticsPage() {
   const maxTemplates = Math.max(...dailyUsage.map(d => d.templates));
   const maxUsers = Math.max(...dailyUsage.map(d => d.users));
 
+  const handleExportCSV = () => {
+    const sections = [
+      {
+        title: 'System Metrics Overview',
+        data: [{
+          metric: 'Total Templates',
+          value: systemMetrics.total_templates,
+          time_range: timeRange
+        }, {
+          metric: 'Avg Response Time (seconds)',
+          value: systemMetrics.avg_response_time,
+          time_range: timeRange
+        }, {
+          metric: 'API Requests',
+          value: systemMetrics.api_requests,
+          time_range: timeRange
+        }, {
+          metric: 'ML Accuracy (%)',
+          value: systemMetrics.ml_accuracy,
+          time_range: timeRange
+        }, {
+          metric: 'Total Users',
+          value: systemMetrics.total_users,
+          time_range: timeRange
+        }, {
+          metric: 'Active Organizations',
+          value: systemMetrics.active_organizations,
+          time_range: timeRange
+        }]
+      },
+      {
+        title: 'Daily Platform Usage',
+        data: dailyUsage
+      },
+      {
+        title: 'ML Model Performance',
+        data: mlPerformance
+      },
+      {
+        title: 'Top API Endpoints',
+        data: apiEndpoints
+      }
+    ];
+
+    const filename = generateFilename(`system-analytics-${timeRange}`);
+    exportMultipleSectionsToCSV(sections, filename);
+  };
+
+  const handleExportPDF = async () => {
+    await exportSystemAnalyticsPDF({
+      timeRange,
+      systemMetrics,
+      chartElements: {
+        dailyUsage: dailyUsageRef.current,
+        mlPerformance: mlPerformanceRef.current,
+        apiEndpoints: apiEndpointsRef.current
+      },
+      tableData: {
+        dailyUsage,
+        mlPerformance,
+        apiEndpoints
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <Link href="/dashboard">
-                <Image
-                  src="/logo.png"
-                  alt="Seleen Logo"
-                  width={120}
-                  height={32}
-                  priority
-                />
-              </Link>
-              <nav className="flex gap-6">
-                <Link href="/dashboard" className="text-gray-600 hover:text-black transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/customers" className="text-gray-600 hover:text-black transition-colors">
-                  Customers
-                </Link>
-                <Link href="/analytics" className="text-black font-medium">
-                  Analytics
-                </Link>
-                <Link href="/licenses" className="text-gray-600 hover:text-black transition-colors">
-                  Licenses
-                </Link>
-              </nav>
-            </div>
-            <button className="px-4 py-2 text-gray-600 hover:text-black transition-colors">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
@@ -141,7 +178,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Daily Usage Chart */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div ref={dailyUsageRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl mb-6 text-black">Daily Platform Usage</h2>
           <div className="space-y-4">
             {dailyUsage.map((day) => (
@@ -171,7 +208,7 @@ export default function AnalyticsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* ML Performance */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div ref={mlPerformanceRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl mb-6 text-black">ML Model Performance</h2>
             <div className="space-y-4">
               {mlPerformance.map((item) => (
@@ -205,7 +242,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* API Endpoints */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div ref={apiEndpointsRef} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-xl mb-6 text-black">Top API Endpoints</h2>
             <div className="space-y-3">
               {apiEndpoints.map((endpoint) => (
@@ -264,10 +301,16 @@ export default function AnalyticsPage() {
               <p className="text-black text-sm">Download comprehensive analytics report</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black">
+              <button
+                onClick={handleExportCSV}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black"
+              >
                 Export CSV
               </button>
-              <button className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors">
+              <button
+                onClick={handleExportPDF}
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+              >
                 Export PDF Report
               </button>
             </div>
