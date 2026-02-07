@@ -280,23 +280,57 @@ class FreshBooksService:
             logger.info(f"Successfully fetched invoice: {invoice_id}")
             return invoice_data
 
-    def get_invoice_pdf_url(self, account_id: str, invoice_id: str) -> str:
+    async def download_invoice_pdf(
+        self,
+        access_token: str,
+        account_id: str,
+        invoice_id: str
+    ) -> bytes:
         """
-        Generate URL for downloading invoice PDF.
+        Download invoice PDF from FreshBooks.
 
-        Note: FreshBooks doesn't provide a direct API for PDF download.
-        The PDF URL follows a standard pattern that can be accessed with proper authentication.
+        FreshBooks doesn't have a direct PDF download endpoint, so we need to:
+        1. Get the invoice data
+        2. Use the browser-accessible PDF URL with authentication
 
         Args:
-            account_id: Account ID
+            access_token: Valid FreshBooks access token
+            account_id: Account ID from identity endpoint
             invoice_id: Invoice ID
 
         Returns:
-            URL to download invoice PDF
+            PDF file content as bytes
+
+        Raises:
+            httpx.HTTPError: If download fails
         """
-        # FreshBooks PDF URLs follow this pattern
-        # Users can access this URL in their browser when logged in
-        return f"https://my.freshbooks.com/invoice/{account_id}-{invoice_id}.pdf"
+        # FreshBooks PDF download URL (requires authentication)
+        pdf_url = f"https://my.freshbooks.com/invoice/{account_id}-{invoice_id}.pdf"
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            # Try to download PDF with bearer token
+            response = await client.get(
+                pdf_url,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+
+            # If that doesn't work, FreshBooks might use cookies for PDF access
+            # In that case, we need to use their API endpoint
+            if response.status_code != 200:
+                # Alternative: Try using the accounting API to get PDF
+                logger.warning(f"Direct PDF download failed with status {response.status_code}, trying API endpoint")
+
+                # FreshBooks may have a PDF generation endpoint
+                api_pdf_url = f"{self.API_BASE_URL}/accounting/account/{account_id}/invoices/invoices/{invoice_id}.pdf"
+                response = await client.get(
+                    api_pdf_url,
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+
+            response.raise_for_status()
+
+            logger.info(f"Successfully downloaded PDF for invoice: {invoice_id}")
+            return response.content
 
     async def ensure_valid_token(self, org_id: str) -> Optional[str]:
         """

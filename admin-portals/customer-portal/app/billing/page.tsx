@@ -83,13 +83,34 @@ export default function BillingPage() {
     window.location.href = `${apiUrl}/auth/freshbooks/authorize?org_id=${orgId}`;
   };
 
-  const handleDownloadInvoice = (pdfUrl?: string) => {
-    if (!pdfUrl) {
-      alert('PDF URL not available for this invoice');
-      return;
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+      const url = `${apiUrl}/portal/customer/billing/invoices/${invoiceId}/pdf?org_id=placeholder-org-id`;
+
+      // Download PDF directly from backend
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error('Failed to download invoice PDF');
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create a download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `invoice-${invoiceId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Failed to download invoice:', error);
+      alert('Failed to download invoice PDF. Please try again.');
     }
-    // Open PDF in new tab
-    window.open(pdfUrl, '_blank');
   };
 
   // Check FreshBooks connection status on mount
@@ -382,9 +403,8 @@ export default function BillingPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={() => handleDownloadInvoice(invoice.pdf_url)}
-                          className="text-black hover:underline text-sm disabled:text-gray-400 disabled:no-underline"
-                          disabled={!invoice.pdf_url}
+                          onClick={() => handleDownloadInvoice(invoice.invoice_id)}
+                          className="text-black hover:underline text-sm"
                         >
                           Download PDF
                         </button>

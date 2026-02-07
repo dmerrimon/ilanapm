@@ -8,10 +8,11 @@ Provides endpoints for:
 """
 
 from fastapi import APIRouter, HTTPException, Query, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from typing import Optional
 import logging
 from urllib.parse import quote
+from io import BytesIO
 
 from services.freshbooks_service import freshbooks_service
 
@@ -337,31 +338,33 @@ async def get_invoice(
 
 
 @billing_router.get("/invoices/{invoice_id}/pdf")
-async def get_invoice_pdf_url(
+async def download_invoice_pdf(
     invoice_id: str,
     org_id: str = Query(..., description="Organization ID")
 ):
     """
-    Get PDF URL for an invoice.
+    Download invoice PDF directly from FreshBooks and stream it to the customer.
 
-    Note: FreshBooks doesn't provide a direct API endpoint for PDF download.
-    This returns a URL that users can access when logged into FreshBooks.
+    This endpoint downloads the PDF using the stored access token and serves it
+    directly to the customer without requiring them to have FreshBooks access.
 
     Args:
         invoice_id: Invoice ID
         org_id: Organization ID
 
     Returns:
-        PDF URL
+        PDF file as streaming response
     """
-    token_data = freshbooks_service.get_token(org_id)
+    # Ensure valid token
+    access_token = await freshbooks_service.ensure_valid_token(org_id)
 
-    if not token_data:
+    if not access_token:
         raise HTTPException(
             status_code=401,
             detail="FreshBooks not connected. Please connect your FreshBooks account first."
         )
 
+    token_data = freshbooks_service.get_token(org_id)
     account_id = token_data.get("account_id")
 
     if not account_id:
@@ -370,13 +373,26 @@ async def get_invoice_pdf_url(
             detail="Account ID not found. Please reconnect your FreshBooks account."
         )
 
-    pdf_url = freshbooks_service.get_invoice_pdf_url(
-        account_id=account_id,
-        invoice_id=invoice_id
-    )
+    try:
+        # Download PDF from FreshBooks
+        pdf_content = await freshbooks_service.download_invoice_pdf(
+            access_token=access_token,
+            account_id=account_id,
+            invoice_id=invoice_id
+        )
 
-    return {
-        "pdf_url": pdf_url,
-        "invoice_id": invoice_id,
-        "account_id": account_id
-    }
+        # Stream PDF to customer
+        return StreamingResponse(
+            BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename=invoice-{invoice_id}.pdf"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to download invoice PDF {invoice_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to download invoice PDF: {str(e)}"
+        )
