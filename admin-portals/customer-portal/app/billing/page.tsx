@@ -113,9 +113,29 @@ export default function BillingPage() {
     }
   };
 
-  // Check FreshBooks connection status on mount
+  // Check FreshBooks connection status on mount and after OAuth callback
   useEffect(() => {
+    // Check for OAuth callback success parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const freshbooksConnectedParam = urlParams.get('freshbooks_connected');
+    const errorParam = urlParams.get('error');
+
+    // Check connection status
     checkFreshBooksConnection();
+
+    // Show success/error messages
+    if (freshbooksConnectedParam === 'true') {
+      // Clear the query parameter from URL
+      window.history.replaceState({}, '', '/billing');
+    }
+
+    if (errorParam) {
+      const message = urlParams.get('message') || 'Failed to connect to FreshBooks';
+      console.error('FreshBooks connection error:', errorParam, message);
+      alert(`FreshBooks connection failed: ${message}`);
+      // Clear the query parameters from URL
+      window.history.replaceState({}, '', '/billing');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

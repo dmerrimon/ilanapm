@@ -166,8 +166,8 @@ async def disconnect_freshbooks(org_id: str = Query(..., description="Organizati
             detail="No FreshBooks connection found for this organization"
         )
 
-    # Remove token from storage
-    freshbooks_service._tokens.pop(org_id, None)
+    # Remove token from database
+    freshbooks_service.delete_token(org_id)
 
     logger.info(f"Disconnected FreshBooks for organization: {org_id}")
 

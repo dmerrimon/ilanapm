@@ -13,6 +13,9 @@ import httpx
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta
 import logging
+import json
+
+from database.connection import get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +35,6 @@ class FreshBooksService:
             "FRESHBOOKS_REDIRECT_URI",
             "https://ilanapm.onrender.com/api/v1/auth/freshbooks/callback"
         )
-
-        # In-memory token storage (in production, use database or Redis)
-        self._tokens: Dict[str, Dict[str, Any]] = {}
 
         if not self.client_id or not self.client_secret:
             logger.warning(
@@ -140,18 +140,43 @@ class FreshBooksService:
 
     def store_token(self, org_id: str, token_data: Dict[str, Any]) -> None:
         """
-        Store access token for an organization.
+        Store access token for an organization in database.
 
         Args:
             org_id: Organization ID to associate token with
             token_data: Token data from OAuth flow
         """
-        self._tokens[org_id] = token_data
-        logger.info(f"Stored access token for organization: {org_id}")
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+
+                # Insert or update token
+                cursor.execute("""
+                    INSERT INTO freshbooks_tokens
+                    (org_id, access_token, refresh_token, account_id, expires_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(org_id) DO UPDATE SET
+                        access_token = excluded.access_token,
+                        refresh_token = excluded.refresh_token,
+                        account_id = excluded.account_id,
+                        expires_at = excluded.expires_at,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (
+                    org_id,
+                    token_data.get("access_token"),
+                    token_data.get("refresh_token"),
+                    token_data.get("account_id"),
+                    token_data.get("expires_at")
+                ))
+
+                logger.info(f"Stored access token in database for organization: {org_id}")
+        except Exception as e:
+            logger.error(f"Failed to store token in database: {e}")
+            raise
 
     def get_token(self, org_id: str) -> Optional[Dict[str, Any]]:
         """
-        Retrieve stored access token for an organization.
+        Retrieve stored access token for an organization from database.
 
         Args:
             org_id: Organization ID
@@ -159,7 +184,49 @@ class FreshBooksService:
         Returns:
             Token data if found, None otherwise
         """
-        return self._tokens.get(org_id)
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT access_token, refresh_token, account_id, expires_at
+                    FROM freshbooks_tokens
+                    WHERE org_id = ?
+                """, (org_id,))
+
+                row = cursor.fetchone()
+
+                if row:
+                    return {
+                        "access_token": row[0],
+                        "refresh_token": row[1],
+                        "account_id": row[2],
+                        "expires_at": row[3]
+                    }
+
+                return None
+        except Exception as e:
+            logger.error(f"Failed to retrieve token from database: {e}")
+            return None
+
+    def delete_token(self, org_id: str) -> None:
+        """
+        Delete stored access token for an organization from database.
+
+        Args:
+            org_id: Organization ID
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM freshbooks_tokens
+                    WHERE org_id = ?
+                """, (org_id,))
+
+                logger.info(f"Deleted access token from database for organization: {org_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete token from database: {e}")
+            raise
 
     async def get_identity(self, access_token: str) -> Dict[str, Any]:
         """
@@ -356,6 +423,8 @@ class FreshBooksService:
             logger.info(f"Token expired for organization: {org_id}, refreshing...")
             try:
                 new_token_data = await self.refresh_access_token(token_data["refresh_token"])
+                # Preserve account_id from old token
+                new_token_data["account_id"] = token_data.get("account_id")
                 self.store_token(org_id, new_token_data)
                 return new_token_data["access_token"]
             except httpx.HTTPError as e:
