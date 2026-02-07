@@ -369,10 +369,7 @@ async def get_invoice(
             "status": invoice.get("v3_status", "").lower(),
             "period_start": invoice.get("date", ""),
             "period_end": invoice.get("due_date", ""),
-            "pdf_url": freshbooks_service.get_invoice_pdf_url(
-                account_id=account_id,
-                invoice_id=invoice_id
-            ),
+            "pdf_url": "",  # PDF is downloaded via backend endpoint
             "line_items": invoice.get("lines", [])
         }
 
