@@ -180,23 +180,23 @@ async def disconnect_freshbooks(org_id: str = Query(..., description="Organizati
 
 @billing_router.get("/invoices")
 async def get_invoices(
-    customer_email: Optional[str] = Query(None, description="Customer email to filter invoices"),
+    org_id: str = Query(..., description="Portal organization ID"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(15, ge=1, le=100, description="Invoices per page")
 ):
     """
-    Get list of invoices from FreshBooks for a customer.
+    Get list of invoices from FreshBooks for an organization.
 
     Uses the founder's FreshBooks connection and filters invoices
-    by customer email address.
+    by FreshBooks customer ID (mapped from org_id).
 
     Args:
-        customer_email: Customer email address to filter invoices
+        org_id: Portal organization ID
         page: Page number for pagination
         per_page: Number of invoices per page
 
     Returns:
-        List of invoices for this customer with pagination info
+        List of invoices for this organization with pagination info
     """
     # Use founder's FreshBooks token (stored with org_id='founder-org')
     access_token = await freshbooks_service.ensure_valid_token('founder-org')
@@ -216,8 +216,27 @@ async def get_invoices(
             detail="FreshBooks account ID not found. Please contact support."
         )
 
+    # Get FreshBooks customer ID mapping for this organization
+    customer_mapping = freshbooks_service.get_customer_mapping(org_id)
+
+    if not customer_mapping:
+        # No mapping found - return empty list
+        logger.warning(f"No FreshBooks customer mapping found for org: {org_id}")
+        return {
+            "invoices": [],
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": 0,
+                "pages": 0
+            },
+            "message": "No FreshBooks customer mapping found. Please contact support to configure billing."
+        }
+
+    freshbooks_customer_id = customer_mapping["freshbooks_customer_id"]
+
     try:
-        # Fetch ALL invoices from FreshBooks (we'll filter by customer)
+        # Fetch ALL invoices from FreshBooks (we'll filter by customer_id)
         # Note: For production with many invoices, implement FreshBooks API filtering
         invoices_response = await freshbooks_service.get_invoices(
             access_token=access_token,
@@ -230,21 +249,16 @@ async def get_invoices(
         invoices_data = invoices_response.get("response", {}).get("result", {})
         all_invoices = invoices_data.get("invoices", [])
 
-        # Filter invoices by customer email if provided
-        if customer_email:
-            filtered_invoices = []
-            for invoice in all_invoices:
-                # Check if invoice belongs to this customer
-                # FreshBooks stores customer email in different fields
-                customer_data = invoice.get("customer", {})
-                invoice_email = customer_data.get("email", "").lower()
+        # Filter invoices by FreshBooks customer ID
+        filtered_invoices = []
+        for invoice in all_invoices:
+            # FreshBooks stores customer ID in customerid field
+            invoice_customer_id = str(invoice.get("customerid", ""))
 
-                if invoice_email == customer_email.lower():
-                    filtered_invoices.append(invoice)
+            if invoice_customer_id == freshbooks_customer_id:
+                filtered_invoices.append(invoice)
 
-            invoices = filtered_invoices
-        else:
-            invoices = all_invoices
+        invoices = filtered_invoices
 
         # Transform invoices to match frontend interface
         transformed_invoices = []
@@ -281,16 +295,17 @@ async def get_invoices(
 @billing_router.get("/invoices/{invoice_id}")
 async def get_invoice(
     invoice_id: str,
-    customer_email: Optional[str] = Query(None, description="Customer email (for validation)")
+    org_id: str = Query(..., description="Portal organization ID")
 ):
     """
     Get a single invoice by ID from FreshBooks.
 
-    Uses the founder's FreshBooks connection.
+    Uses the founder's FreshBooks connection and validates
+    the invoice belongs to the organization.
 
     Args:
         invoice_id: Invoice ID
-        customer_email: Customer email for validation (optional)
+        org_id: Portal organization ID for validation
 
     Returns:
         Invoice details
@@ -357,7 +372,7 @@ async def get_invoice(
 @billing_router.get("/invoices/{invoice_id}/pdf")
 async def download_invoice_pdf(
     invoice_id: str,
-    customer_email: Optional[str] = Query(None, description="Customer email (for validation)")
+    org_id: str = Query(..., description="Portal organization ID")
 ):
     """
     Download invoice PDF from FreshBooks and stream it to the customer.
@@ -367,7 +382,7 @@ async def download_invoice_pdf(
 
     Args:
         invoice_id: Invoice ID
-        customer_email: Customer email for validation (optional)
+        org_id: Portal organization ID for validation
 
     Returns:
         PDF file as streaming response
@@ -412,4 +427,147 @@ async def download_invoice_pdf(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to download invoice PDF: {str(e)}"
+        )
+
+
+# ============================================================================
+# Customer Mapping Endpoints (Founder Portal Only)
+# ============================================================================
+
+@router.get("/customers")
+async def get_freshbooks_customers():
+    """
+    Get list of customers/clients from FreshBooks.
+
+    Used by founder portal to populate customer mapping dropdown.
+
+    Returns:
+        List of FreshBooks customers
+    """
+    # Use founder's FreshBooks token
+    access_token = await freshbooks_service.ensure_valid_token('founder-org')
+
+    if not access_token:
+        raise HTTPException(
+            status_code=503,
+            detail="FreshBooks integration not configured. Please connect FreshBooks first."
+        )
+
+    token_data = freshbooks_service.get_token('founder-org')
+    account_id = token_data.get("account_id")
+
+    if not account_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Account ID not found. Please reconnect your FreshBooks account."
+        )
+
+    try:
+        # Fetch customers from FreshBooks
+        customers_response = await freshbooks_service.get_customers(
+            access_token=access_token,
+            account_id=account_id
+        )
+
+        # Extract customer list
+        customers_data = customers_response.get("response", {}).get("result", {})
+        clients = customers_data.get("clients", [])
+
+        # Transform for frontend
+        transformed_customers = []
+        for client in clients:
+            transformed_customers.append({
+                "customer_id": str(client.get("id", "")),
+                "organization": client.get("organization", ""),
+                "email": client.get("email", ""),
+                "fname": client.get("fname", ""),
+                "lname": client.get("lname", ""),
+            })
+
+        return {"customers": transformed_customers}
+
+    except Exception as e:
+        logger.error(f"Failed to fetch FreshBooks customers: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch customers from FreshBooks: {str(e)}"
+        )
+
+
+@router.get("/customer-mappings")
+async def get_customer_mappings():
+    """
+    Get all organization to FreshBooks customer mappings.
+
+    Used by founder portal to display current mappings.
+
+    Returns:
+        List of customer mappings
+    """
+    mappings = freshbooks_service.get_all_customer_mappings()
+    return {"mappings": mappings}
+
+
+@router.post("/customer-mappings")
+async def set_customer_mapping(
+    org_id: str = Query(..., description="Portal organization ID"),
+    freshbooks_customer_id: str = Query(..., description="FreshBooks customer ID"),
+    freshbooks_customer_name: Optional[str] = Query(None, description="Customer name for reference")
+):
+    """
+    Set or update organization to FreshBooks customer mapping.
+
+    Args:
+        org_id: Portal organization ID
+        freshbooks_customer_id: FreshBooks customer/client ID
+        freshbooks_customer_name: Customer name for display (optional)
+
+    Returns:
+        Success message
+    """
+    try:
+        freshbooks_service.set_customer_mapping(
+            org_id=org_id,
+            freshbooks_customer_id=freshbooks_customer_id,
+            freshbooks_customer_name=freshbooks_customer_name
+        )
+
+        logger.info(f"Set customer mapping: {org_id} → {freshbooks_customer_id}")
+
+        return {
+            "success": True,
+            "message": f"Mapping created: {org_id} → {freshbooks_customer_id}"
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to set customer mapping: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to set customer mapping: {str(e)}"
+        )
+
+
+@router.delete("/customer-mappings/{org_id}")
+async def delete_customer_mapping(org_id: str):
+    """
+    Delete organization to FreshBooks customer mapping.
+
+    Args:
+        org_id: Portal organization ID
+
+    Returns:
+        Success message
+    """
+    try:
+        freshbooks_service.delete_customer_mapping(org_id)
+
+        logger.info(f"Deleted customer mapping for: {org_id}")
+
+        return {"success": True, "message": f"Mapping deleted for {org_id}"}
+
+    except Exception as e:
+        logger.error(f"Failed to delete customer mapping: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete customer mapping: {str(e)}"
         )

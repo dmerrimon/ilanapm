@@ -4,12 +4,34 @@ import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { apiClient } from "@/lib/api-client";
 
+interface CustomerMapping {
+  org_id: string;
+  freshbooks_customer_id: string;
+  freshbooks_customer_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface FreshBooksCustomer {
+  customer_id: string;
+  organization: string;
+  email: string;
+  fname: string;
+  lname: string;
+}
+
 export default function SettingsPage() {
   const [freshbooksConnected, setFreshbooksConnected] = useState(false);
   const [freshbooksAccountId, setFreshbooksAccountId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Customer mapping state
+  const [customerMappings, setCustomerMappings] = useState<CustomerMapping[]>([]);
+  const [freshbooksCustomers, setFreshbooksCustomers] = useState<FreshBooksCustomer[]>([]);
+  const [showMappingModal, setShowMappingModal] = useState(false);
+  const [newMapping, setNewMapping] = useState({ org_id: '', freshbooks_customer_id: '' });
 
   const checkFreshBooksConnection = async () => {
     setLoading(true);
@@ -46,6 +68,63 @@ export default function SettingsPage() {
     }
   };
 
+  const fetchCustomerMappings = async () => {
+    try {
+      const response = await apiClient.get('/auth/freshbooks/customer-mappings');
+      setCustomerMappings(response.mappings || []);
+    } catch (error) {
+      console.error('Failed to fetch customer mappings:', error);
+    }
+  };
+
+  const fetchFreshBooksCustomers = async () => {
+    try {
+      const response = await apiClient.get('/auth/freshbooks/customers');
+      setFreshbooksCustomers(response.customers || []);
+    } catch (error) {
+      console.error('Failed to fetch FreshBooks customers:', error);
+    }
+  };
+
+  const createMapping = async () => {
+    if (!newMapping.org_id || !newMapping.freshbooks_customer_id) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    try {
+      const customer = freshbooksCustomers.find(c => c.customer_id === newMapping.freshbooks_customer_id);
+      const customerName = customer?.organization || `${customer?.fname} ${customer?.lname}`.trim();
+
+      await apiClient.post(
+        `/auth/freshbooks/customer-mappings?org_id=${newMapping.org_id}&freshbooks_customer_id=${newMapping.freshbooks_customer_id}&freshbooks_customer_name=${encodeURIComponent(customerName || '')}`
+      );
+
+      setSuccessMessage('Customer mapping created successfully!');
+      setShowMappingModal(false);
+      setNewMapping({ org_id: '', freshbooks_customer_id: '' });
+      fetchCustomerMappings();
+    } catch (error) {
+      console.error('Failed to create mapping:', error);
+      alert('Failed to create mapping. Please try again.');
+    }
+  };
+
+  const deleteMapping = async (orgId: string) => {
+    if (!confirm(`Are you sure you want to delete the mapping for ${orgId}?`)) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`/auth/freshbooks/customer-mappings/${orgId}`);
+      setSuccessMessage('Mapping deleted successfully');
+      fetchCustomerMappings();
+    } catch (error) {
+      console.error('Failed to delete mapping:', error);
+      alert('Failed to delete mapping. Please try again.');
+    }
+  };
+
   useEffect(() => {
     // Check for OAuth callback success parameter
     const urlParams = new URLSearchParams(window.location.search);
@@ -71,6 +150,15 @@ export default function SettingsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch customer mappings and FreshBooks customers when connected
+  useEffect(() => {
+    if (freshbooksConnected) {
+      fetchCustomerMappings();
+      fetchFreshBooksCustomers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshbooksConnected]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -185,6 +273,122 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
+
+        {/* Customer Mappings (only show if FreshBooks is connected) */}
+        {freshbooksConnected && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-8">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl text-black">Customer Mappings</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Link portal organizations to FreshBooks customers
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMappingModal(true)}
+                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+              >
+                + Add Mapping
+              </button>
+            </div>
+            <div className="p-6">
+              {customerMappings.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="mb-4">No customer mappings yet</p>
+                  <p className="text-sm">
+                    Create mappings to link your portal organizations to FreshBooks customers.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {customerMappings.map((mapping) => (
+                    <div
+                      key={mapping.org_id}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="text-black font-medium">{mapping.org_id}</div>
+                        <div className="text-sm text-gray-600">
+                          → FreshBooks: {mapping.freshbooks_customer_name || mapping.freshbooks_customer_id}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteMapping(mapping.org_id)}
+                        className="px-3 py-1 text-sm border border-red-300 text-red-600 rounded hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Add Mapping Modal */}
+        {showMappingModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h3 className="text-xl mb-4 text-black">Add Customer Mapping</h3>
+              <p className="mb-6 text-gray-600 text-sm">
+                Link a portal organization to a FreshBooks customer so they can see their invoices.
+              </p>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-black mb-2">
+                  Portal Organization ID
+                </label>
+                <input
+                  type="text"
+                  value={newMapping.org_id}
+                  onChange={(e) => setNewMapping({ ...newMapping, org_id: e.target.value })}
+                  placeholder="acme-corp"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black text-black"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  The org_id from your portal database
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-black mb-2">
+                  FreshBooks Customer
+                </label>
+                <select
+                  value={newMapping.freshbooks_customer_id}
+                  onChange={(e) => setNewMapping({ ...newMapping, freshbooks_customer_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black text-black"
+                >
+                  <option value="">Select a customer...</option>
+                  {freshbooksCustomers.map((customer) => (
+                    <option key={customer.customer_id} value={customer.customer_id}>
+                      {customer.organization || `${customer.fname} ${customer.lname}`} ({customer.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowMappingModal(false);
+                    setNewMapping({ org_id: '', freshbooks_customer_id: '' });
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createMapping}
+                  className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                >
+                  Create Mapping
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Future Integrations Placeholder */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-8">

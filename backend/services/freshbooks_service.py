@@ -433,6 +433,156 @@ class FreshBooksService:
 
         return token_data["access_token"]
 
+    async def get_customers(
+        self,
+        access_token: str,
+        account_id: str
+    ) -> Dict[str, Any]:
+        """
+        Fetch customers/clients from FreshBooks.
+
+        Args:
+            access_token: Valid FreshBooks access token
+            account_id: Account ID from identity endpoint
+
+        Returns:
+            Customers response with list of clients
+
+        Raises:
+            httpx.HTTPError: If API call fails
+        """
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.API_BASE_URL}/accounting/account/{account_id}/users/clients",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            response.raise_for_status()
+            customers_data = response.json()
+
+            logger.info(f"Successfully fetched customers for account: {account_id}")
+            return customers_data
+
+    def get_customer_mapping(self, org_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get FreshBooks customer mapping for an organization.
+
+        Args:
+            org_id: Portal organization ID
+
+        Returns:
+            Mapping data if found, None otherwise
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT org_id, freshbooks_customer_id, freshbooks_customer_name, created_at, updated_at
+                    FROM freshbooks_customer_mapping
+                    WHERE org_id = ?
+                """, (org_id,))
+
+                row = cursor.fetchone()
+
+                if row:
+                    return {
+                        "org_id": row[0],
+                        "freshbooks_customer_id": row[1],
+                        "freshbooks_customer_name": row[2],
+                        "created_at": row[3],
+                        "updated_at": row[4]
+                    }
+
+                return None
+        except Exception as e:
+            logger.error(f"Failed to retrieve customer mapping: {e}")
+            return None
+
+    def get_all_customer_mappings(self) -> List[Dict[str, Any]]:
+        """
+        Get all FreshBooks customer mappings.
+
+        Returns:
+            List of all mappings
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT org_id, freshbooks_customer_id, freshbooks_customer_name, created_at, updated_at
+                    FROM freshbooks_customer_mapping
+                    ORDER BY created_at DESC
+                """)
+
+                rows = cursor.fetchall()
+                mappings = []
+
+                for row in rows:
+                    mappings.append({
+                        "org_id": row[0],
+                        "freshbooks_customer_id": row[1],
+                        "freshbooks_customer_name": row[2],
+                        "created_at": row[3],
+                        "updated_at": row[4]
+                    })
+
+                return mappings
+        except Exception as e:
+            logger.error(f"Failed to retrieve customer mappings: {e}")
+            return []
+
+    def set_customer_mapping(
+        self,
+        org_id: str,
+        freshbooks_customer_id: str,
+        freshbooks_customer_name: Optional[str] = None
+    ) -> None:
+        """
+        Set or update FreshBooks customer mapping for an organization.
+
+        Args:
+            org_id: Portal organization ID
+            freshbooks_customer_id: FreshBooks customer/client ID
+            freshbooks_customer_name: Customer name for reference (optional)
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+
+                cursor.execute("""
+                    INSERT INTO freshbooks_customer_mapping
+                    (org_id, freshbooks_customer_id, freshbooks_customer_name, updated_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(org_id) DO UPDATE SET
+                        freshbooks_customer_id = excluded.freshbooks_customer_id,
+                        freshbooks_customer_name = excluded.freshbooks_customer_name,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (org_id, freshbooks_customer_id, freshbooks_customer_name))
+
+                logger.info(f"Set customer mapping: {org_id} → {freshbooks_customer_id}")
+        except Exception as e:
+            logger.error(f"Failed to set customer mapping: {e}")
+            raise
+
+    def delete_customer_mapping(self, org_id: str) -> None:
+        """
+        Delete FreshBooks customer mapping for an organization.
+
+        Args:
+            org_id: Portal organization ID
+        """
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM freshbooks_customer_mapping
+                    WHERE org_id = ?
+                """, (org_id,))
+
+                logger.info(f"Deleted customer mapping for: {org_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete customer mapping: {e}")
+            raise
+
 
 # Global service instance
 freshbooks_service = FreshBooksService()

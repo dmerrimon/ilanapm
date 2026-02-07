@@ -50,8 +50,9 @@ export default function BillingPage() {
     setLoadingInvoices(true);
     setInvoicesError(null);
     try {
-      // TODO: Replace placeholder with actual user email from auth context
-      const response = await apiClient.get('/portal/customer/billing/invoices?customer_email=customer@example.com&per_page=15');
+      // TODO: Replace placeholder with actual org_id from auth context
+      const orgId = 'acme-corp'; // Placeholder - get from user session
+      const response = await apiClient.get(`/portal/customer/billing/invoices?org_id=${orgId}&per_page=15`);
       setInvoices(response.invoices || []);
     } catch (error: any) {
       console.error('Failed to fetch invoices:', error);
@@ -64,8 +65,9 @@ export default function BillingPage() {
   const handleDownloadInvoice = async (invoiceId: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-      // TODO: Replace placeholder with actual user email from auth context
-      const url = `${apiUrl}/portal/customer/billing/invoices/${invoiceId}/pdf?customer_email=customer@example.com`;
+      // TODO: Replace placeholder with actual org_id from auth context
+      const orgId = 'acme-corp'; // Placeholder - get from user session
+      const url = `${apiUrl}/portal/customer/billing/invoices/${invoiceId}/pdf?org_id=${orgId}`;
 
       // Download PDF directly from backend
       const response = await fetch(url);
