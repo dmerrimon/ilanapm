@@ -19,6 +19,7 @@ export default function Header() {
     { href: "/customers", label: "Customers" },
     { href: "/licenses", label: "Licenses" },
     { href: "/analytics", label: "Analytics" },
+    { href: "/settings", label: "Settings" },
   ];
 
   return (

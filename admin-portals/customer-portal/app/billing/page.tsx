@@ -26,13 +26,8 @@ interface PaymentMethod {
 }
 
 export default function BillingPage() {
-  // FreshBooks state
-  const [freshbooksConnected, setFreshbooksConnected] = useState(false);
-  const [freshbooksAccountId, setFreshbooksAccountId] = useState<string | null>(null);
-  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
   const [invoicesError, setInvoicesError] = useState<string | null>(null);
-  const [oauthError, setOauthError] = useState<string | null>(null);
-
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   const [paymentMethods] = useState<PaymentMethod[]>([
@@ -51,23 +46,12 @@ export default function BillingPage() {
   const [seatsToAdd, setSeatsToAdd] = useState(10);
   const [billingCycle] = useState("monthly");
 
-  // Function definitions (must come before useEffect hooks that use them)
-  const checkFreshBooksConnection = async () => {
-    try {
-      const response = await apiClient.get('/auth/freshbooks/status?org_id=placeholder-org-id');
-      setFreshbooksConnected(response.connected);
-      setFreshbooksAccountId(response.account_id);
-    } catch (error) {
-      console.error('Failed to check FreshBooks status:', error);
-      setFreshbooksConnected(false);
-    }
-  };
-
   const fetchInvoices = useCallback(async () => {
     setLoadingInvoices(true);
     setInvoicesError(null);
     try {
-      const response = await apiClient.get('/portal/customer/billing/invoices?org_id=placeholder-org-id&per_page=15');
+      // TODO: Replace placeholder with actual user email from auth context
+      const response = await apiClient.get('/portal/customer/billing/invoices?customer_email=customer@example.com&per_page=15');
       setInvoices(response.invoices || []);
     } catch (error: any) {
       console.error('Failed to fetch invoices:', error);
@@ -77,17 +61,11 @@ export default function BillingPage() {
     }
   }, []);
 
-  const connectToFreshBooks = () => {
-    // Redirect to OAuth authorization
-    const orgId = 'placeholder-org-id'; // TODO: Get from user context
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    window.location.href = `${apiUrl}/auth/freshbooks/authorize?org_id=${orgId}`;
-  };
-
   const handleDownloadInvoice = async (invoiceId: string) => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-      const url = `${apiUrl}/portal/customer/billing/invoices/${invoiceId}/pdf?org_id=placeholder-org-id`;
+      // TODO: Replace placeholder with actual user email from auth context
+      const url = `${apiUrl}/portal/customer/billing/invoices/${invoiceId}/pdf?customer_email=customer@example.com`;
 
       // Download PDF directly from backend
       const response = await fetch(url);
@@ -114,38 +92,10 @@ export default function BillingPage() {
     }
   };
 
-  // Check FreshBooks connection status on mount and after OAuth callback
+  // Fetch invoices on mount
   useEffect(() => {
-    // Check for OAuth callback success parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const freshbooksConnectedParam = urlParams.get('freshbooks_connected');
-    const errorParam = urlParams.get('error');
-
-    // Check connection status
-    checkFreshBooksConnection();
-
-    // Show success/error messages
-    if (freshbooksConnectedParam === 'true') {
-      // Clear the query parameter from URL
-      window.history.replaceState({}, '', '/billing');
-    }
-
-    if (errorParam) {
-      const message = urlParams.get('message') || 'Failed to connect to FreshBooks';
-      console.error('FreshBooks connection error:', errorParam, message);
-      setOauthError(`FreshBooks connection failed: ${message}`);
-      // Clear the query parameters from URL
-      window.history.replaceState({}, '', '/billing');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Fetch invoices when FreshBooks is connected
-  useEffect(() => {
-    if (freshbooksConnected) {
-      fetchInvoices();
-    }
-  }, [freshbooksConnected, fetchInvoices]);
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   const currentPlan = {
     seats_purchased: 50,
@@ -309,55 +259,10 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* OAuth Error Banner */}
-        {oauthError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-red-900 mb-2">Connection Error</h3>
-                <p className="text-red-800">{oauthError}</p>
-              </div>
-              <button
-                onClick={() => setOauthError(null)}
-                className="text-red-600 hover:text-red-800"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* FreshBooks Connection Banner */}
-        {!freshbooksConnected && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-blue-900 mb-2">Connect to FreshBooks</h3>
-                <p className="text-blue-800 mb-4">
-                  Connect your FreshBooks account to view and download your invoices directly from here.
-                </p>
-                <button
-                  onClick={connectToFreshBooks}
-                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Connect FreshBooks
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Invoices */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl text-black">Invoice History</h2>
-              {freshbooksConnected && freshbooksAccountId && (
-                <span className="text-sm text-green-600">
-                  ✓ Connected to FreshBooks
-                </span>
-              )}
-            </div>
+            <h2 className="text-xl text-black">Invoice History</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -403,16 +308,10 @@ export default function BillingPage() {
                       </button>
                     </td>
                   </tr>
-                ) : !freshbooksConnected ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      Connect to FreshBooks to view your invoices
-                    </td>
-                  </tr>
                 ) : invoices.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      No invoices found
+                      No invoices yet
                     </td>
                   </tr>
                 ) : (

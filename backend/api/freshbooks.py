@@ -69,11 +69,11 @@ async def oauth_callback(
     # Check for OAuth errors
     if error:
         logger.error(f"OAuth error: {error} - {error_description}")
-        # Redirect to billing page with error (URL encode parameters)
+        # Redirect to founder portal settings page with error (URL encode parameters)
         encoded_error = quote(str(error))
         encoded_description = quote(str(error_description or ''))
         return RedirectResponse(
-            url=f"https://app.seleen.io/billing?error={encoded_error}&message={encoded_description}",
+            url=f"https://admin.seleen.io/settings?error={encoded_error}&message={encoded_description}",
             status_code=302
         )
 
@@ -106,9 +106,9 @@ async def oauth_callback(
 
         logger.info(f"Successfully completed OAuth flow for organization: {org_id}")
 
-        # Redirect to billing page with success message
+        # Redirect to founder portal settings page with success message
         return RedirectResponse(
-            url="https://app.seleen.io/billing?freshbooks_connected=true",
+            url="https://admin.seleen.io/settings?freshbooks_connected=true",
             status_code=302
         )
 
@@ -116,7 +116,7 @@ async def oauth_callback(
         logger.error(f"Failed to complete OAuth flow: {e}")
         encoded_message = quote(str(e))
         return RedirectResponse(
-            url=f"https://app.seleen.io/billing?error=oauth_failed&message={encoded_message}",
+            url=f"https://admin.seleen.io/settings?error=oauth_failed&message={encoded_message}",
             status_code=302
         )
 
@@ -180,53 +180,71 @@ async def disconnect_freshbooks(org_id: str = Query(..., description="Organizati
 
 @billing_router.get("/invoices")
 async def get_invoices(
-    org_id: str = Query(..., description="Organization ID"),
+    customer_email: Optional[str] = Query(None, description="Customer email to filter invoices"),
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(15, ge=1, le=100, description="Invoices per page")
 ):
     """
-    Get list of invoices from FreshBooks for an organization.
+    Get list of invoices from FreshBooks for a customer.
+
+    Uses the founder's FreshBooks connection and filters invoices
+    by customer email address.
 
     Args:
-        org_id: Organization ID
+        customer_email: Customer email address to filter invoices
         page: Page number for pagination
         per_page: Number of invoices per page
 
     Returns:
-        List of invoices with pagination info
+        List of invoices for this customer with pagination info
     """
-    # Ensure valid token
-    access_token = await freshbooks_service.ensure_valid_token(org_id)
+    # Use founder's FreshBooks token (stored with org_id='founder-org')
+    access_token = await freshbooks_service.ensure_valid_token('founder-org')
 
     if not access_token:
         raise HTTPException(
-            status_code=401,
-            detail="FreshBooks not connected. Please connect your FreshBooks account first."
+            status_code=503,
+            detail="FreshBooks integration not configured. Please contact support."
         )
 
-    token_data = freshbooks_service.get_token(org_id)
+    token_data = freshbooks_service.get_token('founder-org')
     account_id = token_data.get("account_id")
 
     if not account_id:
         raise HTTPException(
             status_code=500,
-            detail="Account ID not found. Please reconnect your FreshBooks account."
+            detail="FreshBooks account ID not found. Please contact support."
         )
 
     try:
-        # Fetch invoices from FreshBooks
+        # Fetch ALL invoices from FreshBooks (we'll filter by customer)
+        # Note: For production with many invoices, implement FreshBooks API filtering
         invoices_response = await freshbooks_service.get_invoices(
             access_token=access_token,
             account_id=account_id,
             page=page,
-            per_page=per_page
+            per_page=100  # Fetch more to filter client-side (temporary solution)
         )
 
         # Extract invoice list and pagination info
         invoices_data = invoices_response.get("response", {}).get("result", {})
-        invoices = invoices_data.get("invoices", [])
-        total = invoices_data.get("total", 0)
-        pages = invoices_data.get("pages", 1)
+        all_invoices = invoices_data.get("invoices", [])
+
+        # Filter invoices by customer email if provided
+        if customer_email:
+            filtered_invoices = []
+            for invoice in all_invoices:
+                # Check if invoice belongs to this customer
+                # FreshBooks stores customer email in different fields
+                customer_data = invoice.get("customer", {})
+                invoice_email = customer_data.get("email", "").lower()
+
+                if invoice_email == customer_email.lower():
+                    filtered_invoices.append(invoice)
+
+            invoices = filtered_invoices
+        else:
+            invoices = all_invoices
 
         # Transform invoices to match frontend interface
         transformed_invoices = []
@@ -239,10 +257,7 @@ async def get_invoices(
                 "status": invoice.get("v3_status", "").lower(),
                 "period_start": invoice.get("date", ""),
                 "period_end": invoice.get("due_date", ""),
-                "pdf_url": freshbooks_service.get_invoice_pdf_url(
-                    account_id=account_id,
-                    invoice_id=str(invoice.get("id", ""))
-                )
+                "pdf_url": ""  # Not needed, PDF is downloaded via backend
             })
 
         return {
@@ -250,8 +265,8 @@ async def get_invoices(
             "pagination": {
                 "page": page,
                 "per_page": per_page,
-                "total": total,
-                "pages": pages
+                "total": len(transformed_invoices),
+                "pages": 1  # Simplified for now
             }
         }
 
@@ -266,28 +281,30 @@ async def get_invoices(
 @billing_router.get("/invoices/{invoice_id}")
 async def get_invoice(
     invoice_id: str,
-    org_id: str = Query(..., description="Organization ID")
+    customer_email: Optional[str] = Query(None, description="Customer email (for validation)")
 ):
     """
     Get a single invoice by ID from FreshBooks.
 
+    Uses the founder's FreshBooks connection.
+
     Args:
         invoice_id: Invoice ID
-        org_id: Organization ID
+        customer_email: Customer email for validation (optional)
 
     Returns:
         Invoice details
     """
-    # Ensure valid token
-    access_token = await freshbooks_service.ensure_valid_token(org_id)
+    # Use founder's FreshBooks token
+    access_token = await freshbooks_service.ensure_valid_token('founder-org')
 
     if not access_token:
         raise HTTPException(
-            status_code=401,
-            detail="FreshBooks not connected. Please connect your FreshBooks account first."
+            status_code=503,
+            detail="FreshBooks integration not configured. Please contact support."
         )
 
-    token_data = freshbooks_service.get_token(org_id)
+    token_data = freshbooks_service.get_token('founder-org')
     account_id = token_data.get("account_id")
 
     if not account_id:
@@ -340,31 +357,31 @@ async def get_invoice(
 @billing_router.get("/invoices/{invoice_id}/pdf")
 async def download_invoice_pdf(
     invoice_id: str,
-    org_id: str = Query(..., description="Organization ID")
+    customer_email: Optional[str] = Query(None, description="Customer email (for validation)")
 ):
     """
-    Download invoice PDF directly from FreshBooks and stream it to the customer.
+    Download invoice PDF from FreshBooks and stream it to the customer.
 
-    This endpoint downloads the PDF using the stored access token and serves it
-    directly to the customer without requiring them to have FreshBooks access.
+    Uses the founder's FreshBooks connection to download the PDF
+    and streams it directly to the customer.
 
     Args:
         invoice_id: Invoice ID
-        org_id: Organization ID
+        customer_email: Customer email for validation (optional)
 
     Returns:
         PDF file as streaming response
     """
-    # Ensure valid token
-    access_token = await freshbooks_service.ensure_valid_token(org_id)
+    # Use founder's FreshBooks token
+    access_token = await freshbooks_service.ensure_valid_token('founder-org')
 
     if not access_token:
         raise HTTPException(
-            status_code=401,
-            detail="FreshBooks not connected. Please connect your FreshBooks account first."
+            status_code=503,
+            detail="FreshBooks integration not configured. Please contact support."
         )
 
-    token_data = freshbooks_service.get_token(org_id)
+    token_data = freshbooks_service.get_token('founder-org')
     account_id = token_data.get("account_id")
 
     if not account_id:
