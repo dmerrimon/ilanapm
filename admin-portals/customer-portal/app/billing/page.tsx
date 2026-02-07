@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/Header";
+import { apiClient } from "@/lib/api-client";
 
 interface Invoice {
   invoice_id: string;
@@ -25,35 +26,13 @@ interface PaymentMethod {
 }
 
 export default function BillingPage() {
-  const [invoices] = useState<Invoice[]>([
-    {
-      invoice_id: "inv_001",
-      invoice_number: "INV-2026-001",
-      date: "2026-01-01",
-      amount: 414.00,
-      status: "paid",
-      period_start: "2026-01-01",
-      period_end: "2026-01-31"
-    },
-    {
-      invoice_id: "inv_002",
-      invoice_number: "INV-2025-012",
-      date: "2025-12-01",
-      amount: 414.00,
-      status: "paid",
-      period_start: "2025-12-01",
-      period_end: "2025-12-31"
-    },
-    {
-      invoice_id: "inv_003",
-      invoice_number: "INV-2025-011",
-      date: "2025-11-01",
-      amount: 414.00,
-      status: "paid",
-      period_start: "2025-11-01",
-      period_end: "2025-11-30"
-    }
-  ]);
+  // FreshBooks state
+  const [freshbooksConnected, setFreshbooksConnected] = useState(false);
+  const [freshbooksAccountId, setFreshbooksAccountId] = useState<string | null>(null);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoicesError, setInvoicesError] = useState<string | null>(null);
+
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   const [paymentMethods] = useState<PaymentMethod[]>([
     {
@@ -70,6 +49,61 @@ export default function BillingPage() {
   const [showAddSeatsModal, setShowAddSeatsModal] = useState(false);
   const [seatsToAdd, setSeatsToAdd] = useState(10);
   const [billingCycle] = useState("monthly");
+
+  // Function definitions (must come before useEffect hooks that use them)
+  const checkFreshBooksConnection = async () => {
+    try {
+      const response = await apiClient.get('/auth/freshbooks/status?org_id=placeholder-org-id');
+      setFreshbooksConnected(response.connected);
+      setFreshbooksAccountId(response.account_id);
+    } catch (error) {
+      console.error('Failed to check FreshBooks status:', error);
+      setFreshbooksConnected(false);
+    }
+  };
+
+  const fetchInvoices = useCallback(async () => {
+    setLoadingInvoices(true);
+    setInvoicesError(null);
+    try {
+      const response = await apiClient.get('/portal/customer/billing/invoices?org_id=placeholder-org-id&per_page=15');
+      setInvoices(response.invoices || []);
+    } catch (error: any) {
+      console.error('Failed to fetch invoices:', error);
+      setInvoicesError(error.message || 'Failed to load invoices');
+    } finally {
+      setLoadingInvoices(false);
+    }
+  }, []);
+
+  const connectToFreshBooks = () => {
+    // Redirect to OAuth authorization
+    const orgId = 'placeholder-org-id'; // TODO: Get from user context
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+    window.location.href = `${apiUrl}/auth/freshbooks/authorize?org_id=${orgId}`;
+  };
+
+  const handleDownloadInvoice = (pdfUrl?: string) => {
+    if (!pdfUrl) {
+      alert('PDF URL not available for this invoice');
+      return;
+    }
+    // Open PDF in new tab
+    window.open(pdfUrl, '_blank');
+  };
+
+  // Check FreshBooks connection status on mount
+  useEffect(() => {
+    checkFreshBooksConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch invoices when FreshBooks is connected
+  useEffect(() => {
+    if (freshbooksConnected) {
+      fetchInvoices();
+    }
+  }, [freshbooksConnected, fetchInvoices]);
 
   const currentPlan = {
     seats_purchased: 50,
@@ -233,10 +267,37 @@ export default function BillingPage() {
           </div>
         </div>
 
+        {/* FreshBooks Connection Banner */}
+        {!freshbooksConnected && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-blue-900 mb-2">Connect to FreshBooks</h3>
+                <p className="text-blue-800 mb-4">
+                  Connect your FreshBooks account to view and download your invoices directly from here.
+                </p>
+                <button
+                  onClick={connectToFreshBooks}
+                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                >
+                  Connect FreshBooks
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Invoices */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mt-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl text-black">Invoice History</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl text-black">Invoice History</h2>
+              {freshbooksConnected && freshbooksAccountId && (
+                <span className="text-sm text-green-600">
+                  ✓ Connected to FreshBooks
+                </span>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -263,32 +324,74 @@ export default function BillingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {invoices.map((invoice) => (
-                  <tr key={invoice.invoice_id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-black font-medium">{invoice.invoice_number}</div>
+                {loadingInvoices ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      Loading invoices...
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-black">
-                      {formatDate(invoice.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-black">
-                      {formatDate(invoice.period_start)} - {formatDate(invoice.period_end)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-black">
-                      {formatCurrency(invoice.amount)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                        {invoice.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button className="text-black hover:underline text-sm">
-                        Download PDF
+                  </tr>
+                ) : invoicesError ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="text-red-600 mb-2">Failed to load invoices</div>
+                      <div className="text-sm text-gray-500">{invoicesError}</div>
+                      <button
+                        onClick={fetchInvoices}
+                        className="mt-4 px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+                      >
+                        Retry
                       </button>
                     </td>
                   </tr>
-                ))}
+                ) : !freshbooksConnected ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      Connect to FreshBooks to view your invoices
+                    </td>
+                  </tr>
+                ) : invoices.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      No invoices found
+                    </td>
+                  </tr>
+                ) : (
+                  invoices.map((invoice) => (
+                    <tr key={invoice.invoice_id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-black font-medium">{invoice.invoice_number}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-black">
+                        {formatDate(invoice.date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-black">
+                        {formatDate(invoice.period_start)} - {formatDate(invoice.period_end)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-black">
+                        {formatCurrency(invoice.amount)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded ${
+                          invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                          invoice.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          invoice.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {invoice.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <button
+                          onClick={() => handleDownloadInvoice(invoice.pdf_url)}
+                          className="text-black hover:underline text-sm disabled:text-gray-400 disabled:no-underline"
+                          disabled={!invoice.pdf_url}
+                        >
+                          Download PDF
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

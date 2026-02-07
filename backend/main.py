@@ -12,7 +12,7 @@ import logging
 from jose import JWTError, jwt
 from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal, freshbooks
 from database import init_db, run_migrations
 
 # Configure logging
@@ -146,6 +146,8 @@ app.include_router(teams.router, prefix="/api/v1", tags=["teams"])
 app.include_router(feedback.router, prefix="/api/v1", tags=["feedback"])
 app.include_router(templates.router, prefix="/api/v1", tags=["templates"])
 app.include_router(telemetry.router, prefix="/api/v1", tags=["telemetry"])  # ML feedback loop
+app.include_router(freshbooks.router, prefix="/api/v1", tags=["freshbooks"])  # FreshBooks OAuth
+app.include_router(freshbooks.billing_router, prefix="/api/v1", tags=["billing"])  # FreshBooks Billing
 
 
 @app.on_event("startup")

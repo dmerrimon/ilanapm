@@ -66,6 +66,22 @@ async function apiRequest<T>(
 }
 
 /**
+ * Generic API client for making requests
+ */
+export const apiClient = {
+  get: <T = any>(endpoint: string) => apiRequest<T>(endpoint, { method: 'GET' }),
+  post: <T = any>(endpoint: string, data?: any) => apiRequest<T>(endpoint, {
+    method: 'POST',
+    body: data ? JSON.stringify(data) : undefined,
+  }),
+  put: <T = any>(endpoint: string, data?: any) => apiRequest<T>(endpoint, {
+    method: 'PUT',
+    body: data ? JSON.stringify(data) : undefined,
+  }),
+  delete: <T = any>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
+};
+
+/**
  * Token management helpers
  */
 export function setAccessToken(token: string) {
