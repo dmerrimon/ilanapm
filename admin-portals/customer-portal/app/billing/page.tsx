@@ -31,6 +31,7 @@ export default function BillingPage() {
   const [freshbooksAccountId, setFreshbooksAccountId] = useState<string | null>(null);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [invoicesError, setInvoicesError] = useState<string | null>(null);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
@@ -132,7 +133,7 @@ export default function BillingPage() {
     if (errorParam) {
       const message = urlParams.get('message') || 'Failed to connect to FreshBooks';
       console.error('FreshBooks connection error:', errorParam, message);
-      alert(`FreshBooks connection failed: ${message}`);
+      setOauthError(`FreshBooks connection failed: ${message}`);
       // Clear the query parameters from URL
       window.history.replaceState({}, '', '/billing');
     }
@@ -307,6 +308,24 @@ export default function BillingPage() {
             </div>
           </div>
         </div>
+
+        {/* OAuth Error Banner */}
+        {oauthError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-red-900 mb-2">Connection Error</h3>
+                <p className="text-red-800">{oauthError}</p>
+              </div>
+              <button
+                onClick={() => setOauthError(null)}
+                className="text-red-600 hover:text-red-800"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* FreshBooks Connection Banner */}
         {!freshbooksConnected && (
