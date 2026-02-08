@@ -5,6 +5,10 @@ This is the main application file that initializes the FastAPI app
 and registers all API routes.
 """
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
