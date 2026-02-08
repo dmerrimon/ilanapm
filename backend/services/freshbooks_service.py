@@ -196,12 +196,21 @@ class FreshBooksService:
                 row = cursor.fetchone()
 
                 if row:
-                    return {
-                        "access_token": row[0],
-                        "refresh_token": row[1],
-                        "account_id": row[2],
-                        "expires_at": row[3]
-                    }
+                    # Handle both dict (PostgreSQL) and tuple (SQLite) row types
+                    if isinstance(row, dict):
+                        return {
+                            "access_token": row["access_token"],
+                            "refresh_token": row["refresh_token"],
+                            "account_id": row["account_id"],
+                            "expires_at": row["expires_at"]
+                        }
+                    else:
+                        return {
+                            "access_token": row[0],
+                            "refresh_token": row[1],
+                            "account_id": row[2],
+                            "expires_at": row[3]
+                        }
 
                 return None
         except Exception as e:
@@ -484,13 +493,23 @@ class FreshBooksService:
                 row = cursor.fetchone()
 
                 if row:
-                    return {
-                        "org_id": row[0],
-                        "freshbooks_customer_id": row[1],
-                        "freshbooks_customer_name": row[2],
-                        "created_at": row[3],
-                        "updated_at": row[4]
-                    }
+                    # Handle both dict (PostgreSQL) and tuple (SQLite) row types
+                    if isinstance(row, dict):
+                        return {
+                            "org_id": row["org_id"],
+                            "freshbooks_customer_id": row["freshbooks_customer_id"],
+                            "freshbooks_customer_name": row["freshbooks_customer_name"],
+                            "created_at": row["created_at"],
+                            "updated_at": row["updated_at"]
+                        }
+                    else:
+                        return {
+                            "org_id": row[0],
+                            "freshbooks_customer_id": row[1],
+                            "freshbooks_customer_name": row[2],
+                            "created_at": row[3],
+                            "updated_at": row[4]
+                        }
 
                 return None
         except Exception as e:
@@ -517,13 +536,23 @@ class FreshBooksService:
                 mappings = []
 
                 for row in rows:
-                    mappings.append({
-                        "org_id": row[0],
-                        "freshbooks_customer_id": row[1],
-                        "freshbooks_customer_name": row[2],
-                        "created_at": row[3],
-                        "updated_at": row[4]
-                    })
+                    # Handle both dict (PostgreSQL) and tuple (SQLite) row types
+                    if isinstance(row, dict):
+                        mappings.append({
+                            "org_id": row["org_id"],
+                            "freshbooks_customer_id": row["freshbooks_customer_id"],
+                            "freshbooks_customer_name": row["freshbooks_customer_name"],
+                            "created_at": row["created_at"],
+                            "updated_at": row["updated_at"]
+                        })
+                    else:
+                        mappings.append({
+                            "org_id": row[0],
+                            "freshbooks_customer_id": row[1],
+                            "freshbooks_customer_name": row[2],
+                            "created_at": row[3],
+                            "updated_at": row[4]
+                        })
 
                 return mappings
         except Exception as e:
