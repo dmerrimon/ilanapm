@@ -1121,6 +1121,231 @@ async def get_system_analytics(user_data: dict = Depends(require_super_admin_rol
         }
 
 
+@router.get("/portal/founder/activations")
+async def list_all_activations(user_data: dict = Depends(require_super_admin_role)):
+    """
+    List all device activations across all organizations (system-wide)
+    Shows: user, org, device name, activation date, last activity, MS Project version
+    Allows super admins to see entire device landscape
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                a.activation_id,
+                a.user_id,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.org_id,
+                o.org_name,
+                a.device_id,
+                a.device_name,
+                a.is_active,
+                a.activated_at,
+                a.deactivated_at,
+                a.last_api_call,
+                a.api_call_count,
+                a.ms_project_version,
+                a.addin_version
+            FROM activations a
+            JOIN users u ON a.user_id = u.user_id
+            JOIN organizations o ON u.org_id = o.org_id
+            ORDER BY a.is_active DESC, a.last_api_call DESC
+        """)
+
+        activations = cursor.fetchall()
+
+        # Count active vs inactive
+        active_count = sum(1 for a in activations if a["is_active"])
+        inactive_count = len(activations) - active_count
+
+        # Count by organization
+        org_counts = {}
+        for a in activations:
+            org_id = a["org_id"]
+            if org_id not in org_counts:
+                org_counts[org_id] = {"org_name": a["org_name"], "active": 0, "inactive": 0}
+            if a["is_active"]:
+                org_counts[org_id]["active"] += 1
+            else:
+                org_counts[org_id]["inactive"] += 1
+
+        return {
+            "activations": [dict(activation) for activation in activations],
+            "total_count": len(activations),
+            "active_count": active_count,
+            "inactive_count": inactive_count,
+            "by_organization": [
+                {"org_id": org_id, **counts}
+                for org_id, counts in org_counts.items()
+            ]
+        }
+
+
+@router.get("/portal/founder/activations/stats")
+async def get_activation_stats(user_data: dict = Depends(require_super_admin_role)):
+    """
+    Get system-wide device activation statistics
+    Shows: total devices, by org, by MS Project version, activity trends
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Total active devices
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM activations
+            WHERE is_active = TRUE
+        """)
+        active_devices = cursor.fetchone()["count"]
+
+        # Total inactive devices
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM activations
+            WHERE is_active = FALSE
+        """)
+        inactive_devices = cursor.fetchone()["count"]
+
+        # Devices by MS Project version
+        cursor.execute("""
+            SELECT
+                ms_project_version,
+                COUNT(*) as count
+            FROM activations
+            WHERE is_active = TRUE
+            GROUP BY ms_project_version
+            ORDER BY count DESC
+        """)
+        by_version = cursor.fetchall()
+
+        # Devices by organization (top 10)
+        cursor.execute("""
+            SELECT
+                o.org_name,
+                o.org_id,
+                COUNT(CASE WHEN a.is_active = TRUE THEN 1 END) as active_devices
+            FROM organizations o
+            LEFT JOIN users u ON o.org_id = u.org_id
+            LEFT JOIN activations a ON u.user_id = a.user_id
+            GROUP BY o.org_id, o.org_name
+            HAVING active_devices > 0
+            ORDER BY active_devices DESC
+            LIMIT 10
+        """)
+        top_orgs = cursor.fetchall()
+
+        # Recent activations (last 7 days)
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM activations
+            WHERE activated_at >= datetime('now', '-7 days')
+        """)
+        recent_activations = cursor.fetchone()["count"]
+
+        # Recent deactivations (last 7 days)
+        cursor.execute("""
+            SELECT COUNT(*) as count
+            FROM activations
+            WHERE deactivated_at >= datetime('now', '-7 days')
+        """)
+        recent_deactivations = cursor.fetchone()["count"]
+
+        return {
+            "total_active_devices": active_devices,
+            "total_inactive_devices": inactive_devices,
+            "by_ms_project_version": [dict(v) for v in by_version],
+            "top_organizations": [dict(org) for org in top_orgs],
+            "recent_activations_7d": recent_activations,
+            "recent_deactivations_7d": recent_deactivations
+        }
+
+
+@router.delete("/portal/founder/activations/{activation_id}")
+async def founder_deactivate_device(activation_id: str, user_data: dict = Depends(require_super_admin_role)):
+    """
+    Deactivate a specific device activation (super admin support function)
+    Can deactivate any device across any organization for support purposes
+    """
+    admin_user_id = user_data["user_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Get activation details
+        cursor.execute("""
+            SELECT
+                a.activation_id,
+                a.user_id,
+                a.device_name,
+                a.is_active,
+                u.email,
+                u.org_id,
+                o.org_name
+            FROM activations a
+            JOIN users u ON a.user_id = u.user_id
+            JOIN organizations o ON u.org_id = o.org_id
+            WHERE a.activation_id = ?
+        """, (activation_id,))
+
+        activation = cursor.fetchone()
+
+        if not activation:
+            raise HTTPException(status_code=404, detail="Activation not found")
+
+        if not activation["is_active"]:
+            return {"message": "Device already deactivated"}
+
+        org_id = activation["org_id"]
+
+        # Deactivate the device
+        cursor.execute("""
+            UPDATE activations
+            SET is_active = FALSE, deactivated_at = CURRENT_TIMESTAMP
+            WHERE activation_id = ?
+        """, (activation_id,))
+
+        # Decrement seats_used for the organization
+        cursor.execute("""
+            UPDATE organizations
+            SET seats_used = seats_used - 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE org_id = ?
+        """, (org_id,))
+
+        # Log action
+        cursor.execute("""
+            INSERT INTO audit_logs (log_id, org_id, user_id, action, resource_type, resource_id, metadata, timestamp)
+            VALUES (?, ?, ?, 'device_deactivated_by_support', 'activation', ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            secrets.token_urlsafe(16),
+            org_id,
+            admin_user_id,
+            activation_id,
+            json.dumps({
+                "device_name": activation["device_name"],
+                "user_email": activation["email"],
+                "org_name": activation["org_name"],
+                "deactivated_by_support": admin_user_id,
+                "reason": "Support intervention"
+            })
+        ))
+
+        conn.commit()
+
+        logger.info(f"Device deactivated by super admin: activation_id={activation_id}, org={activation['org_name']}, admin={admin_user_id}")
+
+        return {
+            "message": "Device deactivated successfully",
+            "activation_id": activation_id,
+            "device_name": activation["device_name"],
+            "user_email": activation["email"],
+            "org_name": activation["org_name"]
+        }
+
+
 # ============================================================================
 # STRIPE INTEGRATION ENDPOINTS (for future use)
 # ============================================================================
