@@ -101,6 +101,17 @@ class LoginResponse(BaseModel):
     user: dict
 
 
+class ForgotPasswordRequest(BaseModel):
+    """Request to reset password"""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset password with token"""
+    token: str
+    new_password: str
+
+
 # ============================================================================
 # Authentication Helpers
 # ============================================================================
@@ -236,6 +247,125 @@ async def portal_login(request: LoginRequest):
         except Exception as e:
             logger.error(f"Login error: {e}")
             raise HTTPException(status_code=500, detail="Login failed")
+
+
+@router.post("/auth/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    """
+    Initiate password reset by sending reset link to user's email
+
+    Creates a reset token and logs the reset link (in production, would send email)
+    """
+    email = request.email
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Check if user exists
+        cursor.execute("SELECT user_id, email, first_name FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+
+        # Always return success to prevent email enumeration
+        # But only create token if user exists
+        if user:
+            # Generate secure random token
+            reset_token = secrets.token_urlsafe(32)
+
+            # Token expires in 1 hour
+            expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+
+            # Store token in database
+            cursor.execute("""
+                INSERT INTO password_reset_tokens (email, token, expires_at, used)
+                VALUES (?, ?, ?, FALSE)
+            """, (email, reset_token, expires_at))
+            conn.commit()
+
+            # In production, send email here
+            # For now, log the reset link
+            reset_link = f"https://app.seleen.io/reset-password?token={reset_token}"
+            logger.info(f"Password reset link for {email}: {reset_link}")
+
+            # TODO: Send email using SendGrid or similar
+            # send_password_reset_email(
+            #     to_email=email,
+            #     user_name=user.get('first_name') or 'User',
+            #     reset_link=reset_link
+            # )
+
+        return {"message": "If an account exists with that email, you will receive a password reset link shortly."}
+
+
+@router.post("/auth/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    """
+    Reset password using the token from email
+
+    Validates token and updates user's password
+    """
+    token = request.token
+    new_password = request.new_password
+
+    # Validate password length
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Look up token
+        cursor.execute("""
+            SELECT email, expires_at, used
+            FROM password_reset_tokens
+            WHERE token = ?
+        """, (token,))
+
+        token_data = cursor.fetchone()
+
+        if not token_data:
+            raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+        # Handle both dict (PostgreSQL) and tuple (SQLite) row types
+        if isinstance(token_data, dict):
+            email = token_data["email"]
+            expires_at = token_data["expires_at"]
+            used = token_data["used"]
+        else:
+            email = token_data[0]
+            expires_at = token_data[1]
+            used = token_data[2]
+
+        # Check if token is already used
+        if used:
+            raise HTTPException(status_code=400, detail="This reset link has already been used")
+
+        # Check if token is expired
+        expires_datetime = datetime.fromisoformat(expires_at)
+        if datetime.utcnow() > expires_datetime:
+            raise HTTPException(status_code=400, detail="This reset link has expired. Please request a new one")
+
+        # Hash the new password
+        password_hash = hash_password(new_password)
+
+        # Update user's password
+        cursor.execute("""
+            UPDATE users
+            SET password_hash = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE email = ?
+        """, (password_hash, email))
+
+        # Mark token as used
+        cursor.execute("""
+            UPDATE password_reset_tokens
+            SET used = TRUE
+            WHERE token = ?
+        """, (token,))
+
+        conn.commit()
+
+        logger.info(f"Password successfully reset for user: {email}")
+
+        return {"message": "Password has been reset successfully. You can now sign in with your new password."}
 
 
 # ============================================================================
