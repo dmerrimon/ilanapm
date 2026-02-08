@@ -416,6 +416,27 @@ async def get_customer_dashboard(user_data: dict = Depends(require_admin_role)):
         else:
             masked_license = None
 
+        # Count active devices (actual seat usage)
+        cursor.execute("""
+            SELECT COUNT(*) as active_devices
+            FROM activations a
+            JOIN users u ON a.user_id = u.user_id
+            WHERE u.org_id = ? AND a.is_active = TRUE
+        """, (org_id,))
+
+        device_count = cursor.fetchone()
+        active_devices = device_count["active_devices"] if device_count else 0
+
+        # Count active users
+        cursor.execute("""
+            SELECT COUNT(*) as active_users
+            FROM users
+            WHERE org_id = ? AND is_active = TRUE
+        """, (org_id,))
+
+        user_count = cursor.fetchone()
+        active_users = user_count["active_users"] if user_count else 0
+
         return {
             "org_name": org["org_name"],
             "license_key": masked_license,
@@ -424,6 +445,8 @@ async def get_customer_dashboard(user_data: dict = Depends(require_admin_role)):
             "seats_purchased": org["seats_purchased"],
             "seats_used": org["seats_used"],
             "seats_available": org["seats_purchased"] - org["seats_used"],
+            "active_devices": active_devices,  # Actual count from activations table
+            "active_users": active_users,      # Count of active users
             "seat_rate": float(org["seat_rate"]) if org["seat_rate"] else None,
             "billing_cycle": org["billing_cycle"],
             "mrr": float(org["mrr"]) if org["mrr"] else None,
@@ -437,7 +460,7 @@ async def get_customer_dashboard(user_data: dict = Depends(require_admin_role)):
 async def list_org_users(user_data: dict = Depends(require_admin_role)):
     """
     List all users in the organization
-    Shows: email, name, role, activation status, last login
+    Shows: email, name, role, activation status, last login, device count
     """
     org_id = user_data["org_id"]
 
@@ -446,11 +469,21 @@ async def list_org_users(user_data: dict = Depends(require_admin_role)):
 
         cursor.execute("""
             SELECT
-                user_id, email, first_name, last_name, role,
-                is_active, last_login, created_at
-            FROM users
-            WHERE org_id = ?
-            ORDER BY created_at DESC
+                u.user_id,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.role,
+                u.is_active,
+                u.last_login,
+                u.created_at,
+                COUNT(CASE WHEN a.is_active = TRUE THEN 1 END) as active_devices
+            FROM users u
+            LEFT JOIN activations a ON u.user_id = a.user_id
+            WHERE u.org_id = ?
+            GROUP BY u.user_id, u.email, u.first_name, u.last_name, u.role,
+                     u.is_active, u.last_login, u.created_at
+            ORDER BY u.created_at DESC
         """, (org_id,))
 
         users = cursor.fetchall()
@@ -530,6 +563,135 @@ async def deactivate_user(user_id: str, user_data: dict = Depends(require_admin_
         return {
             "message": "User deactivated successfully",
             "user_id": user_id
+        }
+
+
+@router.get("/portal/customer/activations")
+async def list_org_activations(user_data: dict = Depends(require_admin_role)):
+    """
+    List all active device activations for the organization
+    Shows: user email, device name, activation date, last activity, MS Project version
+    Allows admins to see which devices are consuming seats
+    """
+    org_id = user_data["org_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT
+                a.activation_id,
+                a.user_id,
+                u.email,
+                u.first_name,
+                u.last_name,
+                a.device_id,
+                a.device_name,
+                a.is_active,
+                a.activated_at,
+                a.deactivated_at,
+                a.last_api_call,
+                a.api_call_count,
+                a.ms_project_version,
+                a.addin_version
+            FROM activations a
+            JOIN users u ON a.user_id = u.user_id
+            WHERE u.org_id = ?
+            ORDER BY a.is_active DESC, a.last_api_call DESC
+        """, (org_id,))
+
+        activations = cursor.fetchall()
+
+        # Count active vs inactive
+        active_count = sum(1 for a in activations if a["is_active"])
+        inactive_count = len(activations) - active_count
+
+        return {
+            "activations": [dict(activation) for activation in activations],
+            "total_count": len(activations),
+            "active_count": active_count,
+            "inactive_count": inactive_count
+        }
+
+
+@router.delete("/portal/customer/activations/{activation_id}")
+async def deactivate_device(activation_id: str, user_data: dict = Depends(require_admin_role)):
+    """
+    Deactivate a specific device activation (frees up a seat)
+    Admin can deactivate any device in their organization
+    User will need to re-activate on that device
+    """
+    org_id = user_data["org_id"]
+    admin_user_id = user_data["user_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Verify activation belongs to this org and get details
+        cursor.execute("""
+            SELECT
+                a.activation_id,
+                a.user_id,
+                a.device_name,
+                a.is_active,
+                u.email,
+                u.org_id
+            FROM activations a
+            JOIN users u ON a.user_id = u.user_id
+            WHERE a.activation_id = ?
+        """, (activation_id,))
+
+        activation = cursor.fetchone()
+
+        if not activation:
+            raise HTTPException(status_code=404, detail="Activation not found")
+
+        if activation["org_id"] != org_id:
+            raise HTTPException(status_code=403, detail="Cannot deactivate devices from other organizations")
+
+        if not activation["is_active"]:
+            return {"message": "Device already deactivated"}
+
+        # Deactivate the device
+        cursor.execute("""
+            UPDATE activations
+            SET is_active = FALSE, deactivated_at = CURRENT_TIMESTAMP
+            WHERE activation_id = ?
+        """, (activation_id,))
+
+        # Decrement seats_used for the organization
+        cursor.execute("""
+            UPDATE organizations
+            SET seats_used = seats_used - 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE org_id = ?
+        """, (org_id,))
+
+        # Log action
+        cursor.execute("""
+            INSERT INTO audit_logs (log_id, org_id, user_id, action, resource_type, resource_id, metadata, timestamp)
+            VALUES (?, ?, ?, 'device_deactivated', 'activation', ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            secrets.token_urlsafe(16),
+            org_id,
+            admin_user_id,
+            activation_id,
+            json.dumps({
+                "device_name": activation["device_name"],
+                "user_email": activation["email"],
+                "deactivated_by": admin_user_id
+            })
+        ))
+
+        conn.commit()
+
+        logger.info(f"Device deactivated by admin: activation_id={activation_id}, device={activation['device_name']}, admin={admin_user_id}")
+
+        return {
+            "message": "Device deactivated successfully",
+            "activation_id": activation_id,
+            "device_name": activation["device_name"],
+            "user_email": activation["email"]
         }
 
 

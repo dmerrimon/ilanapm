@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
+import { apiClient } from "@/lib/api-client";
 
 interface User {
   user_id: string;
@@ -12,54 +14,33 @@ interface User {
   is_active: boolean;
   last_login: string | null;
   created_at: string;
+  active_devices: number;
 }
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>([
-    {
-      user_id: "usr_001",
-      email: "john.doe@example.com",
-      first_name: "John",
-      last_name: "Doe",
-      role: "admin",
-      is_active: true,
-      last_login: "2026-02-06T10:30:00Z",
-      created_at: "2025-12-01T09:00:00Z"
-    },
-    {
-      user_id: "usr_002",
-      email: "jane.smith@example.com",
-      first_name: "Jane",
-      last_name: "Smith",
-      role: "user",
-      is_active: true,
-      last_login: "2026-02-05T14:20:00Z",
-      created_at: "2025-12-02T10:30:00Z"
-    },
-    {
-      user_id: "usr_003",
-      email: "bob.johnson@example.com",
-      first_name: "Bob",
-      last_name: "Johnson",
-      role: "user",
-      is_active: true,
-      last_login: "2026-02-04T16:45:00Z",
-      created_at: "2025-12-03T11:15:00Z"
-    },
-    {
-      user_id: "usr_004",
-      email: "alice.williams@example.com",
-      first_name: "Alice",
-      last_name: "Williams",
-      role: "user",
-      is_active: false,
-      last_login: "2026-01-15T09:20:00Z",
-      created_at: "2025-12-01T14:00:00Z"
-    }
-  ]);
-
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await apiClient.get('/portal/customer/users');
+      setUsers(response.users);
+    } catch (err: any) {
+      setError(err.message || "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeactivate = (user: User) => {
     setSelectedUser(user);
@@ -69,17 +50,20 @@ export default function UsersPage() {
   const confirmDeactivate = async () => {
     if (!selectedUser) return;
 
-    // TODO: Call API to deactivate user
-    // await fetch(`/api/v1/portal/customer/users/${selectedUser.user_id}`, { method: 'DELETE' })
+    setDeactivating(true);
+    try {
+      await apiClient.delete(`/portal/customer/users/${selectedUser.user_id}`);
 
-    setUsers(users.map(u =>
-      u.user_id === selectedUser.user_id
-        ? { ...u, is_active: false }
-        : u
-    ));
+      // Refresh the user list
+      await fetchUsers();
 
-    setShowDeactivateModal(false);
-    setSelectedUser(null);
+      setShowDeactivateModal(false);
+      setSelectedUser(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to deactivate user");
+    } finally {
+      setDeactivating(false);
+    }
   };
 
   const formatDate = (dateString: string | null) => {
@@ -105,6 +89,12 @@ export default function UsersPage() {
           <p className="text-black">Manage user access and seat assignments for your organization.</p>
         </div>
 
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -116,88 +106,120 @@ export default function UsersPage() {
             <div className="text-3xl font-light text-black">{inactiveUsers}</div>
           </div>
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="text-gray-500 text-sm mb-1">Total Seats</div>
-            <div className="text-3xl font-light text-black">50</div>
+            <div className="text-gray-500 text-sm mb-1">Total Users</div>
+            <div className="text-3xl font-light text-black">{users.length}</div>
           </div>
         </div>
 
         {/* Users Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-xl text-black">All Users</h2>
+            <Link
+              href="/devices"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              View Active Devices →
+            </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Last Login
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.user_id} className={!user.is_active ? 'bg-gray-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-black">{user.first_name} {user.last_name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-black">{user.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        user.role === 'admin'
-                          ? 'bg-black text-white'
-                          : 'bg-gray-200 text-black'
-                      }`}>
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-black">
-                      {formatDate(user.last_login)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        user.is_active
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {user.is_active && user.role !== 'admin' && (
-                        <button
-                          onClick={() => handleDeactivate(user)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                      {user.role === 'admin' && (
-                        <span className="text-gray-400 text-sm">Admin</span>
-                      )}
-                    </td>
+
+          {loading ? (
+            <div className="px-6 py-12 text-center text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+              Loading users...
+            </div>
+          ) : users.length === 0 ? (
+            <div className="px-6 py-12 text-center text-gray-500">
+              <p>No users found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Devices
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Last Login
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user.user_id} className={!user.is_active ? 'bg-gray-50' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-black">{user.first_name} {user.last_name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-black">{user.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded ${
+                          user.role === 'admin'
+                            ? 'bg-black text-white'
+                            : 'bg-gray-200 text-black'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.active_devices > 0 ? (
+                          <span className="text-black font-medium">
+                            {user.active_devices} {user.active_devices === 1 ? 'device' : 'devices'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">None</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-black">
+                        {formatDate(user.last_login)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs rounded ${
+                          user.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.is_active && user.role !== 'admin' ? (
+                          <button
+                            onClick={() => handleDeactivate(user)}
+                            disabled={deactivating}
+                            className="text-red-600 hover:text-red-800 text-sm hover:underline disabled:opacity-50"
+                          >
+                            Deactivate
+                          </button>
+                        ) : user.role === 'admin' ? (
+                          <span className="text-gray-400 text-sm">Admin</span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">N/A</span>
+                        )}
+                      </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
         {/* Info Box */}
