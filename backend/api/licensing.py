@@ -315,7 +315,8 @@ async def activate_license(request: ActivationRequest):
     
             if existing_activation:
                 activation_id = existing_activation['activation_id']
-    
+                was_inactive = not existing_activation['is_active']
+
                 # Update existing activation
                 cursor.execute("""
                     UPDATE activations
@@ -336,8 +337,17 @@ async def activate_license(request: ActivationRequest):
                     request.device_name,
                     activation_id
                 ))
-    
-                logger.info(f"Reactivated existing activation: {activation_id}")
+
+                # If device was inactive, increment seats_used
+                if was_inactive:
+                    cursor.execute("""
+                        UPDATE organizations
+                        SET seats_used = seats_used + 1
+                        WHERE org_id = ?
+                    """, (org_id,))
+                    logger.info(f"Reactivated existing activation and incremented seats: {activation_id}")
+                else:
+                    logger.info(f"Refreshed existing active activation: {activation_id}")
             else:
                 activation_id = generate_activation_id()
     

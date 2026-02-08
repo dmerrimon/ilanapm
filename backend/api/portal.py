@@ -524,6 +524,16 @@ async def deactivate_user(user_id: str, user_data: dict = Depends(require_admin_
         if not user["is_active"]:
             return {"message": "User already deactivated"}
 
+        # Count active devices for this user
+        cursor.execute("""
+            SELECT COUNT(*) as active_device_count
+            FROM activations
+            WHERE user_id = ? AND is_active = TRUE
+        """, (user_id,))
+
+        device_count_row = cursor.fetchone()
+        active_device_count = device_count_row["active_device_count"] if device_count_row else 0
+
         # Deactivate user
         cursor.execute("""
             UPDATE users
@@ -538,13 +548,14 @@ async def deactivate_user(user_id: str, user_data: dict = Depends(require_admin_
             WHERE user_id = ?
         """, (user_id,))
 
-        # Decrement seats_used
-        cursor.execute("""
-            UPDATE organizations
-            SET seats_used = seats_used - 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE org_id = ?
-        """, (org_id,))
+        # Decrement seats_used by the number of active devices
+        if active_device_count > 0:
+            cursor.execute("""
+                UPDATE organizations
+                SET seats_used = seats_used - ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE org_id = ?
+            """, (active_device_count, org_id))
 
         # Log action
         cursor.execute("""
@@ -555,14 +566,20 @@ async def deactivate_user(user_id: str, user_data: dict = Depends(require_admin_
             org_id,
             admin_user_id,
             user_id,
-            json.dumps({"deactivated_by": admin_user_id})
+            json.dumps({
+                "deactivated_by": admin_user_id,
+                "devices_deactivated": active_device_count
+            })
         ))
 
         conn.commit()
 
+        logger.info(f"User deactivated: user_id={user_id}, devices_deactivated={active_device_count}, admin={admin_user_id}")
+
         return {
-            "message": "User deactivated successfully",
-            "user_id": user_id
+            "message": f"User deactivated successfully. {active_device_count} device(s) freed.",
+            "user_id": user_id,
+            "devices_deactivated": active_device_count
         }
 
 
