@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import { getTaskMappings, TaskMapping } from '@/lib/api-client';
 
 type ConfidenceFilter = 'all' | 'high' | 'medium' | 'low';
+type ConfidenceLevel = 'high' | 'medium' | 'low';
 type SortField = 'task_name' | 'confidence' | 'confirmed';
 type SortDirection = 'asc' | 'desc';
 
@@ -40,7 +41,7 @@ export default function TaskMappingPage() {
     }
   };
 
-  const getConfidenceLabel = (confidence: number): string => {
+  const getConfidenceLabel = (confidence: number): ConfidenceLevel => {
     if (confidence >= 0.8) return 'high';
     if (confidence >= 0.6) return 'medium';
     return 'low';
