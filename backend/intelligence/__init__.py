@@ -24,7 +24,13 @@ from .models import (
     UnconfirmedMatch,
     TaskMappingSuggestion,
     MetadataInference,
-    MetadataConfirmationRequired
+    MetadataConfirmationRequired,
+    OrgBenchmark,
+    PatternDetection,
+    TaskPattern,
+    CalibrationResult,
+    BlendedBenchmark,
+    ConfidenceScore
 )
 
 from .benchmark_retriever import BenchmarkRetriever
@@ -32,6 +38,12 @@ from .financial_calculator import FinancialImpactCalculator
 from .variance_detection import VarianceDetectionEngine
 from .task_normalizer import TaskNormalizer
 from .metadata_inferrer import MetadataInferrer
+from .calibration_engine import CalibrationEngine
+from .benchmark_blender import BenchmarkBlender
+from .confidence_scorer import ConfidenceScoringEngine
+from .portfolio_aggregator import PortfolioAggregationEngine
+from .resource_collision_detector import ResourceCollisionDetector, ResourceAssignment, ResourceCollision
+from .portfolio_forecaster import PortfolioForecaster
 from .tier_enforcement import require_tier, check_tier
 
 __all__ = [
@@ -48,12 +60,26 @@ __all__ = [
     "TaskMappingSuggestion",
     "MetadataInference",
     "MetadataConfirmationRequired",
+    "OrgBenchmark",
+    "PatternDetection",
+    "TaskPattern",
+    "CalibrationResult",
+    "BlendedBenchmark",
+    "ConfidenceScore",
     # Classes
     "BenchmarkRetriever",
     "FinancialImpactCalculator",
     "VarianceDetectionEngine",
     "TaskNormalizer",
     "MetadataInferrer",
+    "CalibrationEngine",
+    "BenchmarkBlender",
+    "ConfidenceScoringEngine",
+    "PortfolioAggregationEngine",
+    "ResourceCollisionDetector",
+    "ResourceAssignment",
+    "ResourceCollision",
+    "PortfolioForecaster",
     # Decorators
     "require_tier",
     "check_tier",

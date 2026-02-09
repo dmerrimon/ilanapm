@@ -204,3 +204,74 @@ class TierConfiguration(BaseModel):
     benchmark_source: str
     confidence_thresholds: Optional[Dict[str, float]] = None
     auto_apply_calibration: bool = False
+
+
+# ============================================================================
+# Calibration Models (Calibrated Tier)
+# ============================================================================
+
+class OrgBenchmark(BaseModel):
+    """Organization-specific benchmark from calibration"""
+    org_id: str
+    ontology_task_id: str
+    task_name: str
+    category: str
+    median_days: float
+    p25_days: float
+    p75_days: float
+    sample_size: int
+    confidence: float  # 0-1 based on sample size
+    last_updated: str
+
+
+class PatternDetection(BaseModel):
+    """Detected organizational execution pattern"""
+    pattern_type: str  # 'duration_consistency', 'execution_speed', etc.
+    category: str
+    description: str
+    confidence: float
+    sample_size: int
+
+
+class TaskPattern(BaseModel):
+    """Individual task execution pattern"""
+    task_name: str
+    avg_duration_days: float
+    std_deviation: float
+    sample_count: int
+
+
+class CalibrationResult(BaseModel):
+    """Result of processing a historical timeline for calibration"""
+    org_id: str
+    project_name: str
+    tasks_extracted: int
+    tasks_normalized: int
+    benchmarks_generated: int
+    patterns_detected: List[PatternDetection]
+    org_benchmarks: List[OrgBenchmark]
+    quality_metrics: Dict[str, Any]
+    metadata: Dict[str, Any] = {}
+
+
+class BlendedBenchmark(BaseModel):
+    """Benchmark blending organization and industry data"""
+    task_id: str
+    task_name: str
+    category: str
+    org_median_days: Optional[float] = None
+    industry_median_days: float
+    blended_median_days: float
+    blend_ratio: Dict[str, float]  # {"org": 0.7, "industry": 0.3}
+    org_sample_size: int = 0
+    confidence: float
+
+
+class ConfidenceScore(BaseModel):
+    """Multi-factor confidence score for a task estimate"""
+    task_id: str
+    task_name: str
+    overall_score: float  # 0-100
+    factors: Dict[str, float]  # variance, fragility, calibration, complexity
+    risk_drivers: List[str]
+    recommendations: List[str]

@@ -86,7 +86,52 @@ CREATE INDEX IF NOT EXISTS idx_intelligence_usage_feature ON intelligence_usage(
 CREATE INDEX IF NOT EXISTS idx_intelligence_usage_timestamp ON intelligence_usage(timestamp);
 
 -- ============================================================================
--- 5. Insert Default Project Profile for Testing
+-- 5. Organization Benchmarks Table (Calibrated Tier)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS org_benchmarks (
+    benchmark_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    ontology_task_id TEXT NOT NULL,
+    task_name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    median_days REAL NOT NULL,
+    p25_days REAL NOT NULL,
+    p75_days REAL NOT NULL,
+    sample_size INTEGER NOT NULL,
+    confidence REAL NOT NULL,
+    last_updated TEXT DEFAULT (datetime('now')),
+    UNIQUE(org_id, ontology_task_id),
+    FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_org_benchmarks_org ON org_benchmarks(org_id);
+CREATE INDEX IF NOT EXISTS idx_org_benchmarks_task ON org_benchmarks(ontology_task_id);
+CREATE INDEX IF NOT EXISTS idx_org_benchmarks_category ON org_benchmarks(category);
+
+-- ============================================================================
+-- 6. Calibration Results Table (Calibrated Tier)
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS calibration_results (
+    calibration_id TEXT PRIMARY KEY,
+    org_id TEXT NOT NULL,
+    project_name TEXT NOT NULL,
+    tasks_extracted INTEGER NOT NULL,
+    tasks_normalized INTEGER NOT NULL,
+    benchmarks_generated INTEGER NOT NULL,
+    patterns_detected TEXT,  -- JSON array of pattern detections
+    quality_metrics TEXT,  -- JSON object with quality metrics
+    metadata TEXT,  -- JSON object with additional metadata
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_calibration_results_org ON calibration_results(org_id);
+CREATE INDEX IF NOT EXISTS idx_calibration_results_created ON calibration_results(created_at);
+
+-- ============================================================================
+-- 7. Insert Default Project Profile for Testing
 -- ============================================================================
 
 -- Note: This is optional, for testing purposes only
