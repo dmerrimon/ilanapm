@@ -48,6 +48,27 @@ export default function AnalyticsPage() {
   const maxTemplates = Math.max(...dailyUsage.map(d => d.templates));
   const maxUsers = Math.max(...dailyUsage.map(d => d.users));
 
+  // Core Tier Intelligence Metrics (Mock data)
+  const intelligenceMetrics = {
+    total_core_customers: 8,
+    variance_detections_30d: 247,
+    avg_high_variance_tasks: 5.2,
+    avg_financial_impact: 487000,
+    adoption_funnel: {
+      total_customers: 8,
+      used_feature: 7,
+      viewed_portal: 5,
+      upgraded: 0
+    },
+    top_variance_categories: [
+      { category: "Site Contract Execution", count: 42 },
+      { category: "Ethics Committee Approval", count: 38 },
+      { category: "IND/CTA Submission", count: 35 },
+      { category: "Patient Enrollment", count: 29 },
+      { category: "Site Initiation Visit", count: 24 }
+    ]
+  };
+
   const handleExportCSV = () => {
     const sections = [
       {
@@ -271,7 +292,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* System Health */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl mb-6 text-black">System Health Metrics</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
@@ -289,6 +310,142 @@ export default function AnalyticsPage() {
             <div>
               <div className="text-gray-500 text-sm mb-1">Uptime</div>
               <div className="text-2xl font-light text-green-600">99.8%</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Core Tier Intelligence Usage */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl text-black">Core Tier Intelligence Usage</h2>
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+              Last 30 Days
+            </span>
+          </div>
+
+          {/* Key Metrics Row */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div>
+              <div className="text-gray-500 text-sm mb-1">Core Customers</div>
+              <div className="text-3xl font-light text-black">{intelligenceMetrics.total_core_customers}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm mb-1">Variance Detections</div>
+              <div className="text-3xl font-light text-black">{intelligenceMetrics.variance_detections_30d}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm mb-1">Avg High-Variance Tasks</div>
+              <div className="text-3xl font-light text-black">{intelligenceMetrics.avg_high_variance_tasks}</div>
+            </div>
+            <div>
+              <div className="text-gray-500 text-sm mb-1">Avg Financial Impact</div>
+              <div className="text-3xl font-light text-black">
+                ${(intelligenceMetrics.avg_financial_impact / 1000).toFixed(0)}K
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Adoption Funnel */}
+            <div>
+              <h3 className="text-base font-medium text-black mb-4">Adoption Funnel</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-black">Total Core Customers</span>
+                    <span className="text-black font-medium">{intelligenceMetrics.adoption_funnel.total_customers}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-8">
+                    <div
+                      className="bg-blue-600 rounded-full h-8 flex items-center justify-center text-white text-sm font-medium"
+                      style={{ width: '100%' }}
+                    >
+                      100%
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-black">Used Intelligence Feature</span>
+                    <span className="text-black font-medium">{intelligenceMetrics.adoption_funnel.used_feature}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-8">
+                    <div
+                      className="bg-blue-600 rounded-full h-8 flex items-center justify-center text-white text-sm font-medium"
+                      style={{ width: `${(intelligenceMetrics.adoption_funnel.used_feature / intelligenceMetrics.adoption_funnel.total_customers) * 100}%` }}
+                    >
+                      {Math.round((intelligenceMetrics.adoption_funnel.used_feature / intelligenceMetrics.adoption_funnel.total_customers) * 100)}%
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-black">Viewed Intelligence Portal</span>
+                    <span className="text-black font-medium">{intelligenceMetrics.adoption_funnel.viewed_portal}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-8">
+                    <div
+                      className="bg-blue-600 rounded-full h-8 flex items-center justify-center text-white text-sm font-medium"
+                      style={{ width: `${(intelligenceMetrics.adoption_funnel.viewed_portal / intelligenceMetrics.adoption_funnel.total_customers) * 100}%` }}
+                    >
+                      {Math.round((intelligenceMetrics.adoption_funnel.viewed_portal / intelligenceMetrics.adoption_funnel.total_customers) * 100)}%
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-black">Upgraded to Calibrated</span>
+                    <span className="text-black font-medium">{intelligenceMetrics.adoption_funnel.upgraded}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-8">
+                    <div
+                      className="bg-green-600 rounded-full h-8 flex items-center justify-center text-white text-sm font-medium"
+                      style={{ width: intelligenceMetrics.adoption_funnel.upgraded > 0 ? `${(intelligenceMetrics.adoption_funnel.upgraded / intelligenceMetrics.adoption_funnel.total_customers) * 100}%` : '10%', minWidth: '10%' }}
+                    >
+                      {intelligenceMetrics.adoption_funnel.upgraded > 0 ? `${Math.round((intelligenceMetrics.adoption_funnel.upgraded / intelligenceMetrics.adoption_funnel.total_customers) * 100)}%` : '0%'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  <strong>Conversion Rate:</strong> {Math.round((intelligenceMetrics.adoption_funnel.viewed_portal / intelligenceMetrics.adoption_funnel.used_feature) * 100)}% of users view portal after using feature
+                </div>
+              </div>
+            </div>
+
+            {/* Top Variance Categories */}
+            <div>
+              <h3 className="text-base font-medium text-black mb-4">Most Common High-Variance Categories</h3>
+              <div className="space-y-3">
+                {intelligenceMetrics.top_variance_categories.map((item, index) => (
+                  <div key={item.category} className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium text-black">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-black mb-1">{item.category}</div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-amber-600 rounded-full h-2"
+                          style={{ width: `${(item.count / intelligenceMetrics.top_variance_categories[0].count) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium text-black">{item.count}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  Total high-variance detections across all categories: {intelligenceMetrics.top_variance_categories.reduce((sum, item) => sum + item.count, 0)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
