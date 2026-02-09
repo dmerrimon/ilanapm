@@ -82,17 +82,18 @@ export default function TaskMappingPage() {
       return true;
     })
     .sort((a, b) => {
-      let aVal: any = a[sortField];
-      let bVal: any = b[sortField];
+      let aVal: any;
+      let bVal: any;
 
       if (sortField === 'task_name') {
         aVal = a.customer_task_name;
         bVal = b.customer_task_name;
-      }
-
-      if (sortField === 'confirmed') {
+      } else if (sortField === 'confirmed') {
         aVal = a.confirmed_by_user ? 1 : 0;
         bVal = b.confirmed_by_user ? 1 : 0;
+      } else if (sortField === 'confidence') {
+        aVal = a.confidence;
+        bVal = b.confidence;
       }
 
       if (typeof aVal === 'string') {
