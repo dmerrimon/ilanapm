@@ -5,6 +5,9 @@ import Header from "@/components/Header";
 import { exportMultipleSectionsToCSV, generateFilename } from "@/lib/export-utils";
 import { exportUsageAnalyticsPDF } from "@/lib/pdf-export-utils";
 
+// Tab types
+type AnalyticsTab = 'usage' | 'intelligence';
+
 interface TemplateUsage {
   template_name: string;
   count: number;
@@ -21,6 +24,7 @@ interface CountryData {
 }
 
 export default function AnalyticsPage() {
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>('usage');
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   // Refs for capturing chart elements
@@ -146,8 +150,8 @@ export default function AnalyticsPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl mb-2 text-black">Usage Analytics</h1>
-            <p className="text-black">Track template generation, user activity, and system usage.</p>
+            <h1 className="text-4xl mb-2 text-black">Analytics</h1>
+            <p className="text-black">Track usage, intelligence performance, and system insights.</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -183,7 +187,37 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Key Metrics */}
+        {/* Tab Navigation */}
+        <div className="mb-8 border-b border-gray-200">
+          <div className="flex gap-8">
+            <button
+              onClick={() => setActiveTab('usage')}
+              className={`pb-4 px-1 border-b-2 font-medium transition-colors ${
+                activeTab === 'usage'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'
+              }`}
+            >
+              Usage Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('intelligence')}
+              className={`pb-4 px-1 border-b-2 font-medium transition-colors relative ${
+                activeTab === 'intelligence'
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-black hover:border-gray-300'
+              }`}
+            >
+              Intelligence Analytics
+              <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">NEW</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Usage Analytics Tab Content */}
+        {activeTab === 'usage' && (
+          <>
+            {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="text-gray-500 text-sm mb-1">Templates Generated</div>
@@ -299,29 +333,192 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Export Options */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg text-black mb-1">Export Analytics Data</h3>
-              <p className="text-black text-sm">Download your usage data for custom analysis</p>
+            {/* Export Options */}
+            <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg text-black mb-1">Export Analytics Data</h3>
+                  <p className="text-black text-sm">Download your usage data for custom analysis</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleExportCSV}
+                    className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                  >
+                    Export PDF Report
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleExportCSV}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition-colors text-black"
-              >
-                Export CSV
-              </button>
-              <button
-                onClick={handleExportPDF}
-                className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 transition-colors"
-              >
-                Export PDF Report
-              </button>
+          </>
+        )}
+
+        {/* Intelligence Analytics Tab Content */}
+        {activeTab === 'intelligence' && (
+          <div>
+            {/* Intelligence Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-sm mb-1">Variance Analyses</div>
+                <div className="text-3xl font-light text-black">247</div>
+                <div className="text-sm text-green-600 mt-2">↑ 18% from last period</div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-sm mb-1">Avg Benchmark Coverage</div>
+                <div className="text-3xl font-light text-black">78%</div>
+                <div className="text-sm text-green-600 mt-2">↑ 5% improvement</div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="text-gray-500 text-sm mb-1">Total Financial Impact</div>
+                <div className="text-3xl font-light text-black">$2.4M</div>
+                <div className="text-sm text-gray-600 mt-2">Potential savings identified</div>
+              </div>
+            </div>
+
+            {/* High Variance Tasks */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+              <h2 className="text-xl mb-6 text-black">High Variance Tasks</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Task Name</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Your Duration</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Benchmark</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Variance</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Severity</th>
+                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Financial Impact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4 text-black">Site Contract Negotiation</td>
+                      <td className="py-4 px-4 text-black">90 days</td>
+                      <td className="py-4 px-4 text-gray-600">280 days</td>
+                      <td className="py-4 px-4">
+                        <span className="text-red-600 font-medium">-67.9%</span>
+                        <span className="ml-2 text-sm text-gray-500">(underestimate)</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                          Critical
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right text-red-600 font-medium">-$4.6M</td>
+                    </tr>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4 text-black">Patient Enrollment</td>
+                      <td className="py-4 px-4 text-black">180 days</td>
+                      <td className="py-4 px-4 text-gray-600">365 days</td>
+                      <td className="py-4 px-4">
+                        <span className="text-red-600 font-medium">-50.7%</span>
+                        <span className="ml-2 text-sm text-gray-500">(underestimate)</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">
+                          Critical
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right text-red-600 font-medium">-$4.5M</td>
+                    </tr>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-4 text-black">Ethics Committee Review</td>
+                      <td className="py-4 px-4 text-black">60 days</td>
+                      <td className="py-4 px-4 text-gray-600">45 days</td>
+                      <td className="py-4 px-4">
+                        <span className="text-amber-600 font-medium">+33.3%</span>
+                        <span className="ml-2 text-sm text-gray-500">(overestimate)</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded">
+                          Warning
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right text-green-600 font-medium">+$366K</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Benchmark Coverage by Category */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+              <h2 className="text-xl mb-6 text-black">Benchmark Coverage by Category</h2>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-black">Regulatory Submissions</span>
+                    <span className="text-black font-medium">95% coverage</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div className="bg-green-600 rounded-full h-3" style={{ width: '95%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-black">Ethics Approvals</span>
+                    <span className="text-black font-medium">82% coverage</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div className="bg-green-600 rounded-full h-3" style={{ width: '82%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-black">Site Contracting</span>
+                    <span className="text-black font-medium">76% coverage</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div className="bg-amber-600 rounded-full h-3" style={{ width: '76%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-black">Patient Enrollment</span>
+                    <span className="text-black font-medium">68% coverage</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div className="bg-amber-600 rounded-full h-3" style={{ width: '68%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-black">Clinical Procedures</span>
+                    <span className="text-black font-medium">54% coverage</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div className="bg-red-600 rounded-full h-3" style={{ width: '54%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Intelligence Insights */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-blue-900 mb-4">💡 Key Insights</h3>
+              <ul className="space-y-3 text-blue-900">
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span><strong>Site contracting</strong> consistently underestimated by 50-70%. Consider adding 6-9 months to initial estimates.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span><strong>Patient enrollment</strong> times vary widely by therapeutic area. Oncology studies averaging 12 months vs 6 months for cardiovascular.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span><strong>Regulatory review</strong> timelines are highly accurate (within 10% of benchmarks). Your planning here is solid.</span>
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

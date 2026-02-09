@@ -286,3 +286,228 @@ export async function updateSettings(
 
 // Note: Billing endpoints (add-seats) are stubbed in backend
 // Will be implemented when Stripe integration is added
+
+// ============================================================================
+// Intelligence Layer
+// ============================================================================
+
+export interface VarianceMetrics {
+  absolute_days: number;
+  percentage: number;
+  severity: 'acceptable' | 'warning' | 'critical';
+  classification: 'on_target' | 'overestimate' | 'underestimate';
+}
+
+export interface BenchmarkData {
+  task_id: string;
+  task_name: string;
+  category: string;
+  median_days: number;
+  p25_days: number;
+  p75_days: number;
+  typical_duration_days: number;
+  source: string;
+  confidence: string;
+  data_quality?: string;
+}
+
+export interface VarianceSignal {
+  task_id: string;
+  task_name: string;
+  customer_duration_days: number;
+  benchmark: BenchmarkData;
+  variance: VarianceMetrics;
+  financial_impact_usd: number;
+  explanation: string;
+  recommendations?: string[];
+}
+
+export interface VarianceSummary {
+  total_tasks_analyzed: number;
+  tasks_with_benchmarks: number;
+  benchmark_coverage_percent: number;
+  warning_count: number;
+  critical_count: number;
+  acceptable_count: number;
+  total_financial_impact_usd: number;
+  avg_variance_percent: number;
+  overestimate_count: number;
+  underestimate_count: number;
+}
+
+export interface BenchmarkCoverage {
+  tasks_matched: number;
+  tasks_unmatched: number;
+  coverage_percent: number;
+  unmatched_task_names: string[];
+  match_quality: {
+    exact: number;
+    fuzzy: number;
+    category: number;
+    special_case: number;
+  };
+}
+
+export interface VarianceReport {
+  tier: string;
+  org_id: string;
+  analysis_timestamp: string;
+  variance_signals: VarianceSignal[];
+  summary: VarianceSummary;
+  benchmark_coverage: BenchmarkCoverage;
+  configuration?: any;
+}
+
+export interface IntelligenceValidationRequest {
+  timeline: {
+    study_name?: string;
+    primary_country?: string;
+    phase?: string;
+    therapeutic_area?: string;
+    tasks: Array<{
+      id: string;
+      name: string;
+      category?: string;
+      duration_days: number;
+      authority?: string;
+    }>;
+  };
+  org_id: string;
+  tier: string;
+}
+
+export async function validateTimeline(
+  request: IntelligenceValidationRequest
+): Promise<VarianceReport> {
+  return apiRequest<VarianceReport>('/intelligence/validate-core', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+export interface BenchmarkQuery {
+  task_name?: string;
+  category?: string;
+  country?: string;
+  authority?: string;
+  phase?: string;
+  therapeutic_area?: string;
+  site_type?: string;
+}
+
+export async function getBenchmark(query: BenchmarkQuery): Promise<BenchmarkData> {
+  return apiRequest<BenchmarkData>('/intelligence/benchmarks', {
+    method: 'POST',
+    body: JSON.stringify(query),
+  });
+}
+
+export interface IntelligenceConfig {
+  org_id: string;
+  tier: string;
+  variance_thresholds: {
+    warning_percent: number;
+    critical_percent: number;
+  };
+  financial_rate_per_month_usd: number;
+  benchmark_source: string;
+}
+
+export async function getIntelligenceConfig(orgId: string): Promise<IntelligenceConfig> {
+  return apiRequest<IntelligenceConfig>(`/intelligence/tier-config?org_id=${orgId}`);
+}
+
+export interface TaskMapping {
+  mapping_id: string;
+  customer_task_name: string;
+  ontology_task_id: string;
+  ontology_task_name: string;
+  confidence: number;
+  confirmed_by_user: boolean;
+  created_at: string;
+}
+
+export async function getTaskMappings(orgId: string): Promise<{
+  org_id: string;
+  count: number;
+  mappings: TaskMapping[];
+}> {
+  return apiRequest<any>(`/intelligence/task-mappings?org_id=${orgId}`);
+}
+
+export interface TaskNormalizationRequest {
+  customer_task_name: string;
+  category?: string;
+}
+
+export interface TaskMappingSuggestion {
+  ontology_task_id: string;
+  ontology_task_name: string;
+  confidence: number;
+  match_method: string;
+  reasoning?: string;
+}
+
+export async function normalizeTask(
+  orgId: string,
+  request: TaskNormalizationRequest
+): Promise<TaskMappingSuggestion[]> {
+  return apiRequest<TaskMappingSuggestion[]>(
+    `/intelligence/normalize-task?org_id=${orgId}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  );
+}
+
+export interface ProjectProfile {
+  profile_id: string;
+  project_name: string;
+  study_id?: string;
+  therapeutic_area?: string;
+  phase?: string;
+  primary_country?: string;
+  additional_countries?: string[];
+  metadata?: any;
+  created_at: string;
+}
+
+export async function getProjectProfiles(orgId: string): Promise<{
+  org_id: string;
+  count: number;
+  profiles: ProjectProfile[];
+}> {
+  return apiRequest<any>(`/intelligence/project-profiles?org_id=${orgId}`);
+}
+
+export async function createProjectProfile(
+  orgId: string,
+  profile: Partial<ProjectProfile>
+): Promise<ProjectProfile> {
+  return apiRequest<ProjectProfile>(`/intelligence/project-profiles?org_id=${orgId}`, {
+    method: 'POST',
+    body: JSON.stringify(profile),
+  });
+}
+
+export interface MetadataInference {
+  field_name: string;
+  inferred_value: string;
+  confidence: number;
+  evidence: string[];
+  inference_method: string;
+}
+
+export async function inferMetadata(timeline: any): Promise<{
+  phase?: MetadataInference | string;
+  therapeutic_area?: MetadataInference | string;
+  primary_country?: MetadataInference | string;
+  additional_countries?: MetadataInference[];
+  needs_confirmation: boolean;
+}> {
+  return apiRequest<any>('/intelligence/infer-metadata', {
+    method: 'POST',
+    body: JSON.stringify({ timeline }),
+  });
+}
