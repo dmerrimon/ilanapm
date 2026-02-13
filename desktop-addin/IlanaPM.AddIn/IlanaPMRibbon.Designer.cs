@@ -38,6 +38,7 @@ namespace IlanaPM.AddIn
             this.menuAnalysis = this.Factory.CreateRibbonMenu();
             this.btnValidate = this.Factory.CreateRibbonButton();
             this.btnCriticalPath = this.Factory.CreateRibbonButton();
+            this.btnUploadTracker = this.Factory.CreateRibbonButton();
 
             this.btnSettings = this.Factory.CreateRibbonButton();
 
@@ -132,6 +133,7 @@ namespace IlanaPM.AddIn
             this.menuAnalysis.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.menuAnalysis.Items.Add(this.btnValidate);
             this.menuAnalysis.Items.Add(this.btnCriticalPath);
+            this.menuAnalysis.Items.Add(this.btnUploadTracker);
             this.menuAnalysis.Label = "Analysis";
             this.menuAnalysis.Name = "menuAnalysis";
             this.menuAnalysis.ShowImage = true;
@@ -154,6 +156,15 @@ namespace IlanaPM.AddIn
             this.btnCriticalPath.ShowImage = true;
             this.btnCriticalPath.OfficeImageId = "DiagramTargetInsertClassic";
             this.btnCriticalPath.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnCriticalPath_Click);
+
+            //
+            // btnUploadTracker (inside Analysis menu) - PHASE 5
+            //
+            this.btnUploadTracker.Label = "Upload Tracker";
+            this.btnUploadTracker.Name = "btnUploadTracker";
+            this.btnUploadTracker.ShowImage = true;
+            this.btnUploadTracker.OfficeImageId = "ImportExcel";
+            this.btnUploadTracker.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnUploadTracker_Click);
 
             //
             // grpReports - Reports Group with 2 standalone buttons
@@ -268,6 +279,7 @@ namespace IlanaPM.AddIn
         internal Microsoft.Office.Tools.Ribbon.RibbonMenu menuAnalysis;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnValidate;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnCriticalPath;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnUploadTracker;
 
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSettings;
 

@@ -78,13 +78,62 @@ namespace IlanaPM.AddIn
                 // FIRST: Ensure custom fields exist
                 EnsureCustomFields();
 
+                // NEW: Auto-load metadata from project
+                var metadata = Services.MetadataHelper.LoadFromProject();
+
+                if (metadata == null || !metadata.IsValid())
+                {
+                    System.Diagnostics.Debug.WriteLine("Validation: Metadata missing or invalid - showing QuickMetadataForm");
+
+                    // Show form to collect metadata
+                    using (var form = new QuickMetadataForm())
+                    {
+                        if (form.ShowDialog() == DialogResult.OK)
+                        {
+                            metadata = form.CollectedMetadata;
+                            metadata.StudyName = Globals.ThisAddIn.Application.ActiveProject?.Name;
+
+                            // Save metadata to project for future use
+                            Services.MetadataHelper.SaveToProject(metadata);
+                            System.Diagnostics.Debug.WriteLine($"Validation: Saved collected metadata - {metadata}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("Validation: User cancelled metadata collection");
+                            return; // User cancelled - don't proceed with validation
+                        }
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Validation: Auto-loaded metadata - {metadata}");
+                }
+
                 var extractor = new Services.ProjectDataExtractor();
                 var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
 
                 var apiClient = new Services.ApiClient();
 
-                // Call validation API
-                var validationResult = await apiClient.ValidateTimelineAsync(timeline);
+                // Create intelligence request with metadata
+                var intelligenceRequest = new Models.IntelligenceValidationRequest
+                {
+                    timeline = timeline,
+                    org_id = Services.SecureStorage.ReadOrgId() ?? "unknown",
+                    tier = "core",
+                    study_metadata = Models.StudyMetadataDTO.FromModel(metadata)
+                };
+
+                // Call BOTH validation and intelligence APIs in parallel for maximum performance
+                var validationTask = apiClient.ValidateTimelineAsync(timeline);
+                var intelligenceTask = apiClient.ValidateWithIntelligenceAsync(intelligenceRequest);
+
+                System.Diagnostics.Debug.WriteLine("Running validation and intelligence in parallel...");
+                await System.Threading.Tasks.Task.WhenAll(validationTask, intelligenceTask);
+
+                var validationResult = await validationTask;
+                var intelligenceResult = await intelligenceTask;
+
+                System.Diagnostics.Debug.WriteLine($"Validation: {validationResult.status}, Intelligence: {intelligenceResult.summary.total_tasks_analyzed} tasks analyzed");
 
                 // Write validation results back to MS Project
                 var writer = new Services.ProjectDataWriter();
@@ -96,13 +145,16 @@ namespace IlanaPM.AddIn
                     telemetryService.TrackEvent(TelemetryEventType.ValidationCompleted, new Dictionary<string, object>
                     {
                         { "issue_count", validationResult.issues?.Count ?? 0 },
-                        { "task_count", timeline.tasks?.Count ?? 0 }
+                        { "task_count", timeline.tasks?.Count ?? 0 },
+                        { "metadata_source", metadata.MetadataSource },
+                        { "variance_signals", intelligenceResult.variance_signals?.Count ?? 0 },
+                        { "financial_impact", intelligenceResult.summary?.total_financial_impact_usd ?? 0 }
                     });
                 }
 
-                // Show validation results form
+                // Show validation results form with BOTH validation and intelligence data
                 ValidationResultsForm resultsForm = new ValidationResultsForm();
-                resultsForm.DisplayResults(validationResult);
+                resultsForm.DisplayResults(validationResult, intelligenceResult);
                 resultsForm.ShowDialog();
             }
             catch (Models.UnauthorizedException ex)
@@ -687,5 +739,124 @@ namespace IlanaPM.AddIn
         }
 
         #endregion
+
+        // ===================================================================
+        // PHASE 5: TRACKER UPLOAD & INTELLIGENCE
+        // ===================================================================
+
+        /// <summary>
+        /// Upload Tracker button - Upload Risk Log, TMF, Budget, or Vendor trackers
+        /// Phase 5A: Core Tracker Upload workflow
+        /// </summary>
+        private async void btnUploadTracker_Click(object sender, RibbonControlEventArgs e)
+        {
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            try
+            {
+                // Get org_id from secure storage
+                string orgId = Services.SecureStorage.ReadOrgId();
+                if (string.IsNullOrEmpty(orgId))
+                {
+                    MessageBox.Show(
+                        "Organization ID not found.\n\n" +
+                        "Please re-activate your license in Settings to retrieve your organization information.",
+                        "Configuration Required",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                    return;
+                }
+
+                // Get project_id from current MS Project file
+                var app = Globals.ThisAddIn.Application;
+                if (app.ActiveProject == null)
+                {
+                    MessageBox.Show(
+                        "No active project.\n\n" +
+                        "Please open or create a project first before uploading tracker data.",
+                        "No Active Project",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning
+                    );
+                    return;
+                }
+
+                string projectId = app.ActiveProject.Name;
+                System.Diagnostics.Debug.WriteLine($"Upload Tracker: org_id={orgId}, project_id={projectId}");
+
+                // Show tracker upload form
+                var uploadForm = new TrackerUploadForm(orgId, projectId);
+                var result = uploadForm.ShowDialog();
+
+                if (result == DialogResult.OK)
+                {
+                    // Upload succeeded - show results
+                    var uploadResult = uploadForm.UploadResult;
+
+                    if (uploadResult != null)
+                    {
+                        string healthIcon = uploadResult.health_status == "healthy" ? "✅" :
+                                           uploadResult.health_status == "warning" ? "⚠️" : "🔴";
+
+                        string message = $"✅ Tracker uploaded successfully!\n\n" +
+                                       $"📊 {uploadResult.rows_processed} rows processed\n" +
+                                       $"🔔 {uploadResult.signals_extracted} signals extracted\n" +
+                                       $"⚠️ {uploadResult.escalations_detected} escalations detected\n\n" +
+                                       $"{healthIcon} Study Health: {uploadResult.health_score:F1} ({uploadResult.health_status})\n\n" +
+                                       $"View full details in Leadership Dashboard.";
+
+                        MessageBox.Show(
+                            message,
+                            "Upload Complete",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information
+                        );
+
+                        System.Diagnostics.Debug.WriteLine($"Tracker upload successful: {uploadResult.rows_processed} rows, " +
+                                                           $"{uploadResult.signals_extracted} signals, " +
+                                                           $"{uploadResult.escalations_detected} escalations, " +
+                                                           $"health: {uploadResult.health_score} ({uploadResult.health_status})");
+
+                        // Track telemetry
+                        var telemetryService = Globals.ThisAddIn.TelemetryService;
+                        if (telemetryService != null)
+                        {
+                            telemetryService.TrackEvent(TelemetryEventType.TrackerUploaded, new Dictionary<string, object>
+                            {
+                                { "tracker_type", uploadForm.SelectedTrackerType },
+                                { "rows_processed", uploadResult.rows_processed },
+                                { "signals_extracted", uploadResult.signals_extracted },
+                                { "escalations_detected", uploadResult.escalations_detected },
+                                { "health_score", uploadResult.health_score },
+                                { "health_status", uploadResult.health_status }
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Models.UnauthorizedException ex)
+            {
+                // License expired or invalid - show activation form
+                MessageBox.Show(ex.Message, "License Required",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+                var activationForm = new LicenseActivationForm();
+                activationForm.ShowDialog();
+            }
+            catch (System.Exception ex)
+            {
+                string detailedError = "Error uploading tracker: " + ex.Message;
+                if (ex.InnerException != null)
+                {
+                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Tracker upload error: {detailedError}");
+
+                MessageBox.Show(detailedError, "Upload Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
     }
 }

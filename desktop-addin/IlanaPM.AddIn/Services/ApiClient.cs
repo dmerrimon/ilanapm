@@ -268,6 +268,27 @@ namespace IlanaPM.AddIn.Services
             return JsonConvert.DeserializeObject<Models.ValidationResult>(responseBody);
         }
 
+        /// <summary>
+        /// Validate timeline with intelligence features (requires study metadata)
+        /// Calls POST /api/v1/intelligence/validate-core with metadata
+        /// Returns VarianceReport with benchmark comparison and financial impact
+        /// </summary>
+        public async Task<Models.VarianceReport> ValidateWithIntelligenceAsync(Models.IntelligenceValidationRequest request)
+        {
+            AddAuthorizationHeader(); // Add JWT token
+            string jsonContent = JsonConvert.SerializeObject(request);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await httpClient.PostAsync(
+                API_BASE_URL + "/api/v1/intelligence/validate-core",
+                content
+            );
+
+            await HandleResponseAsync(response); // Handle 401, 422, and other errors
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Models.VarianceReport>(responseBody);
+        }
+
         public async Task<Models.TimelineAdvisory> GetTimelineAdvisoryAsync(Models.Timeline timeline)
         {
             AddAuthorizationHeader();
@@ -499,6 +520,116 @@ namespace IlanaPM.AddIn.Services
                 // Fail silently - telemetry errors should not impact user
                 System.Diagnostics.Debug.WriteLine($"Telemetry send error: {ex.Message}");
             }
+        }
+
+        // ===================================================================
+        // PHASE 5: TRACKER UPLOAD & INTELLIGENCE ENDPOINTS
+        // ===================================================================
+
+        /// <summary>
+        /// Upload Excel tracker file (Risk Log, TMF, Budget, Vendor, etc.)
+        /// POST /api/v1/trackers/upload
+        /// Returns upload result with health score and signal extraction summary
+        /// </summary>
+        public async Task<Models.TrackerUploadResult> UploadTrackerAsync(
+            string orgId,
+            string projectId,
+            string trackerType,
+            byte[] fileBytes,
+            string fileName
+        )
+        {
+            try
+            {
+                AddAuthorizationHeader();
+
+                using (var content = new MultipartFormDataContent())
+                {
+                    // Add file content
+                    var fileContent = new ByteArrayContent(fileBytes);
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    content.Add(fileContent, "file", fileName);
+
+                    // Build URL with query parameters
+                    string url = $"{API_BASE_URL}/api/v1/trackers/upload?" +
+                                 $"org_id={Uri.EscapeDataString(orgId)}&" +
+                                 $"project_id={Uri.EscapeDataString(projectId)}&" +
+                                 $"tracker_type={Uri.EscapeDataString(trackerType)}";
+
+                    System.Diagnostics.Debug.WriteLine($"Uploading tracker: {fileName} ({fileBytes.Length} bytes)");
+
+                    HttpResponseMessage response = await httpClient.PostAsync(url, content);
+                    await HandleResponseAsync(response);
+
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"Tracker upload response: {responseBody}");
+
+                    return JsonConvert.DeserializeObject<Models.TrackerUploadResult>(responseBody);
+                }
+            }
+            catch (Models.UnauthorizedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Tracker upload error: {ex.Message}");
+                throw new HttpRequestException($"Failed to upload tracker: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Get study health snapshot with signals and correlations
+        /// GET /api/v1/dashboard/study/{project_id}
+        /// </summary>
+        public async Task<Models.StudyHealthSnapshot> GetStudyHealthSnapshotAsync(
+            string projectId,
+            string orgId
+        )
+        {
+            try
+            {
+                AddAuthorizationHeader();
+
+                string url = $"{API_BASE_URL}/api/v1/dashboard/study/{Uri.EscapeDataString(projectId)}?" +
+                             $"org_id={Uri.EscapeDataString(orgId)}";
+
+                System.Diagnostics.Debug.WriteLine($"Fetching study health for project: {projectId}");
+
+                HttpResponseMessage response = await httpClient.GetAsync(url);
+                await HandleResponseAsync(response);
+
+                string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<Models.StudyHealthSnapshot>(responseBody);
+            }
+            catch (Models.UnauthorizedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Get study health error: {ex.Message}");
+                throw new HttpRequestException($"Failed to retrieve study health: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Get Leadership Dashboard web portal URL with auto-login token
+        /// Returns URL to app.seleen.io with authentication token
+        /// </summary>
+        public string GetLeadershipDashboardUrl()
+        {
+            string token = SecureStorage.ReadToken();
+            string orgId = SecureStorage.ReadOrgId();
+
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(orgId))
+            {
+                throw new Models.UnauthorizedException("No token or org_id available");
+            }
+
+            return $"https://app.seleen.io/dashboard/leadership?" +
+                   $"token={Uri.EscapeDataString(token)}&" +
+                   $"org_id={Uri.EscapeDataString(orgId)}";
         }
     }
 }

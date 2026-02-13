@@ -40,7 +40,13 @@ namespace IlanaPM.AddIn.Models
 
         // ML Learning Events
         TaskCompleted,              // Task marked complete (for ML learning)
-        ProjectOpened               // Project opened (for ML context)
+        ProjectOpened,              // Project opened (for ML context)
+
+        // Phase 5: Intelligence Layer Events
+        TrackerUploaded,            // Tracker file uploaded (Risk Log, TMF, etc.)
+        LeadershipDashboardOpened,  // Leadership Dashboard viewed
+        DashboardExported,          // Dashboard data exported
+        StudyHealthViewed           // Study health snapshot viewed
     }
 
     /// <summary>
