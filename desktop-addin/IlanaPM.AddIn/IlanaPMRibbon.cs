@@ -78,36 +78,30 @@ namespace IlanaPM.AddIn
                 // FIRST: Ensure custom fields exist
                 EnsureCustomFields();
 
-                // NEW: Auto-load metadata from project
+                // Load metadata from project (saved from Clinical Project Manager)
                 var metadata = Services.MetadataHelper.LoadFromProject();
 
                 if (metadata == null || !metadata.IsValid())
                 {
-                    System.Diagnostics.Debug.WriteLine("Validation: Metadata missing or invalid - showing QuickMetadataForm");
+                    System.Diagnostics.Debug.WriteLine("Validation: Metadata missing or invalid");
 
-                    // Show form to collect metadata
-                    using (var form = new QuickMetadataForm())
-                    {
-                        if (form.ShowDialog() == DialogResult.OK)
-                        {
-                            metadata = form.CollectedMetadata;
-                            metadata.StudyName = Globals.ThisAddIn.Application.ActiveProject?.Name;
+                    // Metadata is missing - user needs to set up study first
+                    MessageBox.Show(
+                        "Study information is required for validation.\n\n" +
+                        "Please use the Clinical Project Manager to set up your study first:\n\n" +
+                        "1. Click Clinical → Clinical Project Manager\n" +
+                        "2. Enter study information (Phase, Therapeutic Area, Country)\n" +
+                        "3. Generate your timeline\n" +
+                        "4. Then return to validate\n\n" +
+                        "This ensures all validation uses consistent study information.",
+                        "Study Setup Required",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+                    return; // Don't proceed without metadata
+                }
 
-                            // Save metadata to project for future use
-                            Services.MetadataHelper.SaveToProject(metadata);
-                            System.Diagnostics.Debug.WriteLine($"Validation: Saved collected metadata - {metadata}");
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine("Validation: User cancelled metadata collection");
-                            return; // User cancelled - don't proceed with validation
-                        }
-                    }
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"Validation: Auto-loaded metadata - {metadata}");
-                }
+                System.Diagnostics.Debug.WriteLine($"Validation: Using metadata from Clinical Project Manager - {metadata}");
 
                 var extractor = new Services.ProjectDataExtractor();
                 var timeline = extractor.ExtractTimeline(Globals.ThisAddIn.Application);
