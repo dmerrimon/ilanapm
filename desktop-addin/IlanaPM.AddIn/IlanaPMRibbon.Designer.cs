@@ -39,6 +39,7 @@ namespace IlanaPM.AddIn
             this.btnValidate = this.Factory.CreateRibbonButton();
             this.btnCriticalPath = this.Factory.CreateRibbonButton();
             this.btnUploadTracker = this.Factory.CreateRibbonButton();
+            this.btnLeadershipDashboard = this.Factory.CreateRibbonButton();
 
             this.btnSettings = this.Factory.CreateRibbonButton();
 
@@ -134,6 +135,7 @@ namespace IlanaPM.AddIn
             this.menuAnalysis.Items.Add(this.btnValidate);
             this.menuAnalysis.Items.Add(this.btnCriticalPath);
             this.menuAnalysis.Items.Add(this.btnUploadTracker);
+            this.menuAnalysis.Items.Add(this.btnLeadershipDashboard);
             this.menuAnalysis.Label = "Analysis";
             this.menuAnalysis.Name = "menuAnalysis";
             this.menuAnalysis.ShowImage = true;
@@ -165,6 +167,15 @@ namespace IlanaPM.AddIn
             this.btnUploadTracker.ShowImage = true;
             this.btnUploadTracker.OfficeImageId = "ImportExcel";
             this.btnUploadTracker.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnUploadTracker_Click);
+
+            //
+            // btnLeadershipDashboard (inside Analysis menu) - PHASE 5B
+            //
+            this.btnLeadershipDashboard.Label = "Leadership Dashboard";
+            this.btnLeadershipDashboard.Name = "btnLeadershipDashboard";
+            this.btnLeadershipDashboard.ShowImage = true;
+            this.btnLeadershipDashboard.OfficeImageId = "ViewDashboard";
+            this.btnLeadershipDashboard.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnLeadershipDashboard_Click);
 
             //
             // grpReports - Reports Group with 2 standalone buttons
@@ -280,6 +291,7 @@ namespace IlanaPM.AddIn
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnValidate;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnCriticalPath;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnUploadTracker;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnLeadershipDashboard;
 
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSettings;
 
