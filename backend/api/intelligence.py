@@ -33,6 +33,8 @@ from intelligence import (
     OrgBenchmark,
     BlendedBenchmark,
     ConfidenceScore,
+    StudyMetadata,
+    MetadataValidationResult,
     require_tier,
     check_tier
 )
@@ -78,15 +80,134 @@ class MetadataInferenceRequest(BaseModel):
 
 
 class IntelligenceValidationRequest(BaseModel):
-    """Request for intelligence-enhanced validation"""
+    """
+    Request for intelligence-enhanced validation
+
+    REQUIRES study metadata for accurate benchmarking:
+    - phase: Study phase (Phase I, II, III, IV)
+    - therapeutic_area: Disease area (Oncology, Cardiology, etc.)
+    - primary_country: Regulatory authority (US, EU, JP, etc.)
+
+    Without metadata, benchmarks cannot be accurately matched.
+    """
     timeline: Dict
     org_id: str
     tier: str
+    study_metadata: StudyMetadata  # REQUIRED for accurate benchmarking
 
 
 # ============================================================================
 # Core Intelligence Endpoints
 # ============================================================================
+
+@router.post("/intelligence/validate-metadata", response_model=MetadataValidationResult)
+async def validate_metadata(metadata: StudyMetadata):
+    """
+    Validate study metadata and check benchmark coverage
+
+    CRITICAL: Run this BEFORE uploading timelines to ensure we have
+    benchmarks for your study type.
+
+    Returns coverage statistics:
+    - How many task categories have benchmarks for this combination
+    - What percentage of typical tasks will have benchmarks
+    - Warnings if coverage is low
+    - Recommendations for improving coverage
+
+    Example:
+        POST /api/v1/intelligence/validate-metadata
+        {
+            "phase": "Phase III",
+            "therapeutic_area": "Oncology",
+            "primary_country": "US"
+        }
+
+        Response:
+        {
+            "is_valid": true,
+            "coverage_percent": 87.5,
+            "benchmarks_available": 78,
+            "total_task_categories": 92,
+            "missing_benchmarks": ["enrollment_projection", "safety_monitoring"],
+            "warnings": [],
+            "recommendations": ["Coverage is excellent for Phase III Oncology in US"]
+        }
+    """
+    try:
+        logger.info(f"Validating metadata: {metadata.phase}, {metadata.therapeutic_area}, {metadata.primary_country}")
+
+        # Validate required fields
+        if not metadata.validate_required_fields():
+            raise HTTPException(
+                status_code=422,
+                detail="Study metadata must include phase, therapeutic_area, and primary_country"
+            )
+
+        # Get all task categories from ontology
+        all_tasks = config.get('tasks', [])
+        total_categories = len(set(task.get('category') for task in all_tasks))
+
+        # Check benchmark availability for this metadata combination
+        benchmarks_found = []
+        missing_benchmarks = []
+
+        for task in all_tasks:
+            category = task.get('category')
+            task_id = task.get('task_id')
+
+            # Try to get benchmark with this metadata
+            benchmark = benchmark_retriever.get_benchmark(
+                category=category,
+                country=metadata.primary_country,
+                phase=metadata.phase,
+                therapeutic_area=metadata.therapeutic_area
+            )
+
+            if benchmark:
+                benchmarks_found.append(task_id)
+            else:
+                missing_benchmarks.append(f"{category} ({task_id})")
+
+        # Calculate coverage
+        coverage_percent = (len(benchmarks_found) / len(all_tasks) * 100) if all_tasks else 0
+
+        # Generate warnings and recommendations
+        warnings = []
+        recommendations = []
+
+        if coverage_percent < 50:
+            warnings.append(f"Low benchmark coverage ({coverage_percent:.1f}%). Many tasks will not have industry comparisons.")
+            recommendations.append("Consider using a more common study phase/therapeutic area combination")
+            recommendations.append("Or upload historical timelines to create organization-specific benchmarks (Calibrated tier)")
+        elif coverage_percent < 70:
+            warnings.append(f"Moderate benchmark coverage ({coverage_percent:.1f}%). Some tasks may not have benchmarks.")
+            recommendations.append("This is acceptable but you may want to supplement with organization data (Calibrated tier)")
+        else:
+            recommendations.append(f"Excellent benchmark coverage ({coverage_percent:.1f}%) for this study type!")
+
+        # Additional country-specific warnings
+        if metadata.primary_country not in ['US', 'EU', 'JP', 'CA', 'GB']:
+            warnings.append(f"Country '{metadata.primary_country}' has limited benchmark data. Consider using regional authority (e.g., 'EU' for European countries)")
+
+        return MetadataValidationResult(
+            is_valid=coverage_percent > 50,
+            coverage_percent=round(coverage_percent, 1),
+            benchmarks_available=len(benchmarks_found),
+            total_task_categories=total_categories,
+            missing_benchmarks=missing_benchmarks[:10],  # Return first 10
+            warnings=warnings,
+            recommendations=recommendations
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Metadata validation failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Metadata validation failed: {str(e)}"
+        )
+
 
 @router.post("/intelligence/validate-core")
 async def validate_with_intelligence(request: IntelligenceValidationRequest):
@@ -95,17 +216,45 @@ async def validate_with_intelligence(request: IntelligenceValidationRequest):
 
     Core Tier Feature: Available to all customers.
 
+    REQUIRES study_metadata:
+    - phase: "Phase I", "Phase II", "Phase III", "Phase IV"
+    - therapeutic_area: "Oncology", "Cardiology", "Neurology", etc.
+    - primary_country: "US", "EU", "JP", etc.
+
+    These are CRITICAL for accurate benchmarking. Without them,
+    we cannot compare your timeline to the correct industry standards.
+
     Args:
-        request: Contains timeline, org_id, tier
+        request: Contains timeline, org_id, tier, study_metadata
 
     Returns:
         VarianceReport with detailed variance analysis
+
+    Raises:
+        422: If study_metadata is missing or invalid
     """
     try:
         logger.info(f"Intelligence validation request from org {request.org_id}, tier {request.tier}")
 
+        # Validate study metadata is provided
+        if not request.study_metadata or not request.study_metadata.validate_required_fields():
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error": "Study metadata required",
+                    "message": "Study metadata (phase, therapeutic_area, primary_country) is required for accurate benchmarking",
+                    "missing_fields": [],
+                    "help": "Provide study_metadata with phase, therapeutic_area, and primary_country"
+                }
+            )
+
+        logger.info(f"Study metadata: {request.study_metadata.phase}, {request.study_metadata.therapeutic_area}, {request.study_metadata.primary_country}")
+
         # Get org-specific config
         tier_config = _get_org_intelligence_config(request.org_id, request.tier)
+
+        # Inject study metadata into tier config for engines to use
+        tier_config['study_metadata'] = request.study_metadata.dict()
 
         # Initialize components with database connection
         with get_db_connection() as conn:

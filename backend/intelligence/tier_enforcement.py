@@ -12,68 +12,57 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Tier hierarchy (higher number = more features)
+# Updated: Single tier only - all customers get all features
+# Kept for backward compatibility but all tiers have same level
 TIER_HIERARCHY = {
-    "core": 1,
-    "calibrated": 2,
-    "enterprise": 3,
-    "professional": 2,  # Alias for calibrated (backward compatibility)
+    "enterprise": 1,
+    "calibrated": 1,   # Backward compatibility
+    "professional": 1,  # Backward compatibility
 }
 
 # Feature availability by tier
+# Updated: Single tier - all customers get all features
+ALL_FEATURES = [
+    "variance_detection",
+    "benchmark_retrieval",
+    "financial_impact",
+    "basic_task_normalization",
+    "basic_metadata_inference",
+    "view_task_mappings",
+    "view_project_profiles",
+    "leadership_dashboard",
+    "tracker_upload",
+    "signal_extraction",
+    "study_health_score",
+    "signal_correlation",
+    "advanced_task_normalization",
+    "metadata_inference",
+    "edit_task_mappings",
+    "create_project_profiles",
+    "confidence_scoring",
+    "benchmark_blending",
+    "calibration_upload",
+    "pattern_detection",
+    "custom_column_mapping",
+    "custom_signal_rules",
+    "escalation_filtering",
+    "intervention_recommendations",
+    "portfolio_analytics",
+    "resource_collision_detection",
+    "portfolio_forecasting",
+    "ml_task_classification",
+    "custom_field_definitions",
+    "portfolio_aggregation",
+    "pattern_detection_cross_study",
+    "api_access_full",
+    "sso_saml",
+    "custom_tracker_types",
+]
+
 TIER_FEATURES = {
-    "core": [
-        "variance_detection",
-        "benchmark_retrieval",
-        "financial_impact",
-        "basic_task_normalization",
-        "basic_metadata_inference",
-        "view_task_mappings",
-        "view_project_profiles",
-    ],
-    "calibrated": [
-        # Core features (inherited)
-        "variance_detection",
-        "benchmark_retrieval",
-        "financial_impact",
-        "basic_task_normalization",
-        "basic_metadata_inference",
-        "view_task_mappings",
-        "view_project_profiles",
-        # Calibrated-specific features
-        "advanced_task_normalization",  # NLP semantic similarity
-        "metadata_inference",
-        "edit_task_mappings",
-        "create_project_profiles",
-        "confidence_scoring",
-        "benchmark_blending",
-        "calibration_upload",
-        "pattern_detection",
-    ],
-    "enterprise": [
-        # Core features (inherited)
-        "variance_detection",
-        "benchmark_retrieval",
-        "financial_impact",
-        "basic_task_normalization",
-        "basic_metadata_inference",
-        "view_task_mappings",
-        "view_project_profiles",
-        # Calibrated features (inherited)
-        "advanced_task_normalization",
-        "metadata_inference",
-        "edit_task_mappings",
-        "create_project_profiles",
-        "confidence_scoring",
-        "benchmark_blending",
-        "calibration_upload",
-        "pattern_detection",
-        # Enterprise-specific features
-        "portfolio_analytics",
-        "resource_collision_detection",
-        "portfolio_forecasting",
-        "ml_task_classification",
-        "custom_field_definitions",
-    ]
+    "enterprise": ALL_FEATURES,
+    "calibrated": ALL_FEATURES,   # Backward compatibility
+    "professional": ALL_FEATURES,  # Backward compatibility
 }
 
 
@@ -86,99 +75,58 @@ def check_tier(required_tier: str, user_tier: str) -> bool:
     """
     Check if user's tier meets the required tier level
 
+    Updated: Always returns True (all customers get all features)
+    Kept for backward compatibility
+
     Args:
-        required_tier: Minimum tier required
-        user_tier: User's current tier
+        required_tier: Minimum tier required (ignored)
+        user_tier: User's current tier (ignored)
 
     Returns:
-        bool: True if user has access, False otherwise
+        bool: Always True (no tier gating)
     """
-    required_level = get_tier_level(required_tier)
-    user_level = get_tier_level(user_tier)
-    return user_level >= required_level
+    return True
 
 
 def check_feature_access(feature: str, user_tier: str) -> bool:
     """
     Check if user's tier has access to a specific feature
 
+    Updated: Always returns True (all customers get all features)
+    Kept for backward compatibility
+
     Args:
-        feature: Feature name to check
-        user_tier: User's current tier
+        feature: Feature name to check (ignored)
+        user_tier: User's current tier (ignored)
 
     Returns:
-        bool: True if user has access, False otherwise
+        bool: Always True (no feature gating)
     """
-    tier_features = TIER_FEATURES.get(user_tier.lower(), [])
-    return feature in tier_features
+    return True
 
 
 def require_tier(required_tier: str, feature_name: Optional[str] = None):
     """
-    Decorator to enforce tier-based access control on API endpoints
+    Decorator for backward compatibility - no longer enforces tier restrictions
+
+    Updated: All customers get all features, so this decorator just logs and allows access
+    Kept for backward compatibility with existing code
 
     Usage:
-        @require_tier("calibrated", feature_name="confidence_scoring")
-        async def get_confidence_score(...):
+        @require_tier("enterprise", feature_name="portfolio_analytics")
+        async def get_portfolio(...):
             ...
 
     Args:
-        required_tier: Minimum tier required ("core", "calibrated", "enterprise")
-        feature_name: Optional specific feature name to check
+        required_tier: Ignored (kept for backward compatibility)
+        feature_name: Ignored (kept for backward compatibility)
     """
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Extract tier from kwargs (should be injected by auth middleware)
-            user_tier = kwargs.get('tier') or kwargs.get('user_tier')
-
-            if not user_tier:
-                # Try to get from request context if available
-                request = kwargs.get('request')
-                if request and hasattr(request.state, 'tier'):
-                    user_tier = request.state.tier
-                else:
-                    logger.error(f"No tier information found for {func.__name__}")
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Authentication required"
-                    )
-
-            # Check tier level
-            if not check_tier(required_tier, user_tier):
-                logger.warning(
-                    f"Tier access denied: {func.__name__} requires {required_tier}, user has {user_tier}"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "error": "Tier upgrade required",
-                        "message": f"This feature requires {required_tier.title()} tier or higher",
-                        "user_tier": user_tier,
-                        "required_tier": required_tier,
-                        "feature": feature_name or func.__name__,
-                        "upgrade_url": "/portal/settings/billing"
-                    }
-                )
-
-            # Check specific feature access if specified
-            if feature_name and not check_feature_access(feature_name, user_tier):
-                logger.warning(
-                    f"Feature access denied: {feature_name} not available in {user_tier} tier"
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "error": "Feature not available",
-                        "message": f"Feature '{feature_name}' is not available in your tier",
-                        "user_tier": user_tier,
-                        "feature": feature_name,
-                        "upgrade_url": "/portal/settings/billing"
-                    }
-                )
-
-            # Access granted, proceed with function
-            logger.info(f"Tier access granted: {func.__name__} for tier {user_tier}")
+            # All features available to all customers
+            # Just log for analytics purposes
+            logger.info(f"Access granted to {func.__name__} (all features enabled)")
             return await func(*args, **kwargs)
 
         return wrapper
@@ -189,13 +137,16 @@ def get_available_features(tier: str) -> List[str]:
     """
     Get list of features available for a tier
 
+    Updated: Returns all features for any tier (no tier gating)
+    Kept for backward compatibility
+
     Args:
-        tier: Tier name
+        tier: Tier name (ignored)
 
     Returns:
-        List of feature names
+        List of all feature names
     """
-    return TIER_FEATURES.get(tier.lower(), [])
+    return ALL_FEATURES
 
 
 def get_upgrade_message(current_tier: str, feature: str) -> str:

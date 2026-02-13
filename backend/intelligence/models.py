@@ -180,6 +180,43 @@ class ProjectProfile(BaseModel):
 
 
 # ============================================================================
+# Study Metadata Models (REQUIRED for accurate benchmarking)
+# ============================================================================
+
+class StudyMetadata(BaseModel):
+    """
+    Required metadata for accurate benchmark matching
+
+    Critical for intelligence accuracy - benchmarks vary dramatically by:
+    - Phase: Phase I timelines ≠ Phase III timelines
+    - Therapeutic Area: Oncology ≠ Cardiology timelines
+    - Country: US/FDA ≠ EU/EMA ≠ Japan/PMDA timelines
+    """
+    phase: str  # "Phase I", "Phase II", "Phase III", "Phase IV"
+    therapeutic_area: str  # "Oncology", "Cardiology", "Neurology", etc.
+    primary_country: str  # ISO country code or authority name
+    additional_countries: Optional[List[str]] = None
+    study_name: Optional[str] = None
+    study_id: Optional[str] = None
+    metadata_source: str = "user_provided"  # "user_provided", "inferred", "project_profile"
+
+    def validate_required_fields(self) -> bool:
+        """Validate that critical fields are populated"""
+        return bool(self.phase and self.therapeutic_area and self.primary_country)
+
+
+class MetadataValidationResult(BaseModel):
+    """Result of validating study metadata against available benchmarks"""
+    is_valid: bool
+    coverage_percent: float
+    benchmarks_available: int
+    total_task_categories: int
+    missing_benchmarks: List[str]
+    warnings: List[str]
+    recommendations: List[str]
+
+
+# ============================================================================
 # Configuration Models
 # ============================================================================
 
@@ -192,9 +229,11 @@ class IntelligenceConfig(BaseModel):
         "critical_percent": 30.0
     }
     financial_rate_per_month_usd: float = 733000.0
+    financial_impact_enabled: bool = True  # NEW: Can disable financial calculations
     benchmark_source: str = "industry_only"  # "industry_only", "blended", "org_only"
     blend_ratio: Optional[Dict[str, float]] = None  # {"org": 0.7, "industry": 0.3}
     enabled_features: List[str] = ["variance_detection"]
+    organization_defaults: Optional[Dict[str, Any]] = None  # Default phase, therapeutic areas, countries
 
 
 class TierConfiguration(BaseModel):

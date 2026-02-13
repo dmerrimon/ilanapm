@@ -383,3 +383,337 @@ async def generate_study_closeout_template(request: SiteTemplateRequest) -> Time
     except Exception as e:
         logger.error(f"Study closeout template generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Template generation failed: {str(e)}")
+
+
+# ============================================================================
+# New Database-Backed Timeline Template Endpoints
+# ============================================================================
+
+@router.get("/templates/library")
+async def list_timeline_templates(org_id: Optional[str] = None):
+    """
+    Get list of available timeline templates from database
+
+    Returns system templates and optionally org-specific custom templates.
+
+    Args:
+        org_id: Optional organization ID to include custom templates
+
+    Returns:
+        List of timeline templates with metadata
+
+    Example Response:
+        {
+          "templates": [
+            {
+              "template_id": "TPL_001",
+              "template_name": "Study Startup",
+              "template_type": "study_startup",
+              "description": "Study startup activities from Study Award to FPI",
+              "total_task_count": 86,
+              "is_system_template": true
+            },
+            ...
+          ],
+          "count": 5
+        }
+    """
+    try:
+        import sqlite3
+        from pathlib import Path
+
+        db_path = Path(__file__).parent.parent / "database" / "feedback.db"
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Get system templates (org_id IS NULL)
+        cursor.execute("""
+            SELECT
+                template_id,
+                template_name,
+                template_type,
+                version,
+                description,
+                total_task_count,
+                estimated_duration_days
+            FROM timeline_templates
+            WHERE org_id IS NULL
+            ORDER BY
+                CASE template_type
+                    WHEN 'study_startup' THEN 1
+                    WHEN 'implementation' THEN 2
+                    WHEN 'closeout' THEN 3
+                    WHEN 'site_activation' THEN 4
+                    WHEN 'site_closeout' THEN 5
+                    ELSE 6
+                END
+        """)
+
+        system_templates = [dict(row) for row in cursor.fetchall()]
+
+        # Add is_system_template flag
+        for template in system_templates:
+            template['is_system_template'] = True
+
+        # Get org-specific templates if org_id provided
+        org_templates = []
+        if org_id:
+            cursor.execute("""
+                SELECT
+                    template_id,
+                    template_name,
+                    template_type,
+                    version,
+                    description,
+                    total_task_count,
+                    estimated_duration_days
+                FROM timeline_templates
+                WHERE org_id = ?
+                ORDER BY template_name
+            """, (org_id,))
+
+            org_templates = [dict(row) for row in cursor.fetchall()]
+            for template in org_templates:
+                template['is_system_template'] = False
+
+        conn.close()
+
+        all_templates = system_templates + org_templates
+
+        logger.info(f"Retrieved {len(all_templates)} timeline templates ({len(system_templates)} system, {len(org_templates)} org-specific)")
+
+        return {
+            "templates": all_templates,
+            "count": len(all_templates)
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to list templates: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list templates: {str(e)}"
+        )
+
+
+@router.get("/templates/library/{template_id}")
+async def get_timeline_template(template_id: str):
+    """
+    Get detailed timeline template with all tasks and dependencies
+
+    Args:
+        template_id: Template identifier (e.g., "TPL_001")
+
+    Returns:
+        Complete template with tasks, dependencies, and metadata
+
+    Example Response:
+        {
+          "template": {
+            "template_id": "TPL_001",
+            "template_name": "Study Startup",
+            "template_type": "study_startup",
+            "total_task_count": 86,
+            "description": "Study startup activities..."
+          },
+          "tasks": [
+            {
+              "task_id": "SS_001",
+              "task_name": "Internal Transition Meeting",
+              "category": "Initiation",
+              "typical_duration_days": 7,
+              "is_milestone": false,
+              "responsible_role": "Project Manager",
+              "sort_order": 1
+            },
+            ...
+          ],
+          "dependencies": [
+            {
+              "predecessor_task_id": "SS_001",
+              "successor_task_id": "SS_005",
+              "dependency_type": "finish-to-start"
+            },
+            ...
+          ]
+        }
+    """
+    try:
+        import sqlite3
+        from pathlib import Path
+
+        db_path = Path(__file__).parent.parent / "database" / "feedback.db"
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Get template
+        cursor.execute("""
+            SELECT
+                template_id,
+                template_name,
+                template_type,
+                version,
+                description,
+                total_task_count,
+                estimated_duration_days,
+                org_id
+            FROM timeline_templates
+            WHERE template_id = ?
+        """, (template_id,))
+
+        template_row = cursor.fetchone()
+
+        if not template_row:
+            conn.close()
+            raise HTTPException(
+                status_code=404,
+                detail=f"Template not found: {template_id}"
+            )
+
+        template = dict(template_row)
+
+        # Get tasks
+        cursor.execute("""
+            SELECT
+                task_id,
+                task_name,
+                task_code,
+                category,
+                typical_duration_days,
+                min_duration_days,
+                max_duration_days,
+                p25_duration_days,
+                p75_duration_days,
+                is_milestone,
+                is_critical_path,
+                description,
+                responsible_role,
+                parent_task_id,
+                sort_order,
+                outline_level
+            FROM template_tasks
+            WHERE template_id = ?
+            ORDER BY sort_order
+        """, (template_id,))
+
+        tasks = [dict(row) for row in cursor.fetchall()]
+
+        # Get dependencies
+        cursor.execute("""
+            SELECT
+                dependency_id,
+                predecessor_task_id,
+                successor_task_id,
+                dependency_type,
+                lag_days,
+                is_hard_dependency
+            FROM template_dependencies
+            WHERE template_id = ?
+        """, (template_id,))
+
+        dependencies = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        logger.info(f"Retrieved template {template_id}: {len(tasks)} tasks, {len(dependencies)} dependencies")
+
+        return {
+            "template": template,
+            "tasks": tasks,
+            "dependencies": dependencies
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get template {template_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get template: {str(e)}"
+        )
+
+
+@router.get("/templates/library/{template_id}/tasks")
+async def get_template_tasks(
+    template_id: str,
+    include_headers: bool = True
+):
+    """
+    Get tasks for a specific template
+
+    Args:
+        template_id: Template identifier
+        include_headers: Include category headers (outline_level=1)
+
+    Returns:
+        List of tasks with metadata
+    """
+    try:
+        import sqlite3
+        from pathlib import Path
+
+        db_path = Path(__file__).parent.parent / "database" / "feedback.db"
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Build query based on include_headers
+        if include_headers:
+            query = """
+                SELECT
+                    task_id,
+                    task_name,
+                    task_code,
+                    category,
+                    typical_duration_days,
+                    is_milestone,
+                    is_critical_path,
+                    description,
+                    responsible_role,
+                    parent_task_id,
+                    sort_order,
+                    outline_level
+                FROM template_tasks
+                WHERE template_id = ?
+                ORDER BY sort_order
+            """
+        else:
+            query = """
+                SELECT
+                    task_id,
+                    task_name,
+                    task_code,
+                    category,
+                    typical_duration_days,
+                    is_milestone,
+                    is_critical_path,
+                    description,
+                    responsible_role,
+                    parent_task_id,
+                    sort_order,
+                    outline_level
+                FROM template_tasks
+                WHERE template_id = ? AND outline_level = 2
+                ORDER BY sort_order
+            """
+
+        cursor.execute(query, (template_id,))
+        tasks = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        logger.info(f"Retrieved {len(tasks)} tasks for template {template_id}")
+
+        return {
+            "template_id": template_id,
+            "tasks": tasks,
+            "count": len(tasks)
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get template tasks: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get template tasks: {str(e)}"
+        )

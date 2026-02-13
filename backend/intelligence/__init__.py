@@ -30,7 +30,9 @@ from .models import (
     TaskPattern,
     CalibrationResult,
     BlendedBenchmark,
-    ConfidenceScore
+    ConfidenceScore,
+    StudyMetadata,
+    MetadataValidationResult
 )
 
 from .benchmark_retriever import BenchmarkRetriever
@@ -66,6 +68,8 @@ __all__ = [
     "CalibrationResult",
     "BlendedBenchmark",
     "ConfidenceScore",
+    "StudyMetadata",
+    "MetadataValidationResult",
     # Classes
     "BenchmarkRetriever",
     "FinancialImpactCalculator",

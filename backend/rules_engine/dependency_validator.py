@@ -198,29 +198,55 @@ class DependencyValidator(BaseValidator):
             timeline: Timeline being validated
             issues: List to append issues to
         """
-        # Tasks that should typically have predecessors
-        critical_categories = ["Site", "Data", "Closeout"]
+        # Specific task-to-predecessor requirements
+        required_predecessors = {
+            "Site Identification & Feasibility": {
+                "required": ["Confidentiality Agreement", "CDA", "Confidentiality"],
+                "detail": "Site feasibility work requires an executed confidentiality agreement (CDA) before site visits and data sharing can occur.",
+                "fix": "Add 'Confidentiality Agreement' task as predecessor"
+            },
+            "Site Initiation Visit": {
+                "required": ["Site Contract", "Site Agreement"],
+                "detail": "Site initiation visits require executed site contracts before site activation activities can begin.",
+                "fix": "Add 'Site Contract' or 'Site Agreement' task as predecessor"
+            }
+        }
+
+        # Build task name lookup
+        task_by_id = {task.id: task for task in timeline.tasks}
+        task_names = {task.id: task.name for task in timeline.tasks}
 
         for task in timeline.tasks:
-            if task.category.value in critical_categories:
-                has_predecessors = graph.in_degree(task.id) > 0
+            # Check specific task requirements
+            for required_task_name, requirement in required_predecessors.items():
+                if required_task_name.lower() in task.name.lower():
+                    # Get predecessors
+                    predecessors = list(graph.predecessors(task.id))
+                    predecessor_names = [task_names.get(pred_id, "") for pred_id in predecessors]
 
-                if not has_predecessors:
-                    issues.append(ValidationIssue(
-                        rule_id="DEP-004",
-                        severity=IssueSeverity.WARNING,
-                        category=IssueCategory.DEPENDENCIES,
-                        task_id=task.id,
-                        task_name=task.name,
-                        message=f"Critical task missing predecessors: {task.name}",
-                        detail=f"{task.category.value} tasks typically require predecessors (e.g., regulatory approvals, site contracts).",
-                        suggested_fix="Add appropriate predecessor tasks (e.g., regulatory approvals for site tasks)",
-                        confidence=0.75,
-                        evidence=[
-                            f"Category: {task.category.value}",
-                            f"No predecessor tasks defined"
-                        ]
-                    ))
+                    # Check if any required predecessor exists
+                    has_required_pred = any(
+                        any(req.lower() in pred_name.lower() for req in requirement["required"])
+                        for pred_name in predecessor_names
+                    )
+
+                    if not has_required_pred:
+                        issues.append(ValidationIssue(
+                            rule_id="DEP-004",
+                            severity=IssueSeverity.WARNING,
+                            category=IssueCategory.DEPENDENCIES,
+                            task_id=task.id,
+                            task_name=task.name,
+                            message=f"Critical task missing required predecessor: {task.name}",
+                            detail=requirement["detail"],
+                            suggested_fix=requirement["fix"],
+                            confidence=0.85,
+                            evidence=[
+                                f"Task: {task.name}",
+                                f"Required predecessor: {' or '.join(requirement['required'])}",
+                                f"Current predecessors: {', '.join(predecessor_names) if predecessor_names else 'None'}"
+                            ]
+                        ))
 
     def _check_dependency_validity(
         self,
