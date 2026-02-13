@@ -81,9 +81,24 @@ namespace IlanaPM.AddIn
                 // Load metadata from project (saved from Clinical Project Manager)
                 var metadata = Services.MetadataHelper.LoadFromProject();
 
+                // Debug: Show what we loaded
+                if (metadata == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Validation: Metadata is NULL - no data in project summary task");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Validation: Loaded metadata - Phase='{metadata.Phase}', Area='{metadata.TherapeuticArea}', Country='{metadata.PrimaryCountry}'");
+                    System.Diagnostics.Debug.WriteLine($"Validation: IsValid()={metadata.IsValid()}");
+                }
+
                 if (metadata == null || !metadata.IsValid())
                 {
-                    System.Diagnostics.Debug.WriteLine("Validation: Metadata missing or invalid");
+                    string debugInfo = metadata == null
+                        ? "Metadata is null (not saved to project)"
+                        : $"Metadata incomplete: {metadata.GetValidationError()}";
+
+                    System.Diagnostics.Debug.WriteLine($"Validation: {debugInfo}");
 
                     // Metadata is missing - user needs to set up study first
                     MessageBox.Show(
@@ -93,7 +108,8 @@ namespace IlanaPM.AddIn
                         "2. Enter study information (Phase, Therapeutic Area, Country)\n" +
                         "3. Generate your timeline\n" +
                         "4. Then return to validate\n\n" +
-                        "This ensures all validation uses consistent study information.",
+                        "This ensures all validation uses consistent study information.\n\n" +
+                        $"Debug: {debugInfo}",
                         "Study Setup Required",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information
