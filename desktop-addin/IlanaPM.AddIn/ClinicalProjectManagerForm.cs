@@ -465,6 +465,28 @@ namespace IlanaPM.AddIn
                 string isoCode = ConvertCountryNameToISOCode(item.ToString());
                 config.Countries.Add(isoCode);
             }
+
+            // CRITICAL FIX: Save metadata to MetadataHelper for validation feature
+            // This ensures validation can find the study information without asking again
+            try
+            {
+                var metadata = new StudyMetadata
+                {
+                    Phase = config.StudyPhase,
+                    TherapeuticArea = config.TherapeuticArea,
+                    PrimaryCountry = config.Countries.Count > 0 ? config.Countries[0] : "",
+                    AdditionalCountries = config.Countries.Count > 1 ? config.Countries.Skip(1).ToList() : new List<string>(),
+                    StudyId = config.StudyName
+                };
+
+                Services.MetadataHelper.SaveToProject(metadata);
+                System.Diagnostics.Debug.WriteLine($"ClinicalProjectManager: Metadata saved to MetadataHelper - Phase={metadata.Phase}, Area={metadata.TherapeuticArea}, Country={metadata.PrimaryCountry}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ClinicalProjectManager: Error saving metadata to MetadataHelper: {ex.Message}");
+                // Don't throw - this is a non-critical enhancement for validation feature
+            }
         }
 
         /// <summary>
