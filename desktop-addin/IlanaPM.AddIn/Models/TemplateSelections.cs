@@ -33,6 +33,38 @@ namespace IlanaPM.AddIn.Models
         /// </summary>
         public bool GenerateStudyCloseout { get; set; }
 
+        // DATABASE TEMPLATES (NEW - from template library)
+
+        /// <summary>
+        /// Generate Study Start-Up from database (TPL_001 - 86 tasks, Study Award → FPI)
+        /// </summary>
+        public bool GenerateDatabaseStudyStartup { get; set; }
+
+        /// <summary>
+        /// Generate Study Implementation Milestones from database (TPL_002 - 10 milestones, FPI → LPLV)
+        /// </summary>
+        public bool GenerateDatabaseStudyImplementation { get; set; }
+
+        /// <summary>
+        /// Generate Study Closeout from database (TPL_003 - 23 tasks, LPLV → FDA submission)
+        /// </summary>
+        public bool GenerateDatabaseStudyCloseout { get; set; }
+
+        /// <summary>
+        /// Generate Site Activation from database (TPL_004 - 34 tasks per site)
+        /// </summary>
+        public bool GenerateDatabaseSiteActivation { get; set; }
+
+        /// <summary>
+        /// Generate Site Closeout from database (TPL_005 - 19 tasks per site)
+        /// </summary>
+        public bool GenerateDatabaseSiteCloseout { get; set; }
+
+        /// <summary>
+        /// Generate Full Study Timeline from database (TPL_006 - 119 tasks, complete lifecycle)
+        /// </summary>
+        public bool GenerateDatabaseFullStudy { get; set; }
+
         // Site-specific selections (Step 4 of wizard)
 
         /// <summary>
@@ -53,17 +85,41 @@ namespace IlanaPM.AddIn.Models
         /// </summary>
         public List<string> SitesForCloseout { get; set; }
 
+        /// <summary>
+        /// Site IDs to include in Database Site Activation templates (TPL_004)
+        /// Only used if GenerateDatabaseSiteActivation is true
+        /// </summary>
+        public List<string> SitesForDatabaseActivation { get; set; }
+
+        /// <summary>
+        /// Site IDs to include in Database Site Closeout templates (TPL_005)
+        /// Only used if GenerateDatabaseSiteCloseout is true
+        /// </summary>
+        public List<string> SitesForDatabaseCloseout { get; set; }
+
         public TemplateSelections()
         {
+            // Legacy API templates
             GenerateFullStudyTimeline = false;
             GenerateSiteStartup = false;
             GenerateSiteImplementation = false;
             GenerateSiteCloseout = false;
             GenerateStudyCloseout = false;
 
+            // Database templates
+            GenerateDatabaseStudyStartup = false;
+            GenerateDatabaseStudyImplementation = false;
+            GenerateDatabaseStudyCloseout = false;
+            GenerateDatabaseSiteActivation = false;
+            GenerateDatabaseSiteCloseout = false;
+            GenerateDatabaseFullStudy = false;
+
+            // Site lists
             SitesForStartup = new List<string>();
             SitesForImplementation = new List<string>();
             SitesForCloseout = new List<string>();
+            SitesForDatabaseActivation = new List<string>();
+            SitesForDatabaseCloseout = new List<string>();
         }
 
         /// <summary>
@@ -77,7 +133,13 @@ namespace IlanaPM.AddIn.Models
                        GenerateSiteStartup ||
                        GenerateSiteImplementation ||
                        GenerateSiteCloseout ||
-                       GenerateStudyCloseout;
+                       GenerateStudyCloseout ||
+                       GenerateDatabaseStudyStartup ||
+                       GenerateDatabaseStudyImplementation ||
+                       GenerateDatabaseStudyCloseout ||
+                       GenerateDatabaseSiteActivation ||
+                       GenerateDatabaseSiteCloseout ||
+                       GenerateDatabaseFullStudy;
             }
         }
 
@@ -98,6 +160,7 @@ namespace IlanaPM.AddIn.Models
         {
             int count = 0;
 
+            // Legacy API templates
             if (GenerateFullStudyTimeline) count += 90; // ~90 tasks for full study
             if (GenerateSiteStartup) count += SitesForStartup.Count * 55; // ~55 tasks per site (actual observed from API)
             if (GenerateSiteImplementation)
@@ -110,6 +173,14 @@ namespace IlanaPM.AddIn.Models
             if (GenerateSiteCloseout) count += SitesForCloseout.Count * 35; // ~35 tasks per site
             if (GenerateStudyCloseout) count += 25; // ~25 study-level tasks
 
+            // Database templates (exact counts from database)
+            if (GenerateDatabaseStudyStartup) count += 86; // TPL_001
+            if (GenerateDatabaseStudyImplementation) count += 10; // TPL_002
+            if (GenerateDatabaseStudyCloseout) count += 23; // TPL_003
+            if (GenerateDatabaseSiteActivation) count += SitesForDatabaseActivation.Count * 34; // TPL_004
+            if (GenerateDatabaseSiteCloseout) count += SitesForDatabaseCloseout.Count * 19; // TPL_005
+            if (GenerateDatabaseFullStudy) count += 119; // TPL_006
+
             return count;
         }
 
@@ -120,6 +191,7 @@ namespace IlanaPM.AddIn.Models
         {
             var selections = new List<string>();
 
+            // Legacy API templates
             if (GenerateFullStudyTimeline)
                 selections.Add("Full Study Timeline");
 
@@ -134,6 +206,25 @@ namespace IlanaPM.AddIn.Models
 
             if (GenerateStudyCloseout)
                 selections.Add("Study Closeout");
+
+            // Database templates
+            if (GenerateDatabaseStudyStartup)
+                selections.Add("DB: Study Start-Up (86 tasks)");
+
+            if (GenerateDatabaseStudyImplementation)
+                selections.Add("DB: Study Implementation (10 milestones)");
+
+            if (GenerateDatabaseStudyCloseout)
+                selections.Add("DB: Study Closeout (23 tasks)");
+
+            if (GenerateDatabaseSiteActivation)
+                selections.Add($"DB: Site Activation ({SitesForDatabaseActivation.Count} sites, 34 tasks each)");
+
+            if (GenerateDatabaseSiteCloseout)
+                selections.Add($"DB: Site Closeout ({SitesForDatabaseCloseout.Count} sites, 19 tasks each)");
+
+            if (GenerateDatabaseFullStudy)
+                selections.Add("DB: Full Study Timeline (119 tasks)");
 
             return selections.Count > 0
                 ? string.Join(", ", selections)

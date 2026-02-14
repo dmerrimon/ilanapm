@@ -281,6 +281,117 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
+        /// Load template from database template library (new database-backed templates)
+        /// Uses GET /api/v1/templates/library/{templateId} to retrieve template with all tasks and dependencies
+        /// </summary>
+        /// <param name="templateId">Template ID (e.g., "TPL_001" for Study Start-Up)</param>
+        /// <param name="config">Template configuration with study metadata</param>
+        /// <param name="filters">Optional filters (currently not applied to database templates)</param>
+        /// <returns>Template result ready to apply to MS Project</returns>
+        public async System.Threading.Tasks.Task<TemplateResult> LoadFromDatabaseTemplateAsync(
+            string templateId,
+            TemplateConfiguration config,
+            FilterOptions filters = null)
+        {
+            ReportProgress($"Loading Template {templateId}", $"Fetching template from database...");
+
+            // Get template details from API
+            Models.TemplateDetailResponse templateDetail = await apiClient.GetTemplateAsync(templateId);
+
+            ReportProgress("Template Retrieved", $"Received {templateDetail.tasks.Count} tasks from {templateDetail.template.template_name}");
+
+            // Convert TemplateDetailResponse to Timeline format (for compatibility with existing code)
+            var timeline = new Models.Timeline
+            {
+                study_name = config.StudyName,
+                phase = config.StudyPhase,
+                therapeutic_area = config.TherapeuticArea,
+                tasks = new List<Models.Task>(),
+                dependencies = new List<Models.Dependency>()
+            };
+
+            // Convert template tasks to Timeline tasks
+            foreach (var templateTask in templateDetail.tasks)
+            {
+                var task = new Models.Task
+                {
+                    id = templateTask.task_id,
+                    name = templateTask.task_name,
+                    duration_days = templateTask.typical_duration_days,
+                    category = templateTask.category,
+                    phase = templateDetail.template.template_type,
+                    is_mandatory = true,  // All database tasks are considered mandatory
+                    is_summary = templateTask.outline_level == 1,
+                    outline_level = templateTask.outline_level
+                };
+
+                timeline.tasks.Add(task);
+            }
+
+            // Convert template dependencies to Timeline dependencies
+            foreach (var templateDep in templateDetail.dependencies)
+            {
+                var dependency = new Models.Dependency
+                {
+                    predecessor_id = templateDep.predecessor_task_id,
+                    successor_id = templateDep.successor_task_id,
+                    type = templateDep.dependency_type,
+                    lag_days = templateDep.lag_days
+                };
+
+                timeline.dependencies.Add(dependency);
+            }
+
+            ReportProgress("Template Converted", $"Converted {timeline.tasks.Count} tasks and {timeline.dependencies.Count} dependencies");
+
+            // Determine template type based on template_type field
+            TemplateType resultType = TemplateType.FullStudyTimeline;  // Default
+            string phaseType = "Unknown";
+
+            switch (templateDetail.template.template_type)
+            {
+                case "study_startup":
+                    resultType = TemplateType.FullStudyTimeline;
+                    phaseType = "Study Start-Up";
+                    break;
+                case "implementation":
+                    resultType = TemplateType.SiteImplementation;
+                    phaseType = "Study Implementation";
+                    break;
+                case "closeout":
+                    resultType = TemplateType.StudyCloseout;
+                    phaseType = "Study Closeout";
+                    break;
+                case "site_activation":
+                    resultType = TemplateType.SiteStartup;
+                    phaseType = "Site Activation";
+                    break;
+                case "site_closeout":
+                    resultType = TemplateType.SiteCloseout;
+                    phaseType = "Site Closeout";
+                    break;
+                case "full_study":
+                    resultType = TemplateType.FullStudyTimeline;
+                    phaseType = "Full Study Timeline";
+                    break;
+            }
+
+            return new TemplateResult
+            {
+                TemplateType = resultType,
+                Timeline = timeline,
+                TaskCount = timeline.tasks.Count,
+                EstimatedDuration = templateDetail.template.estimated_duration_days,
+                SiteId = config.SiteId,  // May be null for study-level templates
+                CountryCode = config.CountryCode,
+                TemplateSource = $"DB-{templateId}",
+                PhaseType = phaseType,
+                FiltersApplied = false,  // Database templates not filtered yet
+                TaskCountBeforeFiltering = null
+            };
+        }
+
+        /// <summary>
         /// Apply template result to MS Project
         /// Sets custom fields Text11-14 for filtering
         /// </summary>
@@ -595,6 +706,49 @@ namespace IlanaPM.AddIn.Services
                 if (config.Templates.GenerateStudyCloseout)
                 {
                     totalTasksCreated += GenerateStudyCloseout(app, config);
+                }
+
+                // DATABASE TEMPLATES (NEW)
+                if (config.Templates.GenerateDatabaseStudyStartup)
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> Generating Database Study Start-Up (TPL_001)");
+                    totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_001", null);
+                }
+
+                if (config.Templates.GenerateDatabaseStudyImplementation)
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> Generating Database Study Implementation (TPL_002)");
+                    totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_002", null);
+                }
+
+                if (config.Templates.GenerateDatabaseStudyCloseout)
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> Generating Database Study Closeout (TPL_003)");
+                    totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_003", null);
+                }
+
+                if (config.Templates.GenerateDatabaseSiteActivation && config.Templates.SitesForDatabaseActivation.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($">>> Generating Database Site Activation (TPL_004) for {config.Templates.SitesForDatabaseActivation.Count} sites");
+                    foreach (string siteId in config.Templates.SitesForDatabaseActivation)
+                    {
+                        totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_004", siteId);
+                    }
+                }
+
+                if (config.Templates.GenerateDatabaseSiteCloseout && config.Templates.SitesForDatabaseCloseout.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($">>> Generating Database Site Closeout (TPL_005) for {config.Templates.SitesForDatabaseCloseout.Count} sites");
+                    foreach (string siteId in config.Templates.SitesForDatabaseCloseout)
+                    {
+                        totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_005", siteId);
+                    }
+                }
+
+                if (config.Templates.GenerateDatabaseFullStudy)
+                {
+                    System.Diagnostics.Debug.WriteLine(">>> Generating Database Full Study Timeline (TPL_006)");
+                    totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_006", null);
                 }
 
                 // Generate cohort milestone tasks if cohorts are defined
@@ -1319,6 +1473,50 @@ namespace IlanaPM.AddIn.Services
             }
 
             return tasksCreated;
+        }
+
+        /// <summary>
+        /// Generate tasks from database template and apply to MS Project
+        /// Helper method that loads template from database and creates tasks in MS Project
+        /// </summary>
+        /// <param name="app">MS Project application</param>
+        /// <param name="config">Clinical project configuration</param>
+        /// <param name="templateId">Template ID (e.g., "TPL_001")</param>
+        /// <param name="siteId">Optional site ID for site-specific templates</param>
+        /// <returns>Number of tasks created</returns>
+        private async System.Threading.Tasks.Task<int> GenerateFromDatabaseTemplate(
+            MSProject.Application app,
+            ClinicalProjectConfiguration config,
+            string templateId,
+            string siteId)
+        {
+            try
+            {
+                // Create template configuration
+                var templateConfig = new TemplateConfiguration
+                {
+                    StudyName = config.StudyName,
+                    StudyPhase = config.StudyPhase,
+                    TherapeuticArea = config.TherapeuticArea,
+                    CountryCode = config.Countries.Count > 0 ? config.Countries[0] : "US",
+                    SiteId = siteId
+                };
+
+                // Load template from database
+                var result = await LoadFromDatabaseTemplateAsync(templateId, templateConfig, null);
+
+                // Apply template to MS Project
+                ApplyToProject(app, result);
+
+                System.Diagnostics.Debug.WriteLine($"✓ Applied {result.TaskCount} tasks from {templateId} to MS Project");
+
+                return result.TaskCount;
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error generating from database template {templateId}: {ex.Message}");
+                throw new InvalidOperationException($"Failed to generate template {templateId}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
