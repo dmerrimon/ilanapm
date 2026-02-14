@@ -416,6 +416,27 @@ namespace IlanaPM.AddIn
                             MessageBoxIcon.Warning);
                         return false;
                     }
+                    // Database template validation
+                    if (config.Templates.GenerateDatabaseSiteActivation && clbSitesForDatabaseActivation.CheckedItems.Count == 0)
+                    {
+                        MessageBox.Show(
+                            "You selected DB: Site Activation but didn't select any sites.\n\n" +
+                            "Please select at least one site or uncheck DB: Site Activation.",
+                            "Validation",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    if (config.Templates.GenerateDatabaseSiteCloseout && clbSitesForDatabaseCloseout.CheckedItems.Count == 0)
+                    {
+                        MessageBox.Show(
+                            "You selected DB: Site Closeout but didn't select any sites.\n\n" +
+                            "Please select at least one site or uncheck DB: Site Closeout.",
+                            "Validation",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        return false;
+                    }
                     return true;
 
                 case 5:
@@ -588,11 +609,20 @@ namespace IlanaPM.AddIn
 
         private void SaveStep3Data()
         {
+            // Legacy API templates
             config.Templates.GenerateFullStudyTimeline = chkFullStudyTimeline.Checked;
             config.Templates.GenerateSiteStartup = chkSiteStartup.Checked;
             config.Templates.GenerateSiteImplementation = chkSiteImplementation.Checked;
             config.Templates.GenerateSiteCloseout = chkSiteCloseout.Checked;
             config.Templates.GenerateStudyCloseout = chkStudyCloseout.Checked;
+
+            // Database templates
+            config.Templates.GenerateDatabaseFullStudy = chkDatabaseFullStudy.Checked;
+            config.Templates.GenerateDatabaseStudyStartup = chkDatabaseStudyStartup.Checked;
+            config.Templates.GenerateDatabaseStudyImplementation = chkDatabaseStudyImplementation.Checked;
+            config.Templates.GenerateDatabaseStudyCloseout = chkDatabaseStudyCloseout.Checked;
+            config.Templates.GenerateDatabaseSiteActivation = chkDatabaseSiteActivation.Checked;
+            config.Templates.GenerateDatabaseSiteCloseout = chkDatabaseSiteCloseout.Checked;
         }
 
         private void SaveStep4Data()
@@ -620,6 +650,23 @@ namespace IlanaPM.AddIn
                 var siteConfig = item as SiteConfiguration;
                 if (siteConfig != null)
                     config.Templates.SitesForCloseout.Add(siteConfig.SiteId);
+            }
+
+            // Database template site selections
+            config.Templates.SitesForDatabaseActivation.Clear();
+            foreach (var item in clbSitesForDatabaseActivation.CheckedItems)
+            {
+                var siteConfig = item as SiteConfiguration;
+                if (siteConfig != null)
+                    config.Templates.SitesForDatabaseActivation.Add(siteConfig.SiteId);
+            }
+
+            config.Templates.SitesForDatabaseCloseout.Clear();
+            foreach (var item in clbSitesForDatabaseCloseout.CheckedItems)
+            {
+                var siteConfig = item as SiteConfiguration;
+                if (siteConfig != null)
+                    config.Templates.SitesForDatabaseCloseout.Add(siteConfig.SiteId);
             }
 
             // Save filter options
@@ -1227,6 +1274,8 @@ namespace IlanaPM.AddIn
             grpSiteStartup.Visible = config.Templates.GenerateSiteStartup;
             grpSiteImplementation.Visible = config.Templates.GenerateSiteImplementation;
             grpSiteCloseout.Visible = config.Templates.GenerateSiteCloseout;
+            grpDatabaseSiteActivation.Visible = config.Templates.GenerateDatabaseSiteActivation;
+            grpDatabaseSiteCloseout.Visible = config.Templates.GenerateDatabaseSiteCloseout;
 
             // Populate site lists
             if (config.Templates.GenerateSiteStartup)
@@ -1263,6 +1312,31 @@ namespace IlanaPM.AddIn
                     int index = clbSitesForCloseout.Items.Add(site);
                     if (config.Templates.SitesForCloseout.Contains(site.SiteId))
                         clbSitesForCloseout.SetItemChecked(index, true);
+                }
+            }
+
+            // Database template site lists
+            if (config.Templates.GenerateDatabaseSiteActivation)
+            {
+                clbSitesForDatabaseActivation.Items.Clear();
+                clbSitesForDatabaseActivation.DisplayMember = "DisplayText";
+                foreach (var site in config.Sites)
+                {
+                    int index = clbSitesForDatabaseActivation.Items.Add(site);
+                    if (config.Templates.SitesForDatabaseActivation.Contains(site.SiteId))
+                        clbSitesForDatabaseActivation.SetItemChecked(index, true);
+                }
+            }
+
+            if (config.Templates.GenerateDatabaseSiteCloseout)
+            {
+                clbSitesForDatabaseCloseout.Items.Clear();
+                clbSitesForDatabaseCloseout.DisplayMember = "DisplayText";
+                foreach (var site in config.Sites)
+                {
+                    int index = clbSitesForDatabaseCloseout.Items.Add(site);
+                    if (config.Templates.SitesForDatabaseCloseout.Contains(site.SiteId))
+                        clbSitesForDatabaseCloseout.SetItemChecked(index, true);
                 }
             }
 
@@ -1358,6 +1432,57 @@ namespace IlanaPM.AddIn
                 dt.Rows.Add("Study Closeout", "All Sites",
                     "Final study report, regulatory submissions, archiving",
                     "~20-30");
+            }
+
+            // DATABASE TEMPLATES
+            if (config.Templates.GenerateDatabaseFullStudy)
+            {
+                dt.Rows.Add("DB: Full Study Timeline", "All",
+                    "Complete study lifecycle from database (TPL_006)",
+                    "119");
+            }
+
+            if (config.Templates.GenerateDatabaseStudyStartup)
+            {
+                dt.Rows.Add("DB: Study Start-Up", "All",
+                    "Study Award → FPI from database (TPL_001)",
+                    "86");
+            }
+
+            if (config.Templates.GenerateDatabaseStudyImplementation)
+            {
+                dt.Rows.Add("DB: Study Implementation", "All",
+                    "FPI → LPLV milestones from database (TPL_002)",
+                    "10");
+            }
+
+            if (config.Templates.GenerateDatabaseStudyCloseout)
+            {
+                dt.Rows.Add("DB: Study Closeout", "All",
+                    "LPLV → FDA submission from database (TPL_003)",
+                    "23");
+            }
+
+            if (config.Templates.GenerateDatabaseSiteActivation)
+            {
+                foreach (var siteId in config.Templates.SitesForDatabaseActivation)
+                {
+                    var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
+                    dt.Rows.Add("DB: Site Activation", site?.SiteId ?? siteId,
+                        "Site selection → activation from database (TPL_004)",
+                        "34");
+                }
+            }
+
+            if (config.Templates.GenerateDatabaseSiteCloseout)
+            {
+                foreach (var siteId in config.Templates.SitesForDatabaseCloseout)
+                {
+                    var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
+                    dt.Rows.Add("DB: Site Closeout", site?.SiteId ?? siteId,
+                        "Site complete → DB lock from database (TPL_005)",
+                        "19");
+                }
             }
 
             if (dt.Rows.Count == 0)
