@@ -387,41 +387,11 @@ namespace IlanaPM.AddIn
 
                 case 4:
                     // Validate that site-specific templates have sites selected
-                    // Check the actual CheckedListBox controls, not the config (which isn't saved yet)
-                    if (config.Templates.GenerateSiteStartup && clbSitesForStartup.CheckedItems.Count == 0)
-                    {
-                        MessageBox.Show(
-                            "You selected Site Startup but didn't select any sites.\n\n" +
-                            "Please select at least one site or uncheck Site Startup.",
-                            "Validation",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (config.Templates.GenerateSiteImplementation && clbSitesForImplementation.CheckedItems.Count == 0)
-                    {
-                        MessageBox.Show(
-                            "You selected Site Implementation but didn't select any sites.",
-                            "Validation",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (config.Templates.GenerateSiteCloseout && clbSitesForCloseout.CheckedItems.Count == 0)
-                    {
-                        MessageBox.Show(
-                            "You selected Site Closeout but didn't select any sites.",
-                            "Validation",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    // Database template validation
                     if (config.Templates.GenerateDatabaseSiteActivation && clbSitesForDatabaseActivation.CheckedItems.Count == 0)
                     {
                         MessageBox.Show(
-                            "You selected DB: Site Activation but didn't select any sites.\n\n" +
-                            "Please select at least one site or uncheck DB: Site Activation.",
+                            "You selected Site Activation but didn't select any sites.\n\n" +
+                            "Please select at least one site or uncheck Site Activation.",
                             "Validation",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Warning);
@@ -430,8 +400,8 @@ namespace IlanaPM.AddIn
                     if (config.Templates.GenerateDatabaseSiteCloseout && clbSitesForDatabaseCloseout.CheckedItems.Count == 0)
                     {
                         MessageBox.Show(
-                            "You selected DB: Site Closeout but didn't select any sites.\n\n" +
-                            "Please select at least one site or uncheck DB: Site Closeout.",
+                            "You selected Site Closeout but didn't select any sites.\n\n" +
+                            "Please select at least one site or uncheck Site Closeout.",
                             "Validation",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Warning);
@@ -609,13 +579,6 @@ namespace IlanaPM.AddIn
 
         private void SaveStep3Data()
         {
-            // Legacy API templates
-            config.Templates.GenerateFullStudyTimeline = chkFullStudyTimeline.Checked;
-            config.Templates.GenerateSiteStartup = chkSiteStartup.Checked;
-            config.Templates.GenerateSiteImplementation = chkSiteImplementation.Checked;
-            config.Templates.GenerateSiteCloseout = chkSiteCloseout.Checked;
-            config.Templates.GenerateStudyCloseout = chkStudyCloseout.Checked;
-
             // Database templates
             config.Templates.GenerateDatabaseStudyStartup = chkDatabaseStudyStartup.Checked;
             config.Templates.GenerateDatabaseStudyImplementation = chkDatabaseStudyImplementation.Checked;
@@ -1270,51 +1233,10 @@ namespace IlanaPM.AddIn
         private void LoadStep4Configuration()
         {
             // Show/hide site selection groups based on Step 3 selections
-            grpSiteStartup.Visible = config.Templates.GenerateSiteStartup;
-            grpSiteImplementation.Visible = config.Templates.GenerateSiteImplementation;
-            grpSiteCloseout.Visible = config.Templates.GenerateSiteCloseout;
             grpDatabaseSiteActivation.Visible = config.Templates.GenerateDatabaseSiteActivation;
             grpDatabaseSiteCloseout.Visible = config.Templates.GenerateDatabaseSiteCloseout;
 
             // Populate site lists
-            if (config.Templates.GenerateSiteStartup)
-            {
-                clbSitesForStartup.Items.Clear();
-                clbSitesForStartup.DisplayMember = "DisplayText";
-                foreach (var site in config.Sites)
-                {
-                    int index = clbSitesForStartup.Items.Add(site);
-                    // Auto-check if previously selected
-                    if (config.Templates.SitesForStartup.Contains(site.SiteId))
-                        clbSitesForStartup.SetItemChecked(index, true);
-                }
-            }
-
-            if (config.Templates.GenerateSiteImplementation)
-            {
-                clbSitesForImplementation.Items.Clear();
-                clbSitesForImplementation.DisplayMember = "DisplayText";
-                foreach (var site in config.Sites)
-                {
-                    int index = clbSitesForImplementation.Items.Add(site);
-                    if (config.Templates.SitesForImplementation.Contains(site.SiteId))
-                        clbSitesForImplementation.SetItemChecked(index, true);
-                }
-            }
-
-            if (config.Templates.GenerateSiteCloseout)
-            {
-                clbSitesForCloseout.Items.Clear();
-                clbSitesForCloseout.DisplayMember = "DisplayText";
-                foreach (var site in config.Sites)
-                {
-                    int index = clbSitesForCloseout.Items.Add(site);
-                    if (config.Templates.SitesForCloseout.Contains(site.SiteId))
-                        clbSitesForCloseout.SetItemChecked(index, true);
-                }
-            }
-
-            // Database template site lists
             if (config.Templates.GenerateDatabaseSiteActivation)
             {
                 clbSitesForDatabaseActivation.Items.Clear();
@@ -1377,81 +1299,26 @@ namespace IlanaPM.AddIn
             dt.Columns.Add("Est. Tasks", typeof(string));
 
             // Show summary of what will be generated
-            // Note: Actual task count may vary based on country-specific regulations
-
-            // Full Study Timeline (API-based)
-            if (config.Templates.GenerateFullStudyTimeline)
-            {
-                string countries = config.Countries.Count > 0
-                    ? string.Join(", ", config.Countries)
-                    : "No countries selected";
-                dt.Rows.Add("Full Study Timeline", "All Countries",
-                    $"Complete regulatory timeline via API ({config.StudyPhase}, {config.TherapeuticArea}) - Countries: {countries}",
-                    "~100-150 per country");
-            }
-
-            if (config.Templates.GenerateSiteStartup)
-            {
-                foreach (var siteId in config.Templates.SitesForStartup)
-                {
-                    var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                    string country = site?.CountryCode ?? "Unknown";
-                    dt.Rows.Add("Site Startup", site?.SiteId ?? siteId,
-                        $"Regulatory approval, site activation, training ({country})",
-                        "~55");
-                }
-            }
-
-            if (config.Templates.GenerateSiteImplementation)
-            {
-                foreach (var siteId in config.Templates.SitesForImplementation)
-                {
-                    var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                    string country = site?.CountryCode ?? "Unknown";
-                    dt.Rows.Add("Site Implementation", site?.SiteId ?? siteId,
-                        $"Enrollment, monitoring, data collection ({country})",
-                        "~55");
-                }
-            }
-
-            if (config.Templates.GenerateSiteCloseout)
-            {
-                foreach (var siteId in config.Templates.SitesForCloseout)
-                {
-                    var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                    string country = site?.CountryCode ?? "Unknown";
-                    dt.Rows.Add("Site Closeout", site?.SiteId ?? siteId,
-                        $"Database lock, site closure, archiving ({country})",
-                        "~30-40");
-                }
-            }
-
-            if (config.Templates.GenerateStudyCloseout)
-            {
-                dt.Rows.Add("Study Closeout", "All Sites",
-                    "Final study report, regulatory submissions, archiving",
-                    "~20-30");
-            }
 
             // DATABASE TEMPLATES
             if (config.Templates.GenerateDatabaseStudyStartup)
             {
-                dt.Rows.Add("DB: Study Start-Up", "All",
-                    "Study Award → FPI from database (TPL_001)",
+                dt.Rows.Add("Study Start-Up", "All",
+                    "Study Award → FPI (TPL_001)",
                     "86");
             }
 
             if (config.Templates.GenerateDatabaseStudyImplementation)
             {
-                dt.Rows.Add("DB: Study Implementation", "All",
-                    "FPI → LPLV milestones from database (TPL_002)",
+                dt.Rows.Add("Study Implementation", "All",
+                    "FPI → LPLV milestones (TPL_002)",
                     "10");
             }
 
             if (config.Templates.GenerateDatabaseStudyCloseout)
             {
-                dt.Rows.Add("DB: Study Closeout", "All",
-                    "LPLV → FDA submission from database (TPL_003)",
+                dt.Rows.Add("Study Closeout", "All",
+                    "LPLV → FDA submission (TPL_003)",
                     "23");
             }
 
@@ -1460,8 +1327,8 @@ namespace IlanaPM.AddIn
                 foreach (var siteId in config.Templates.SitesForDatabaseActivation)
                 {
                     var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                    dt.Rows.Add("DB: Site Activation", site?.SiteId ?? siteId,
-                        "Site selection → activation from database (TPL_004)",
+                    dt.Rows.Add("Site Activation", site?.SiteId ?? siteId,
+                        "Site selection → activation (TPL_004)",
                         "34");
                 }
             }
@@ -1471,8 +1338,8 @@ namespace IlanaPM.AddIn
                 foreach (var siteId in config.Templates.SitesForDatabaseCloseout)
                 {
                     var site = config.Sites.FirstOrDefault(s => s.SiteId == siteId);
-                    dt.Rows.Add("DB: Site Closeout", site?.SiteId ?? siteId,
-                        "Site complete → DB lock from database (TPL_005)",
+                    dt.Rows.Add("Site Closeout", site?.SiteId ?? siteId,
+                        "Site complete → DB lock (TPL_005)",
                         "19");
                 }
             }

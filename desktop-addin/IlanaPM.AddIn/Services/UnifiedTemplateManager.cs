@@ -663,16 +663,6 @@ namespace IlanaPM.AddIn.Services
                     System.Diagnostics.Debug.WriteLine($"  Site: {site.SiteId} | Name: '{site.SiteName}' | Country: {site.CountryCode}");
                 }
             }
-            System.Diagnostics.Debug.WriteLine($"Templates.GenerateSiteStartup: {config.Templates?.GenerateSiteStartup}");
-            System.Diagnostics.Debug.WriteLine($"Templates.SitesForStartup count: {config.Templates?.SitesForStartup?.Count ?? 0}");
-            if (config.Templates?.SitesForStartup != null)
-            {
-                foreach (var siteId in config.Templates.SitesForStartup)
-                {
-                    System.Diagnostics.Debug.WriteLine($"  SitesForStartup includes: '{siteId}'");
-                }
-            }
-
             int totalTasksCreated = 0;
 
             try
@@ -681,34 +671,7 @@ namespace IlanaPM.AddIn.Services
                 if (project == null)
                     throw new InvalidOperationException("No active project");
 
-                // Generate each selected template type
-                if (config.Templates.GenerateFullStudyTimeline)
-                {
-                    totalTasksCreated += GenerateFullStudyTimeline(app, config);
-                }
-
-                if (config.Templates.GenerateSiteStartup && config.Templates.SitesForStartup.Count > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($">>> Calling GenerateSiteStartup with {config.Templates.SitesForStartup.Count} sites");
-                    totalTasksCreated += await GenerateSiteStartup(app, config);
-                }
-
-                if (config.Templates.GenerateSiteImplementation && config.Templates.SitesForImplementation.Count > 0)
-                {
-                    totalTasksCreated += GenerateSiteImplementation(app, config);
-                }
-
-                if (config.Templates.GenerateSiteCloseout && config.Templates.SitesForCloseout.Count > 0)
-                {
-                    totalTasksCreated += await GenerateSiteCloseout(app, config);
-                }
-
-                if (config.Templates.GenerateStudyCloseout)
-                {
-                    totalTasksCreated += GenerateStudyCloseout(app, config);
-                }
-
-                // DATABASE TEMPLATES (NEW)
+                // DATABASE TEMPLATES
                 if (config.Templates.GenerateDatabaseStudyStartup)
                 {
                     System.Diagnostics.Debug.WriteLine(">>> Generating Database Study Start-Up (TPL_001)");

@@ -57,11 +57,6 @@ namespace IlanaPM.AddIn
 
             // STEP 3: Template Selection
             this.lblStep3Title = new Label();
-            this.chkFullStudyTimeline = new CheckBox();
-            this.chkSiteStartup = new CheckBox();
-            this.chkSiteImplementation = new CheckBox();
-            this.chkSiteCloseout = new CheckBox();
-            this.chkStudyCloseout = new CheckBox();
             this.chkDatabaseStudyStartup = new CheckBox();
             this.chkDatabaseStudyImplementation = new CheckBox();
             this.chkDatabaseStudyCloseout = new CheckBox();
@@ -70,12 +65,6 @@ namespace IlanaPM.AddIn
 
             // STEP 4: Configuration
             this.lblStep4Title = new Label();
-            this.grpSiteStartup = new GroupBox();
-            this.clbSitesForStartup = new CheckedListBox();
-            this.grpSiteImplementation = new GroupBox();
-            this.clbSitesForImplementation = new CheckedListBox();
-            this.grpSiteCloseout = new GroupBox();
-            this.clbSitesForCloseout = new CheckedListBox();
             this.grpDatabaseSiteActivation = new GroupBox();
             this.clbSitesForDatabaseActivation = new CheckedListBox();
             this.grpDatabaseSiteCloseout = new GroupBox();
@@ -98,9 +87,6 @@ namespace IlanaPM.AddIn
             ((System.ComponentModel.ISupportInitialize)(this.dgvSites)).BeginInit();
             this.pnlStep3.SuspendLayout();
             this.pnlStep4.SuspendLayout();
-            this.grpSiteStartup.SuspendLayout();
-            this.grpSiteImplementation.SuspendLayout();
-            this.grpSiteCloseout.SuspendLayout();
             this.grpFilters.SuspendLayout();
             this.pnlStep5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvPreview)).BeginInit();
@@ -203,9 +189,6 @@ namespace IlanaPM.AddIn
             ((System.ComponentModel.ISupportInitialize)(this.dgvSites)).EndInit();
             this.pnlStep3.ResumeLayout(false);
             this.pnlStep4.ResumeLayout(false);
-            this.grpSiteStartup.ResumeLayout(false);
-            this.grpSiteImplementation.ResumeLayout(false);
-            this.grpSiteCloseout.ResumeLayout(false);
             this.grpFilters.ResumeLayout(false);
             this.pnlStep5.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgvPreview)).EndInit();
@@ -356,11 +339,6 @@ namespace IlanaPM.AddIn
             this.pnlStep3.Size = new Size(560, 410);
             this.pnlStep3.Visible = false;
             this.pnlStep3.Controls.Add(this.lblStep3Title);
-            this.pnlStep3.Controls.Add(this.chkFullStudyTimeline);
-            this.pnlStep3.Controls.Add(this.chkSiteStartup);
-            this.pnlStep3.Controls.Add(this.chkSiteImplementation);
-            this.pnlStep3.Controls.Add(this.chkSiteCloseout);
-            this.pnlStep3.Controls.Add(this.chkStudyCloseout);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyStartup);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyImplementation);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyCloseout);
@@ -373,88 +351,38 @@ namespace IlanaPM.AddIn
             this.lblStep3Title.Size = new Size(560, 25);
             this.lblStep3Title.Text = "Template Selection";
 
-            // Template checkboxes
-            this.chkFullStudyTimeline.Location = new Point(20, 50);
-            this.chkFullStudyTimeline.Size = new Size(500, 60);
-            this.chkFullStudyTimeline.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.chkFullStudyTimeline.Text = "Full Study Timeline\n(Regulatory phases from API - all countries supported)";
-            this.chkFullStudyTimeline.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            this.chkSiteStartup.Location = new Point(20, 120);
-            this.chkSiteStartup.Size = new Size(500, 60);
-            this.chkSiteStartup.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.chkSiteStartup.Text = "Site Startup\n(Site activation tasks from library - 23 countries)";
-            this.chkSiteStartup.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            this.chkSiteImplementation.Location = new Point(20, 190);
-            this.chkSiteImplementation.Size = new Size(500, 60);
-            this.chkSiteImplementation.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.chkSiteImplementation.Text = "Site Implementation\n(Ongoing tasks like IRB continuing review)";
-            this.chkSiteImplementation.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            this.chkSiteCloseout.Location = new Point(20, 260);
-            this.chkSiteCloseout.Size = new Size(500, 60);
-            this.chkSiteCloseout.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.chkSiteCloseout.Text = "Site Closeout\n(Site shutdown tasks from library)";
-            this.chkSiteCloseout.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            this.chkStudyCloseout.Location = new Point(20, 330);
-            this.chkStudyCloseout.Size = new Size(500, 60);
-            this.chkStudyCloseout.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            this.chkStudyCloseout.Text = "Study Closeout\n(Study-level closure - no site-specific tasks)";
-            this.chkStudyCloseout.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            // DATABASE TEMPLATES (NEW - from template library)
-            // Add separator label
-            var lblDatabaseSeparator = new Label
-            {
-                Location = new Point(0, 395),
-                Size = new Size(560, 2),
-                BorderStyle = BorderStyle.Fixed3D
-            };
-            this.pnlStep3.Controls.Add(lblDatabaseSeparator);
-
-            var lblDatabaseSection = new Label
-            {
-                Location = new Point(20, 402),
-                Size = new Size(540, 25),
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold | FontStyle.Italic),
-                ForeColor = Color.DarkGreen,
-                Text = "Database Templates (NEW - Recommended for new projects)"
-            };
-            this.pnlStep3.Controls.Add(lblDatabaseSection);
-
+            // Template checkboxes (Database Templates)
             // Make panel scrollable to fit all templates
             this.pnlStep3.AutoScroll = true;
 
-            this.chkDatabaseStudyStartup.Location = new Point(20, 435);
+            this.chkDatabaseStudyStartup.Location = new Point(20, 50);
             this.chkDatabaseStudyStartup.Size = new Size(520, 35);
             this.chkDatabaseStudyStartup.Font = new Font("Segoe UI", 9F);
-            this.chkDatabaseStudyStartup.Text = "DB: Study Start-Up (86 tasks, 180 days) - TPL_001";
+            this.chkDatabaseStudyStartup.Text = "Study Start-Up (86 tasks, 180 days) - TPL_001";
             this.chkDatabaseStudyStartup.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseStudyImplementation.Location = new Point(20, 475);
+            this.chkDatabaseStudyImplementation.Location = new Point(20, 90);
             this.chkDatabaseStudyImplementation.Size = new Size(520, 35);
             this.chkDatabaseStudyImplementation.Font = new Font("Segoe UI", 9F);
-            this.chkDatabaseStudyImplementation.Text = "DB: Study Implementation (10 milestones, 730 days) - TPL_002";
+            this.chkDatabaseStudyImplementation.Text = "Study Implementation (10 milestones, 730 days) - TPL_002";
             this.chkDatabaseStudyImplementation.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseStudyCloseout.Location = new Point(20, 515);
+            this.chkDatabaseStudyCloseout.Location = new Point(20, 130);
             this.chkDatabaseStudyCloseout.Size = new Size(520, 35);
             this.chkDatabaseStudyCloseout.Font = new Font("Segoe UI", 9F);
-            this.chkDatabaseStudyCloseout.Text = "DB: Study Closeout (23 tasks, 300 days) - TPL_003";
+            this.chkDatabaseStudyCloseout.Text = "Study Closeout (23 tasks, 300 days) - TPL_003";
             this.chkDatabaseStudyCloseout.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseSiteActivation.Location = new Point(20, 555);
+            this.chkDatabaseSiteActivation.Location = new Point(20, 170);
             this.chkDatabaseSiteActivation.Size = new Size(520, 35);
             this.chkDatabaseSiteActivation.Font = new Font("Segoe UI", 9F);
-            this.chkDatabaseSiteActivation.Text = "DB: Site Activation (34 tasks per site, 90 days) - TPL_004";
+            this.chkDatabaseSiteActivation.Text = "Site Activation (34 tasks per site, 90 days) - TPL_004";
             this.chkDatabaseSiteActivation.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseSiteCloseout.Location = new Point(20, 595);
+            this.chkDatabaseSiteCloseout.Location = new Point(20, 210);
             this.chkDatabaseSiteCloseout.Size = new Size(520, 35);
             this.chkDatabaseSiteCloseout.Font = new Font("Segoe UI", 9F);
-            this.chkDatabaseSiteCloseout.Text = "DB: Site Closeout (19 tasks per site, 30 days) - TPL_005";
+            this.chkDatabaseSiteCloseout.Text = "Site Closeout (19 tasks per site, 30 days) - TPL_005";
             this.chkDatabaseSiteCloseout.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
         }
 
@@ -465,9 +393,6 @@ namespace IlanaPM.AddIn
             this.pnlStep4.Size = new Size(560, 410);
             this.pnlStep4.Visible = false;
             this.pnlStep4.Controls.Add(this.lblStep4Title);
-            this.pnlStep4.Controls.Add(this.grpSiteStartup);
-            this.pnlStep4.Controls.Add(this.grpSiteImplementation);
-            this.pnlStep4.Controls.Add(this.grpSiteCloseout);
             this.pnlStep4.Controls.Add(this.grpDatabaseSiteActivation);
             this.pnlStep4.Controls.Add(this.grpDatabaseSiteCloseout);
             this.pnlStep4.Controls.Add(this.grpFilters);
@@ -477,36 +402,6 @@ namespace IlanaPM.AddIn
             this.lblStep4Title.Location = new Point(0, 0);
             this.lblStep4Title.Size = new Size(560, 25);
             this.lblStep4Title.Text = "Configuration & Filters";
-
-            // grpSiteStartup
-            this.grpSiteStartup.Location = new Point(0, 35);
-            this.grpSiteStartup.Size = new Size(270, 150);
-            this.grpSiteStartup.Text = "Sites for Startup";
-            this.grpSiteStartup.Visible = false;
-            this.grpSiteStartup.Controls.Add(this.clbSitesForStartup);
-
-            this.clbSitesForStartup.CheckOnClick = true;
-            this.clbSitesForStartup.Dock = DockStyle.Fill;
-
-            // grpSiteImplementation
-            this.grpSiteImplementation.Location = new Point(285, 35);
-            this.grpSiteImplementation.Size = new Size(270, 150);
-            this.grpSiteImplementation.Text = "Sites for Implementation";
-            this.grpSiteImplementation.Visible = false;
-            this.grpSiteImplementation.Controls.Add(this.clbSitesForImplementation);
-
-            this.clbSitesForImplementation.CheckOnClick = true;
-            this.clbSitesForImplementation.Dock = DockStyle.Fill;
-
-            // grpSiteCloseout
-            this.grpSiteCloseout.Location = new Point(0, 195);
-            this.grpSiteCloseout.Size = new Size(270, 150);
-            this.grpSiteCloseout.Text = "Sites for Closeout";
-            this.grpSiteCloseout.Visible = false;
-            this.grpSiteCloseout.Controls.Add(this.clbSitesForCloseout);
-
-            this.clbSitesForCloseout.CheckOnClick = true;
-            this.clbSitesForCloseout.Dock = DockStyle.Fill;
 
             // grpFilters
             this.grpFilters.Location = new Point(285, 195);
@@ -519,11 +414,10 @@ namespace IlanaPM.AddIn
             this.chkIncludeOptional.Text = "Include optional (non-mandatory) tasks";
             this.chkIncludeOptional.Checked = true;
 
-            // DATABASE SITE SELECTION GROUPS
             // grpDatabaseSiteActivation
-            this.grpDatabaseSiteActivation.Location = new Point(0, 355);
+            this.grpDatabaseSiteActivation.Location = new Point(0, 35);
             this.grpDatabaseSiteActivation.Size = new Size(270, 150);
-            this.grpDatabaseSiteActivation.Text = "Sites for DB: Site Activation";
+            this.grpDatabaseSiteActivation.Text = "Sites for Site Activation";
             this.grpDatabaseSiteActivation.Visible = false;
             this.grpDatabaseSiteActivation.Controls.Add(this.clbSitesForDatabaseActivation);
 
@@ -531,17 +425,14 @@ namespace IlanaPM.AddIn
             this.clbSitesForDatabaseActivation.Dock = DockStyle.Fill;
 
             // grpDatabaseSiteCloseout
-            this.grpDatabaseSiteCloseout.Location = new Point(285, 355);
+            this.grpDatabaseSiteCloseout.Location = new Point(285, 35);
             this.grpDatabaseSiteCloseout.Size = new Size(270, 150);
-            this.grpDatabaseSiteCloseout.Text = "Sites for DB: Site Closeout";
+            this.grpDatabaseSiteCloseout.Text = "Sites for Site Closeout";
             this.grpDatabaseSiteCloseout.Visible = false;
             this.grpDatabaseSiteCloseout.Controls.Add(this.clbSitesForDatabaseCloseout);
 
             this.clbSitesForDatabaseCloseout.CheckOnClick = true;
             this.clbSitesForDatabaseCloseout.Dock = DockStyle.Fill;
-
-            // Make panel scrollable to fit all site selection groups
-            this.pnlStep4.AutoScroll = true;
         }
 
         private void InitializeStep5()
@@ -637,12 +528,6 @@ namespace IlanaPM.AddIn
 
         // Step 3 controls
         private Label lblStep3Title;
-        private CheckBox chkFullStudyTimeline;
-        private CheckBox chkSiteStartup;
-        private CheckBox chkSiteImplementation;
-        private CheckBox chkSiteCloseout;
-        private CheckBox chkStudyCloseout;
-        // Database template checkboxes
         private CheckBox chkDatabaseStudyStartup;
         private CheckBox chkDatabaseStudyImplementation;
         private CheckBox chkDatabaseStudyCloseout;
@@ -651,13 +536,6 @@ namespace IlanaPM.AddIn
 
         // Step 4 controls
         private Label lblStep4Title;
-        private GroupBox grpSiteStartup;
-        private CheckedListBox clbSitesForStartup;
-        private GroupBox grpSiteImplementation;
-        private CheckedListBox clbSitesForImplementation;
-        private GroupBox grpSiteCloseout;
-        private CheckedListBox clbSitesForCloseout;
-        // Database site selection controls
         private GroupBox grpDatabaseSiteActivation;
         private CheckedListBox clbSitesForDatabaseActivation;
         private GroupBox grpDatabaseSiteCloseout;
