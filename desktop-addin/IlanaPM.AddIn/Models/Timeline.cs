@@ -65,6 +65,17 @@ namespace IlanaPM.AddIn.Models
         public int warning_count { get; set; }
         public int info_count { get; set; }
         public int total_tasks_analyzed { get; set; }
+
+        public ValidationResult()
+        {
+            // Initialize all properties to prevent null reference exceptions
+            status = "unknown";
+            issues = new List<ValidationIssue>();
+            error_count = 0;
+            warning_count = 0;
+            info_count = 0;
+            total_tasks_analyzed = 0;
+        }
     }
 
     public class ValidationIssue

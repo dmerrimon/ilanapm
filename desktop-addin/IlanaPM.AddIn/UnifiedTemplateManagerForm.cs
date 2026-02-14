@@ -152,6 +152,11 @@ namespace IlanaPM.AddIn
                 var app = Globals.ThisAddIn.Application;
                 templateManager.ApplyToProject(app, result);
 
+                // IMPORTANT: Auto-save metadata to project for future intelligence validation
+                var metadata = MetadataHelper.FromTemplateConfiguration(currentConfig);
+                MetadataHelper.SaveToProject(metadata);
+                System.Diagnostics.Debug.WriteLine($"Template Wizard: Auto-saved metadata - {metadata}");
+
                 // Track telemetry
                 var telemetryService = Globals.ThisAddIn.TelemetryService;
                 if (telemetryService != null)
