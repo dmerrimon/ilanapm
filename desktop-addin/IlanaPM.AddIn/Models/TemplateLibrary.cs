@@ -45,20 +45,21 @@ namespace IlanaPM.AddIn.Models
     public class TemplateDetailResponse
     {
         public TemplateMetadata template { get; set; }
-        public List<TemplateTask> tasks { get; set; }
+        public List<DatabaseTemplateTask> tasks { get; set; }
         public List<TemplateDependency> dependencies { get; set; }
 
         public TemplateDetailResponse()
         {
-            tasks = new List<TemplateTask>();
+            tasks = new List<DatabaseTemplateTask>();
             dependencies = new List<TemplateDependency>();
         }
     }
 
     /// <summary>
-    /// Task definition within a template
+    /// Task definition within a database template (from template library API)
+    /// Renamed to DatabaseTemplateTask to avoid conflict with existing TemplateTask in CountrySpecificTemplate.cs
     /// </summary>
-    public class TemplateTask
+    public class DatabaseTemplateTask
     {
         public string task_id { get; set; }              // "SS_001", "CDB_001", etc.
         public string task_name { get; set; }            // "Clinical data entry completed"
