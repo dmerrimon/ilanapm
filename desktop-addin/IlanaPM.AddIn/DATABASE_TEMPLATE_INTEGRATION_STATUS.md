@@ -3,6 +3,8 @@
 **Date:** 2026-02-13
 **Status:** ✅ COMPLETE - Backend + UI Fully Integrated
 
+**⚠️ UPDATE (2026-02-14):** TPL_006 (Full Study Timeline) has been removed as it was redundant with TPL_001 + TPL_002 + TPL_003. This document contains historical references to TPL_006 for context. Current implementation has 5 templates (TPL_001 through TPL_005).
+
 ---
 
 ## ✅ What's Been Implemented

@@ -26,7 +26,7 @@
    ```bash
    curl http://localhost:8000/api/v1/templates/library
    ```
-   Should return JSON with 6 templates (TPL_001 through TPL_006)
+   Should return JSON with 5 templates (TPL_001 through TPL_005)
 
 3. **Build the Desktop Add-in**:
    - Open `desktop-addin/IlanaPM.AddIn/IlanaPM.AddIn.sln` in Visual Studio
@@ -38,9 +38,9 @@
 
 ## Test Plan
 
-### Test 1: Full Study Timeline (TPL_006)
+### Test 1: Complete Study Timeline (TPL_001 + TPL_002 + TPL_003)
 
-**Purpose:** Test the most comprehensive database template
+**Purpose:** Test generating a complete 119-task study timeline using all three study-level templates
 
 **Steps:**
 1. Open Microsoft Project (blank project)
@@ -53,11 +53,13 @@
    - Click **Next**
 
 4. **Step 2 - Sites:**
-   - Click **Next** (no sites needed for Full Study Timeline)
+   - Click **Next** (no sites needed for study-level templates)
 
 5. **Step 3 - Template Selection:**
-   - Scroll down to "Database Templates (NEW - Recommended)" section
-   - Check: **DB: Full Study Timeline (119 tasks, 1260 days) - TPL_006**
+   - Scroll down to "Database Templates (Recommended)" section
+   - Check: **DB: Study Start-Up (86 tasks, 180 days) - TPL_001**
+   - Check: **DB: Study Implementation (10 milestones, 730 days) - TPL_002**
+   - Check: **DB: Study Closeout (23 tasks, 300 days) - TPL_003**
    - Click **Next**
 
 6. **Step 4 - Configuration:**
@@ -65,7 +67,11 @@
    - Click **Next**
 
 7. **Step 5 - Preview:**
-   - Verify preview shows: "DB: Full Study Timeline" with 119 tasks
+   - Verify preview shows all three templates:
+     - "DB: Study Start-Up" with 86 tasks
+     - "DB: Study Implementation" with 10 tasks
+     - "DB: Study Closeout" with 23 tasks
+   - Total: 119 tasks
    - Click **Generate**
 
 **Expected Results:**
@@ -203,7 +209,7 @@ Text11 field: Contains site IDs
 
 ### Functionality Tests
 
-- [ ] **Test 1:** Full Study Timeline (119 tasks) generates successfully
+- [ ] **Test 1:** Complete Study Timeline (TPL_001 + TPL_002 + TPL_003 = 119 tasks) generates successfully
 - [ ] **Test 2:** Study Start-Up (86 tasks, 52 dependencies) generates with predecessors
 - [ ] **Test 3:** Site Activation (34 tasks × 2 sites = 68 tasks) generates per site
 - [ ] **Test 4:** Multiple templates combine correctly (153 tasks total)
@@ -354,7 +360,7 @@ Text11 field: Contains site IDs
 ## Success Criteria
 
 ### Minimum Viable Test (MVP)
-- ✅ Test 1 passes: TPL_006 generates 119 tasks
+- ✅ Test 1 passes: All three study templates (TPL_001 + TPL_002 + TPL_003) generate 119 tasks
 - ✅ Tasks visible in MS Project
 - ✅ Durations populated
 - ✅ No compilation errors
