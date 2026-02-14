@@ -446,6 +446,59 @@ namespace IlanaPM.AddIn.Services
         }
 
         /// <summary>
+        /// List all available timeline templates from the template library
+        /// Returns both system templates (Study Start-Up, Site Activation, etc.) and org-specific custom templates
+        /// </summary>
+        /// <param name="orgId">Optional organization ID to include custom templates</param>
+        /// <returns>List of template metadata</returns>
+        public async Task<Models.TemplateListResponse> ListTemplatesAsync(string orgId = null)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                string url = API_BASE_URL + "/api/v1/templates/library";
+                if (!string.IsNullOrEmpty(orgId))
+                {
+                    url += $"?org_id={orgId}";
+                }
+
+                HttpResponseMessage response = await httpClient.GetAsync(url);
+                await HandleResponseAsync(response);
+                string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<Models.TemplateListResponse>(responseBody);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ListTemplatesAsync failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Get detailed timeline template with all tasks and dependencies
+        /// </summary>
+        /// <param name="templateId">Template identifier (e.g., "TPL_001")</param>
+        /// <returns>Complete template with tasks and dependencies</returns>
+        public async Task<Models.TemplateDetailResponse> GetTemplateAsync(string templateId)
+        {
+            try
+            {
+                AddAuthorizationHeader();
+                string url = API_BASE_URL + $"/api/v1/templates/library/{templateId}";
+
+                HttpResponseMessage response = await httpClient.GetAsync(url);
+                await HandleResponseAsync(response);
+                string responseBody = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<Models.TemplateDetailResponse>(responseBody);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTemplateAsync failed for {templateId}: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Send task completion feedback to backend for ML learning
         /// Automatically collects predicted vs actual durations for model improvement
         /// </summary>
