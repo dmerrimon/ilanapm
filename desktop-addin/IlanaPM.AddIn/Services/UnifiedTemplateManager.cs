@@ -303,7 +303,7 @@ namespace IlanaPM.AddIn.Services
             // Convert TemplateDetailResponse to Timeline format (for compatibility with existing code)
             var timeline = new Models.Timeline
             {
-                study_name = config.StudyName,
+                study_name = templateDetail.template.template_name,  // Use template name instead
                 phase = config.StudyPhase,
                 therapeutic_area = config.TherapeuticArea,
                 tasks = new List<Models.Task>(),
@@ -1495,7 +1495,6 @@ namespace IlanaPM.AddIn.Services
                 // Create template configuration
                 var templateConfig = new TemplateConfiguration
                 {
-                    StudyName = config.StudyName,
                     StudyPhase = config.StudyPhase,
                     TherapeuticArea = config.TherapeuticArea,
                     CountryCode = config.Countries.Count > 0 ? config.Countries[0] : "US",
