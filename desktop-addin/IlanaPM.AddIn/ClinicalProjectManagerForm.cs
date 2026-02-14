@@ -589,32 +589,7 @@ namespace IlanaPM.AddIn
 
         private void SaveStep4Data()
         {
-            // Save site selections for each template type
-            config.Templates.SitesForStartup.Clear();
-            foreach (var item in clbSitesForStartup.CheckedItems)
-            {
-                var siteConfig = item as SiteConfiguration;
-                if (siteConfig != null)
-                    config.Templates.SitesForStartup.Add(siteConfig.SiteId);
-            }
-
-            config.Templates.SitesForImplementation.Clear();
-            foreach (var item in clbSitesForImplementation.CheckedItems)
-            {
-                var siteConfig = item as SiteConfiguration;
-                if (siteConfig != null)
-                    config.Templates.SitesForImplementation.Add(siteConfig.SiteId);
-            }
-
-            config.Templates.SitesForCloseout.Clear();
-            foreach (var item in clbSitesForCloseout.CheckedItems)
-            {
-                var siteConfig = item as SiteConfiguration;
-                if (siteConfig != null)
-                    config.Templates.SitesForCloseout.Add(siteConfig.SiteId);
-            }
-
-            // Database template site selections
+            // Save site selections for database templates
             config.Templates.SitesForDatabaseActivation.Clear();
             foreach (var item in clbSitesForDatabaseActivation.CheckedItems)
             {
