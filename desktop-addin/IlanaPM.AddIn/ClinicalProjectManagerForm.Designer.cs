@@ -62,7 +62,6 @@ namespace IlanaPM.AddIn
             this.chkSiteImplementation = new CheckBox();
             this.chkSiteCloseout = new CheckBox();
             this.chkStudyCloseout = new CheckBox();
-            this.chkDatabaseFullStudy = new CheckBox();
             this.chkDatabaseStudyStartup = new CheckBox();
             this.chkDatabaseStudyImplementation = new CheckBox();
             this.chkDatabaseStudyCloseout = new CheckBox();
@@ -362,7 +361,6 @@ namespace IlanaPM.AddIn
             this.pnlStep3.Controls.Add(this.chkSiteImplementation);
             this.pnlStep3.Controls.Add(this.chkSiteCloseout);
             this.pnlStep3.Controls.Add(this.chkStudyCloseout);
-            this.pnlStep3.Controls.Add(this.chkDatabaseFullStudy);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyStartup);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyImplementation);
             this.pnlStep3.Controls.Add(this.chkDatabaseStudyCloseout);
@@ -429,37 +427,31 @@ namespace IlanaPM.AddIn
             // Make panel scrollable to fit all templates
             this.pnlStep3.AutoScroll = true;
 
-            this.chkDatabaseFullStudy.Location = new Point(20, 435);
-            this.chkDatabaseFullStudy.Size = new Size(520, 35);
-            this.chkDatabaseFullStudy.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            this.chkDatabaseFullStudy.Text = "DB: Full Study Timeline (119 tasks, 1260 days) - TPL_006";
-            this.chkDatabaseFullStudy.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
-
-            this.chkDatabaseStudyStartup.Location = new Point(20, 475);
+            this.chkDatabaseStudyStartup.Location = new Point(20, 435);
             this.chkDatabaseStudyStartup.Size = new Size(520, 35);
             this.chkDatabaseStudyStartup.Font = new Font("Segoe UI", 9F);
             this.chkDatabaseStudyStartup.Text = "DB: Study Start-Up (86 tasks, 180 days) - TPL_001";
             this.chkDatabaseStudyStartup.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseStudyImplementation.Location = new Point(20, 515);
+            this.chkDatabaseStudyImplementation.Location = new Point(20, 475);
             this.chkDatabaseStudyImplementation.Size = new Size(520, 35);
             this.chkDatabaseStudyImplementation.Font = new Font("Segoe UI", 9F);
             this.chkDatabaseStudyImplementation.Text = "DB: Study Implementation (10 milestones, 730 days) - TPL_002";
             this.chkDatabaseStudyImplementation.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseStudyCloseout.Location = new Point(20, 555);
+            this.chkDatabaseStudyCloseout.Location = new Point(20, 515);
             this.chkDatabaseStudyCloseout.Size = new Size(520, 35);
             this.chkDatabaseStudyCloseout.Font = new Font("Segoe UI", 9F);
             this.chkDatabaseStudyCloseout.Text = "DB: Study Closeout (23 tasks, 300 days) - TPL_003";
             this.chkDatabaseStudyCloseout.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseSiteActivation.Location = new Point(20, 595);
+            this.chkDatabaseSiteActivation.Location = new Point(20, 555);
             this.chkDatabaseSiteActivation.Size = new Size(520, 35);
             this.chkDatabaseSiteActivation.Font = new Font("Segoe UI", 9F);
             this.chkDatabaseSiteActivation.Text = "DB: Site Activation (34 tasks per site, 90 days) - TPL_004";
             this.chkDatabaseSiteActivation.CheckedChanged += new System.EventHandler(this.TemplateCheckbox_CheckedChanged);
 
-            this.chkDatabaseSiteCloseout.Location = new Point(20, 635);
+            this.chkDatabaseSiteCloseout.Location = new Point(20, 595);
             this.chkDatabaseSiteCloseout.Size = new Size(520, 35);
             this.chkDatabaseSiteCloseout.Font = new Font("Segoe UI", 9F);
             this.chkDatabaseSiteCloseout.Text = "DB: Site Closeout (19 tasks per site, 30 days) - TPL_005";
@@ -651,7 +643,6 @@ namespace IlanaPM.AddIn
         private CheckBox chkSiteCloseout;
         private CheckBox chkStudyCloseout;
         // Database template checkboxes
-        private CheckBox chkDatabaseFullStudy;
         private CheckBox chkDatabaseStudyStartup;
         private CheckBox chkDatabaseStudyImplementation;
         private CheckBox chkDatabaseStudyCloseout;

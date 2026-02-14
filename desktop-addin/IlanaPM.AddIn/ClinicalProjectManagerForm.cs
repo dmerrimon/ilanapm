@@ -617,7 +617,6 @@ namespace IlanaPM.AddIn
             config.Templates.GenerateStudyCloseout = chkStudyCloseout.Checked;
 
             // Database templates
-            config.Templates.GenerateDatabaseFullStudy = chkDatabaseFullStudy.Checked;
             config.Templates.GenerateDatabaseStudyStartup = chkDatabaseStudyStartup.Checked;
             config.Templates.GenerateDatabaseStudyImplementation = chkDatabaseStudyImplementation.Checked;
             config.Templates.GenerateDatabaseStudyCloseout = chkDatabaseStudyCloseout.Checked;
@@ -1435,13 +1434,6 @@ namespace IlanaPM.AddIn
             }
 
             // DATABASE TEMPLATES
-            if (config.Templates.GenerateDatabaseFullStudy)
-            {
-                dt.Rows.Add("DB: Full Study Timeline", "All",
-                    "Complete study lifecycle from database (TPL_006)",
-                    "119");
-            }
-
             if (config.Templates.GenerateDatabaseStudyStartup)
             {
                 dt.Rows.Add("DB: Study Start-Up", "All",

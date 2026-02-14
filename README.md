@@ -19,7 +19,7 @@ Seleen brings clinical trial expertise and intelligence to Microsoft Project, pr
 
 ### Desktop Add-in (C# VSTO)
 - **Clinical Project Manager**: Unified wizard for study timeline generation
-- **Template Library**: Load from database (TPL_001-TPL_006) or legacy API
+- **Template Library**: Load from database (TPL_001-TPL_005) or legacy API
 - **Validation**: Real-time timeline validation with regulatory rules
 - **Licensing**: FreshBooks-integrated seat-based licensing
 - **Telemetry**: ML feedback loop for continuous improvement
@@ -69,9 +69,8 @@ cd desktop-addin/IlanaPM.AddIn
 | TPL_003 | Study Closeout | 23 | 23 | 300 days | Study-level |
 | TPL_004 | Site Activation | 34 | 0 | 90 days | Site-specific |
 | TPL_005 | Site Closeout | 19 | 0 | 30 days | Site-specific |
-| TPL_006 | Full Study Timeline | 119 | 0 | 1260 days | Combined |
 
-**To use:** Check "DB: Full Study Timeline" in Step 3 of Clinical Project Manager wizard.
+**To generate a complete study timeline (119 tasks):** Select all three study-level templates (TPL_001 + TPL_002 + TPL_003) in Step 3 of Clinical Project Manager wizard.
 
 ### Legacy API Templates
 
@@ -133,7 +132,7 @@ seleen/
 ## Development Status
 
 ✅ **Completed:**
-- Database-backed timeline templates (6 templates, 291 tasks, 75 dependencies)
+- Database-backed timeline templates (5 templates, 172 tasks, 75 dependencies)
 - Desktop add-in with Clinical Project Manager wizard
 - Multi-country calculator (23 regulatory authorities)
 - PostgreSQL deployment on Render
@@ -165,10 +164,13 @@ pytest --cov=backend
 
 **Manual Testing:**
 1. Start backend: `uvicorn main:app --reload --port 8000`
-2. Test templates: `curl http://localhost:8000/api/v1/templates/library`
+2. Test templates: `curl http://localhost:8000/api/v1/templates/library` (should return 5 templates)
 3. Open MS Project → Seleen → Clinical Project Manager
-4. Check "DB: Full Study Timeline (119 tasks)" in Step 3
-5. Generate and verify 119 tasks created
+4. In Step 3, check all three study-level templates:
+   - DB: Study Start-Up (86 tasks)
+   - DB: Study Implementation (10 tasks)
+   - DB: Study Closeout (23 tasks)
+5. Generate and verify 119 tasks created (86 + 10 + 23)
 
 ## Contributing
 

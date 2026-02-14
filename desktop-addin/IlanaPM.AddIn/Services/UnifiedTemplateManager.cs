@@ -745,12 +745,6 @@ namespace IlanaPM.AddIn.Services
                     }
                 }
 
-                if (config.Templates.GenerateDatabaseFullStudy)
-                {
-                    System.Diagnostics.Debug.WriteLine(">>> Generating Database Full Study Timeline (TPL_006)");
-                    totalTasksCreated += await GenerateFromDatabaseTemplate(app, config, "TPL_006", null);
-                }
-
                 // Generate cohort milestone tasks if cohorts are defined
                 if (config.Cohorts != null && config.Cohorts.Count > 0)
                 {
