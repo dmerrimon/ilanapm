@@ -16,9 +16,3 @@ services:
           name: ilanapm-db
           property: connectionString
     healthCheckPath: /health
-
-databases:
-  - name: ilanapm-db
-    databaseName: ilanapm
-    user: ilanapm
-    plan: free
