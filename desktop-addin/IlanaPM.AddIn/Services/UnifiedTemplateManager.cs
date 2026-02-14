@@ -727,8 +727,48 @@ namespace IlanaPM.AddIn.Services
             }
         }
 
+        /// <summary>
+        /// Generate tasks from database template and apply to MS Project
+        /// Helper method that loads template from database and creates tasks in MS Project
+        /// </summary>
+        /// <param name="app">MS Project application</param>
+        /// <param name="config">Clinical project configuration</param>
+        /// <param name="templateId">Template ID (e.g., "TPL_001")</param>
+        /// <param name="siteId">Optional site ID for site-specific templates</param>
+        /// <returns>Number of tasks created</returns>
+        private async System.Threading.Tasks.Task<int> GenerateFromDatabaseTemplate(
+            MSProject.Application app,
+            ClinicalProjectConfiguration config,
+            string templateId,
+            string siteId)
+        {
+            try
+            {
+                // Create template configuration
+                var templateConfig = new TemplateConfiguration
+                {
+                    StudyPhase = config.StudyPhase,
+                    TherapeuticArea = config.TherapeuticArea,
+                    CountryCode = config.Countries.Count > 0 ? config.Countries[0] : "US",
+                    SiteId = siteId
+                };
 
+                // Load template from database
+                var result = await LoadFromDatabaseTemplateAsync(templateId, templateConfig, null);
 
+                // Apply template to MS Project
+                ApplyToProject(app, result);
+
+                System.Diagnostics.Debug.WriteLine($"✓ Applied {result.TaskCount} tasks from {templateId} to MS Project");
+
+                return result.TaskCount;
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error generating from database template {templateId}: {ex.Message}");
+                throw new InvalidOperationException($"Failed to generate template {templateId}: {ex.Message}", ex);
+            }
+        }
 
         /// <summary>
         /// Auto-generate cohort-specific participant milestone tasks with safety review meetings
