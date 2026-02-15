@@ -35,7 +35,21 @@ namespace IlanaPM.AddIn.Services
             // Create tasks with proper hierarchy (summary tasks + children)
             foreach (var templateTask in template.tasks)
             {
-                var msTask = project.Tasks.Add(templateTask.name);
+                // Sanitize task name - MS Project doesn't support newlines in task names
+                // Replace newlines with spaces and preserve full text in Notes field
+                string sanitizedName = templateTask.name
+                    .Replace("\r\n", " ")
+                    .Replace("\n", " ")
+                    .Replace("\r", " ")
+                    .Trim();
+
+                // Remove multiple consecutive spaces
+                while (sanitizedName.Contains("  "))
+                {
+                    sanitizedName = sanitizedName.Replace("  ", " ");
+                }
+
+                var msTask = project.Tasks.Add(sanitizedName);
 
                 // Set duration (summary tasks will auto-calculate from children)
                 if (!templateTask.is_summary)
@@ -111,7 +125,15 @@ namespace IlanaPM.AddIn.Services
                 msTask.SetField(PjField.pjTaskFlag1, templateTask.is_mandatory ? "Yes" : "No");
 
                 // Add notes with template metadata
-                string notes = $"Template Task ID: {templateTask.id}\n";
+                string notes = "";
+
+                // If original task name contains newlines, preserve full text in notes
+                if (templateTask.name.Contains("\n") || templateTask.name.Contains("\r"))
+                {
+                    notes += $"Full Task Description:\n{templateTask.name}\n\n";
+                }
+
+                notes += $"Template Task ID: {templateTask.id}\n";
                 if (!string.IsNullOrEmpty(templateTask.authority))
                     notes += $"Authority: {templateTask.authority}\n";
 
