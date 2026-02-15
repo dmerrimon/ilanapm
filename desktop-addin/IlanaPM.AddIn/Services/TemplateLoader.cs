@@ -26,8 +26,18 @@ namespace IlanaPM.AddIn.Services
 
             Project project = projectApp.ActiveProject;
 
-            // Set project name
-            project.Name = template.study_name;
+            // Set project name (wrap in try-catch - may fail with special characters)
+            try
+            {
+                if (!string.IsNullOrEmpty(template.study_name))
+                {
+                    project.Name = template.study_name;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not set project name to '{template.study_name}': {ex.Message}");
+            }
 
             // Map template task IDs to MS Project task IDs
             Dictionary<string, int> taskIdMap = new Dictionary<string, int>();
@@ -35,46 +45,73 @@ namespace IlanaPM.AddIn.Services
             // Create tasks with proper hierarchy (summary tasks + children)
             foreach (var templateTask in template.tasks)
             {
-                // Sanitize task name - MS Project doesn't support newlines in task names
-                // Replace newlines with spaces and preserve full text in Notes field
-                string sanitizedName = templateTask.name
-                    .Replace("\r\n", " ")
-                    .Replace("\n", " ")
-                    .Replace("\r", " ")
-                    .Trim();
-
-                // Remove multiple consecutive spaces
-                while (sanitizedName.Contains("  "))
+                try
                 {
-                    sanitizedName = sanitizedName.Replace("  ", " ");
+                    // Sanitize task name - MS Project doesn't support newlines in task names
+                    string sanitizedName = templateTask.name
+                        .Replace("\r\n", " ")
+                        .Replace("\n", " ")
+                        .Replace("\r", " ")
+                        .Trim();
+
+                    // Remove multiple consecutive spaces
+                    while (sanitizedName.Contains("  "))
+                    {
+                        sanitizedName = sanitizedName.Replace("  ", " ");
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Creating task: {sanitizedName}");
+                    var msTask = project.Tasks.Add(sanitizedName);
+
+                    // Set duration (summary tasks will auto-calculate from children)
+                    if (!templateTask.is_summary && templateTask.duration_days > 0)
+                    {
+                        try
+                        {
+                            msTask.Duration = templateTask.duration_days + "d";
+                        }
+                        catch (System.Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Warning: Could not set duration for task '{sanitizedName}': {ex.Message}");
+                        }
+                    }
+
+                    // Set outline level for proper indentation
+                    try
+                    {
+                        if (templateTask.outline_level >= 1 && templateTask.outline_level <= 9)
+                        {
+                            msTask.OutlineLevel = (short)templateTask.outline_level;
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Could not set outline level for task '{sanitizedName}': {ex.Message}");
+                    }
+
+                    // Set custom fields based on template metadata (skip for summary tasks)
+                    if (!templateTask.is_summary)
+                    {
+                        try
+                        {
+                            SetTaskCustomFields(msTask, templateTask);
+                        }
+                        catch (System.Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Warning: Could not set custom fields on task '{sanitizedName}': {ex.Message}");
+                        }
+                    }
+
+                    // Store mapping for dependency creation (skip summary tasks)
+                    if (!templateTask.is_summary)
+                    {
+                        taskIdMap[templateTask.id] = msTask.ID;
+                    }
                 }
-
-                var msTask = project.Tasks.Add(sanitizedName);
-
-                // Set duration (summary tasks will auto-calculate from children)
-                if (!templateTask.is_summary)
+                catch (System.Exception ex)
                 {
-                    msTask.Duration = templateTask.duration_days + "d";
-                }
-
-                // Set outline level for proper indentation
-                // Level 1 = Summary task (not indented)
-                // Level 2 = Normal task (indented under summary)
-                msTask.OutlineLevel = (short)templateTask.outline_level;
-
-                // MS Project will auto-detect summary tasks based on children
-                // Summary property is read-only and cannot be set directly
-
-                // Set custom fields based on template metadata (skip for summary tasks)
-                if (!templateTask.is_summary)
-                {
-                    SetTaskCustomFields(msTask, templateTask);
-                }
-
-                // Store mapping for dependency creation (skip summary tasks)
-                if (!templateTask.is_summary)
-                {
-                    taskIdMap[templateTask.id] = msTask.ID;
+                    System.Diagnostics.Debug.WriteLine($"ERROR: Failed to create task '{templateTask.name}': {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 }
             }
 

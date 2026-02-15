@@ -415,35 +415,49 @@ namespace IlanaPM.AddIn.Services
             templateLoader.LoadTemplateIntoProject(result.Timeline, app);
 
             // Set custom fields (Text11-14) for filtering
-            foreach (Microsoft.Office.Interop.MSProject.Task task in project.Tasks)
+            try
             {
-                if (task == null) continue;
-
-                // Find matching API task by name
-                var apiTask = result.Timeline.tasks.FirstOrDefault(t => t.name == task.Name);
-                if (apiTask == null) continue;
-
-                // Determine subphase from category/phase
-                string subphase = apiTask.category ?? "Unspecified";
-
-                // Set filtering fields
-                fieldManager.SetFilteringFields(
-                    task,
-                    site: result.SiteId,
-                    phaseType: result.PhaseType,
-                    subphase: subphase,
-                    templateSource: result.TemplateSource
-                );
-
-                // If site-specific, also set clinical entity fields
-                if (!string.IsNullOrEmpty(result.SiteId))
+                foreach (Microsoft.Office.Interop.MSProject.Task task in project.Tasks)
                 {
-                    fieldManager.SetClinicalEntityFields(
-                        task,
-                        siteIds: result.SiteId,
-                        isSiteSpecific: true
-                    );
+                    if (task == null) continue;
+
+                    // Find matching API task by name
+                    var apiTask = result.Timeline.tasks.FirstOrDefault(t => t.name == task.Name);
+                    if (apiTask == null) continue;
+
+                    // Determine subphase from category/phase
+                    string subphase = apiTask.category ?? "Unspecified";
+
+                    try
+                    {
+                        // Set filtering fields
+                        fieldManager.SetFilteringFields(
+                            task,
+                            site: result.SiteId,
+                            phaseType: result.PhaseType,
+                            subphase: subphase,
+                            templateSource: result.TemplateSource
+                        );
+
+                        // If site-specific, also set clinical entity fields
+                        if (!string.IsNullOrEmpty(result.SiteId))
+                        {
+                            fieldManager.SetClinicalEntityFields(
+                                task,
+                                siteIds: result.SiteId,
+                                isSiteSpecific: true
+                            );
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Warning: Could not set custom fields for task '{task.Name}': {ex.Message}");
+                    }
                 }
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Warning: Could not set custom fields: {ex.Message}");
             }
 
             // Configure the MS Project view to show the custom columns
