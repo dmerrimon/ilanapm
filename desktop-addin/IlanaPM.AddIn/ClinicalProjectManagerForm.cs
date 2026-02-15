@@ -1418,9 +1418,40 @@ namespace IlanaPM.AddIn
 
                     if (generationError != null)
                     {
+                        // Get the real error message (unwrap AggregateException if needed)
+                        string errorMessage = generationError.Message;
+                        Exception innerException = generationError.InnerException;
+
+                        // If it's an AggregateException, get the first inner exception
+                        if (generationError is AggregateException aggEx && aggEx.InnerExceptions.Count > 0)
+                        {
+                            innerException = aggEx.InnerExceptions[0];
+                            errorMessage = innerException.Message;
+                        }
+                        else if (innerException != null)
+                        {
+                            errorMessage = innerException.Message;
+                        }
+
+                        // Log detailed error to Debug output
+                        System.Diagnostics.Debug.WriteLine("=== TEMPLATE GENERATION ERROR ===");
+                        System.Diagnostics.Debug.WriteLine($"Error Type: {generationError.GetType().Name}");
+                        System.Diagnostics.Debug.WriteLine($"Error Message: {generationError.Message}");
+                        if (innerException != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Inner Exception: {innerException.GetType().Name}");
+                            System.Diagnostics.Debug.WriteLine($"Inner Message: {innerException.Message}");
+                            System.Diagnostics.Debug.WriteLine($"Stack Trace: {innerException.StackTrace}");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Stack Trace: {generationError.StackTrace}");
+                        }
+                        System.Diagnostics.Debug.WriteLine("=================================");
+
                         MessageBox.Show(
-                            $"Error generating templates: {generationError.Message}\n\n" +
-                            "Please check the error and try again.",
+                            $"Error generating templates: {errorMessage}\n\n" +
+                            "Please check the Visual Studio Output window (Debug) for details.",
                             "Generation Error",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
