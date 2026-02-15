@@ -102,11 +102,9 @@ namespace IlanaPM.AddIn.Services
                         }
                     }
 
-                    // Store mapping for dependency creation (skip summary tasks)
-                    if (!templateTask.is_summary)
-                    {
-                        taskIdMap[templateTask.id] = msTask.ID;
-                    }
+                    // Store mapping for dependency creation (ALL tasks)
+                    taskIdMap[templateTask.id] = msTask.ID;
+                    System.Diagnostics.Debug.WriteLine($"  Added to task map: {templateTask.id} -> MS Project ID {msTask.ID}");
                 }
                 catch (System.Exception ex)
                 {
