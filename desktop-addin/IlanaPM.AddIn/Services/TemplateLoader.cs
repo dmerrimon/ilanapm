@@ -116,6 +116,9 @@ namespace IlanaPM.AddIn.Services
             }
 
             // Create dependencies
+            System.Diagnostics.Debug.WriteLine($"=== Creating Dependencies ===");
+            System.Diagnostics.Debug.WriteLine($"Total dependencies to create: {template.dependencies.Count}");
+            System.Diagnostics.Debug.WriteLine($"Tasks in ID map: {taskIdMap.Count}");
             CreateDependencies(project, template.dependencies, taskIdMap);
 
             // Rename custom column headers if provided
@@ -198,31 +201,51 @@ namespace IlanaPM.AddIn.Services
         /// </summary>
         private void CreateDependencies(Project project, List<Models.Dependency> dependencies, Dictionary<string, int> taskIdMap)
         {
+            int successCount = 0;
+            int skipCount = 0;
+            int errorCount = 0;
+
             foreach (var dep in dependencies)
             {
-                if (taskIdMap.ContainsKey(dep.predecessor_id) && taskIdMap.ContainsKey(dep.successor_id))
+                if (!taskIdMap.ContainsKey(dep.predecessor_id))
                 {
-                    try
-                    {
-                        int predecessorId = taskIdMap[dep.predecessor_id];
-                        int successorId = taskIdMap[dep.successor_id];
+                    System.Diagnostics.Debug.WriteLine($"Skipping dependency: predecessor '{dep.predecessor_id}' not found in task map");
+                    skipCount++;
+                    continue;
+                }
 
-                        var predecessorTask = project.Tasks[predecessorId];
-                        var successorTask = project.Tasks[successorId];
+                if (!taskIdMap.ContainsKey(dep.successor_id))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Skipping dependency: successor '{dep.successor_id}' not found in task map");
+                    skipCount++;
+                    continue;
+                }
 
-                        // Convert dependency type
-                        PjTaskLinkType linkType = ConvertDependencyType(dep.type);
+                try
+                {
+                    int predecessorId = taskIdMap[dep.predecessor_id];
+                    int successorId = taskIdMap[dep.successor_id];
 
-                        // Add dependency with lag
-                        string lag = dep.lag_days + "d";
-                        successorTask.TaskDependencies.Add(predecessorTask, linkType, lag);
-                    }
-                    catch (System.Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error creating dependency {dep.predecessor_id} → {dep.successor_id}: {ex.Message}");
-                    }
+                    var predecessorTask = project.Tasks[predecessorId];
+                    var successorTask = project.Tasks[successorId];
+
+                    // Convert dependency type
+                    PjTaskLinkType linkType = ConvertDependencyType(dep.type);
+
+                    // Add dependency with lag
+                    string lag = dep.lag_days > 0 ? dep.lag_days + "d" : "0d";
+                    successorTask.TaskDependencies.Add(predecessorTask, linkType, lag);
+                    successCount++;
+                }
+                catch (System.Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ERROR creating dependency {dep.predecessor_id} → {dep.successor_id}: {ex.Message}");
+                    errorCount++;
                 }
             }
+
+            System.Diagnostics.Debug.WriteLine($"=== Dependency Creation Summary ===");
+            System.Diagnostics.Debug.WriteLine($"Success: {successCount}, Skipped: {skipCount}, Errors: {errorCount}");
         }
 
         /// <summary>
