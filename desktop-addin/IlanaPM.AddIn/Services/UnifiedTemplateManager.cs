@@ -313,10 +313,13 @@ namespace IlanaPM.AddIn.Services
             // Convert template tasks to Timeline tasks
             foreach (var templateTask in templateDetail.tasks)
             {
+                // Sanitize task name - MS Project doesn't support newlines in task names
+                string sanitizedName = SanitizeTaskName(templateTask.task_name);
+
                 var task = new Models.Task
                 {
                     id = templateTask.task_id,
-                    name = templateTask.task_name,
+                    name = sanitizedName,
                     duration_days = templateTask.typical_duration_days,
                     category = templateTask.category,
                     phase = templateDetail.template.template_type,
@@ -543,6 +546,31 @@ namespace IlanaPM.AddIn.Services
 
             // Default to category
             return task.category ?? "Unspecified";
+        }
+
+        /// <summary>
+        /// Sanitize task name for MS Project compatibility
+        /// MS Project doesn't support newlines in task names
+        /// </summary>
+        private string SanitizeTaskName(string taskName)
+        {
+            if (string.IsNullOrEmpty(taskName))
+                return taskName;
+
+            // Replace newlines with spaces
+            string sanitized = taskName
+                .Replace("\r\n", " ")
+                .Replace("\n", " ")
+                .Replace("\r", " ")
+                .Trim();
+
+            // Remove multiple consecutive spaces
+            while (sanitized.Contains("  "))
+            {
+                sanitized = sanitized.Replace("  ", " ");
+            }
+
+            return sanitized;
         }
 
         /// <summary>
