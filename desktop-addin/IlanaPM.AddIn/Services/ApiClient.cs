@@ -680,7 +680,8 @@ namespace IlanaPM.AddIn.Services
                 throw new Models.UnauthorizedException("No token or org_id available");
             }
 
-            return $"https://app.seleen.io/dashboard/leadership?" +
+            // Updated to point to new Study Dashboard
+            return $"https://app.seleen.io/studies?" +
                    $"token={Uri.EscapeDataString(token)}&" +
                    $"org_id={Uri.EscapeDataString(orgId)}";
         }

@@ -761,7 +761,7 @@ namespace IlanaPM.AddIn
                                        $"🔔 {uploadResult.signals_extracted} signals extracted\n" +
                                        $"⚠️ {uploadResult.escalations_detected} escalations detected\n\n" +
                                        $"{healthIcon} Study Health: {uploadResult.health_score:F1} ({uploadResult.health_status})\n\n" +
-                                       $"View full details in Leadership Dashboard.";
+                                       $"View full details in Study Dashboard.";
 
                         MessageBox.Show(
                             message,
