@@ -1532,10 +1532,12 @@ async def upload_tracker_with_signal_extraction(
         }
 
     except HTTPException:
+        if 'conn' in locals() and conn:
+            conn.close()
         raise
     except Exception as e:
         logger.error(f"Failed to upload tracker: {e}", exc_info=True)
-        if 'conn' in locals():
+        if 'conn' in locals() and conn:
             conn.close()
         raise HTTPException(
             status_code=500,

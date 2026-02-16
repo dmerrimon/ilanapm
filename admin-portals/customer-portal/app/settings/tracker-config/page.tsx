@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
-import apiClient from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 
 // ============================================================================
 // Types
@@ -120,12 +120,10 @@ export default function TrackerConfigPage() {
     setSuccessMessage(null);
 
     try {
-      await apiClient.post('/account/trackers/save-mapping', {
+      await apiClient.post('/account/trackers/save-mapping?created_by=admin_user', {
         org_id: orgId,
         tracker_type: selectedTracker.tracker_type,
         column_mappings: columnMappings,
-      }, {
-        params: { created_by: 'admin_user' }
       });
 
       setSuccessMessage(
