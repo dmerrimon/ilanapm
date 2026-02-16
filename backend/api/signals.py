@@ -602,3 +602,237 @@ async def list_projects(
     except Exception as e:
         logger.error(f"Failed to list projects: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Signal Management Endpoints
+# ============================================================================
+
+@router.patch("/signals/{signal_id}/status")
+async def update_signal_status(
+    signal_id: str,
+    org_id: str = Query(..., description="Organization ID"),
+    status: str = Query(..., description="New status (open, acknowledged, resolved)"),
+    updated_by: str = Query(..., description="User ID making the update")
+):
+    """
+    Update signal status
+
+    Allowed transitions:
+    - open → acknowledged
+    - open → resolved
+    - acknowledged → resolved
+    """
+    try:
+        if status not in ['open', 'acknowledged', 'resolved']:
+            raise HTTPException(status_code=400, detail="Invalid status")
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verify signal exists and belongs to org
+        cursor.execute("""
+            SELECT status FROM signals
+            WHERE signal_id = ? AND org_id = ?
+        """, (signal_id, org_id))
+
+        signal = cursor.fetchone()
+        if not signal:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Signal not found")
+
+        # Update status
+        cursor.execute("""
+            UPDATE signals
+            SET status = ?, updated_at = datetime('now'), updated_by = ?
+            WHERE signal_id = ? AND org_id = ?
+        """, (status, updated_by, signal_id, org_id))
+
+        conn.commit()
+        conn.close()
+
+        logger.info(f"Signal {signal_id} status updated to {status} by {updated_by}")
+
+        return {
+            "success": True,
+            "signal_id": signal_id,
+            "status": status
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update signal status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/signals/{signal_id}/assign")
+async def assign_signal(
+    signal_id: str,
+    org_id: str = Query(..., description="Organization ID"),
+    assigned_to: str = Query(..., description="User ID to assign to"),
+    assigned_by: str = Query(..., description="User ID making the assignment")
+):
+    """
+    Assign signal to a user
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verify signal exists and belongs to org
+        cursor.execute("""
+            SELECT signal_id FROM signals
+            WHERE signal_id = ? AND org_id = ?
+        """, (signal_id, org_id))
+
+        signal = cursor.fetchone()
+        if not signal:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Signal not found")
+
+        # Update assignment
+        cursor.execute("""
+            UPDATE signals
+            SET assigned_to = ?, updated_at = datetime('now'), updated_by = ?
+            WHERE signal_id = ? AND org_id = ?
+        """, (assigned_to, assigned_by, signal_id, org_id))
+
+        conn.commit()
+        conn.close()
+
+        logger.info(f"Signal {signal_id} assigned to {assigned_to} by {assigned_by}")
+
+        return {
+            "success": True,
+            "signal_id": signal_id,
+            "assigned_to": assigned_to
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to assign signal: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Escalation Management Endpoints
+# ============================================================================
+
+@router.patch("/escalations/{escalation_id}/acknowledge")
+async def acknowledge_escalation(
+    escalation_id: str,
+    org_id: str = Query(..., description="Organization ID"),
+    acknowledged_by: str = Query(..., description="User ID acknowledging"),
+    notes: Optional[str] = Query(None, description="Acknowledgment notes")
+):
+    """
+    Acknowledge escalation
+
+    Transitions status from 'open' to 'acknowledged'
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verify escalation exists and belongs to org
+        cursor.execute("""
+            SELECT status FROM escalations
+            WHERE escalation_id = ? AND org_id = ?
+        """, (escalation_id, org_id))
+
+        escalation = cursor.fetchone()
+        if not escalation:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Escalation not found")
+
+        if escalation['status'] != 'open':
+            conn.close()
+            raise HTTPException(status_code=400, detail="Can only acknowledge open escalations")
+
+        # Update status
+        cursor.execute("""
+            UPDATE escalations
+            SET status = 'acknowledged',
+                acknowledged_at = datetime('now'),
+                acknowledged_by = ?,
+                acknowledgment_notes = ?
+            WHERE escalation_id = ? AND org_id = ?
+        """, (acknowledged_by, notes, escalation_id, org_id))
+
+        conn.commit()
+        conn.close()
+
+        logger.info(f"Escalation {escalation_id} acknowledged by {acknowledged_by}")
+
+        return {
+            "success": True,
+            "escalation_id": escalation_id,
+            "status": "acknowledged"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to acknowledge escalation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.patch("/escalations/{escalation_id}/resolve")
+async def resolve_escalation(
+    escalation_id: str,
+    org_id: str = Query(..., description="Organization ID"),
+    resolved_by: str = Query(..., description="User ID resolving"),
+    resolution_notes: str = Query(..., description="Resolution notes")
+):
+    """
+    Resolve escalation
+
+    Transitions status to 'resolved'
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verify escalation exists and belongs to org
+        cursor.execute("""
+            SELECT status FROM escalations
+            WHERE escalation_id = ? AND org_id = ?
+        """, (escalation_id, org_id))
+
+        escalation = cursor.fetchone()
+        if not escalation:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Escalation not found")
+
+        if escalation['status'] == 'resolved':
+            conn.close()
+            raise HTTPException(status_code=400, detail="Escalation already resolved")
+
+        # Update status
+        cursor.execute("""
+            UPDATE escalations
+            SET status = 'resolved',
+                resolved_at = datetime('now'),
+                resolved_by = ?,
+                resolution_notes = ?
+            WHERE escalation_id = ? AND org_id = ?
+        """, (resolved_by, resolution_notes, escalation_id, org_id))
+
+        conn.commit()
+        conn.close()
+
+        logger.info(f"Escalation {escalation_id} resolved by {resolved_by}")
+
+        return {
+            "success": True,
+            "escalation_id": escalation_id,
+            "status": "resolved"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to resolve escalation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

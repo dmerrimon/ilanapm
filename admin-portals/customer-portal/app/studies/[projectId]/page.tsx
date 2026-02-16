@@ -90,6 +90,10 @@ export default function StudyDetailPage() {
   const [signalStatusFilter, setSignalStatusFilter] = useState<string>('all');
   const [escalationLevelFilter, setEscalationLevelFilter] = useState<string>('all');
 
+  // Action states
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   // Load data on mount
   useEffect(() => {
     fetchAllData();
@@ -125,6 +129,96 @@ export default function StudyDetailPage() {
       setError(err.message || 'Failed to load project data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Signal action handlers
+  const handleSignalStatusUpdate = async (signalId: string, newStatus: string) => {
+    try {
+      setActionLoading(signalId);
+      setSuccessMessage(null);
+      setError(null);
+
+      await apiClient.patch(
+        `/signals/${signalId}/status?org_id=${orgId}&status=${newStatus}&updated_by=current_user`
+      );
+
+      // Update local state
+      setSignals((prev) =>
+        prev.map((s) =>
+          s.signal_id === signalId ? { ...s, status: newStatus as Signal['status'] } : s
+        )
+      );
+
+      setSuccessMessage(`Signal ${newStatus} successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Failed to update signal:', err);
+      setError(err.message || 'Failed to update signal');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Escalation action handlers
+  const handleEscalationAcknowledge = async (escalationId: string) => {
+    try {
+      setActionLoading(escalationId);
+      setSuccessMessage(null);
+      setError(null);
+
+      await apiClient.patch(
+        `/escalations/${escalationId}/acknowledge?org_id=${orgId}&acknowledged_by=current_user&notes=Acknowledged from portal`
+      );
+
+      // Update local state
+      setEscalations((prev) =>
+        prev.map((e) =>
+          e.escalation_id === escalationId
+            ? { ...e, status: 'acknowledged' as Escalation['status'], acknowledged_at: new Date().toISOString() }
+            : e
+        )
+      );
+
+      setSuccessMessage('Escalation acknowledged successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Failed to acknowledge escalation:', err);
+      setError(err.message || 'Failed to acknowledge escalation');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleEscalationResolve = async (escalationId: string) => {
+    const notes = prompt('Enter resolution notes:');
+    if (!notes) return;
+
+    try {
+      setActionLoading(escalationId);
+      setSuccessMessage(null);
+      setError(null);
+
+      await apiClient.patch(
+        `/escalations/${escalationId}/resolve?org_id=${orgId}&resolved_by=current_user&resolution_notes=${encodeURIComponent(notes)}`
+      );
+
+      // Update local state
+      setEscalations((prev) =>
+        prev.map((e) =>
+          e.escalation_id === escalationId
+            ? { ...e, status: 'resolved' as Escalation['status'], resolved_at: new Date().toISOString() }
+            : e
+        )
+      );
+
+      setSuccessMessage('Escalation resolved successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Failed to resolve escalation:', err);
+      setError(err.message || 'Failed to resolve escalation');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -171,6 +265,13 @@ export default function StudyDetailPage() {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
             {error}
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+            {successMessage}
           </div>
         )}
 
@@ -299,6 +400,9 @@ export default function StudyDetailPage() {
                             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                               Date
                             </th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                              Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -328,6 +432,52 @@ export default function StudyDetailPage() {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-600">
                                 {new Date(signal.date_identified).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <div className="flex gap-2">
+                                  {signal.status === 'open' && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleSignalStatusUpdate(signal.signal_id, 'acknowledged')
+                                        }
+                                        disabled={actionLoading === signal.signal_id}
+                                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                                      >
+                                        {actionLoading === signal.signal_id
+                                          ? 'Processing...'
+                                          : 'Acknowledge'}
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleSignalStatusUpdate(signal.signal_id, 'resolved')
+                                        }
+                                        disabled={actionLoading === signal.signal_id}
+                                        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                                      >
+                                        {actionLoading === signal.signal_id
+                                          ? 'Processing...'
+                                          : 'Resolve'}
+                                      </button>
+                                    </>
+                                  )}
+                                  {signal.status === 'acknowledged' && (
+                                    <button
+                                      onClick={() =>
+                                        handleSignalStatusUpdate(signal.signal_id, 'resolved')
+                                      }
+                                      disabled={actionLoading === signal.signal_id}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      {actionLoading === signal.signal_id
+                                        ? 'Processing...'
+                                        : 'Resolve'}
+                                    </button>
+                                  )}
+                                  {signal.status === 'resolved' && (
+                                    <span className="text-gray-400 text-xs">Resolved</span>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -384,6 +534,9 @@ export default function StudyDetailPage() {
                             <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                               Date
                             </th>
+                            <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
+                              Actions
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -409,6 +562,52 @@ export default function StudyDetailPage() {
                               </td>
                               <td className="px-6 py-4 text-sm text-gray-600">
                                 {new Date(escalation.created_at).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <div className="flex gap-2">
+                                  {escalation.status === 'open' && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleEscalationAcknowledge(escalation.escalation_id)
+                                        }
+                                        disabled={actionLoading === escalation.escalation_id}
+                                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                                      >
+                                        {actionLoading === escalation.escalation_id
+                                          ? 'Processing...'
+                                          : 'Acknowledge'}
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleEscalationResolve(escalation.escalation_id)
+                                        }
+                                        disabled={actionLoading === escalation.escalation_id}
+                                        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                                      >
+                                        {actionLoading === escalation.escalation_id
+                                          ? 'Processing...'
+                                          : 'Resolve'}
+                                      </button>
+                                    </>
+                                  )}
+                                  {escalation.status === 'acknowledged' && (
+                                    <button
+                                      onClick={() =>
+                                        handleEscalationResolve(escalation.escalation_id)
+                                      }
+                                      disabled={actionLoading === escalation.escalation_id}
+                                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      {actionLoading === escalation.escalation_id
+                                        ? 'Processing...'
+                                        : 'Resolve'}
+                                    </button>
+                                  )}
+                                  {escalation.status === 'resolved' && (
+                                    <span className="text-gray-400 text-xs">Resolved</span>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
