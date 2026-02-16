@@ -19,6 +19,7 @@ import uuid
 
 from database.connection import get_db_connection
 from api.licensing import create_access_token, decode_token
+from services.email_service import send_password_reset_email, send_admin_transfer_email
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,26 @@ class ResetPasswordRequest(BaseModel):
     """Reset password with token"""
     token: str
     new_password: str
+
+
+class LicenseGenerationRequest(BaseModel):
+    """Request to generate a new license key"""
+    org_id: str
+    tier: str = "enterprise"  # professional or enterprise
+    seats: int
+    expires_at: Optional[str] = None  # ISO date format, None for perpetual
+    notes: Optional[str] = None
+
+
+class LicenseGenerationResponse(BaseModel):
+    """Response with generated license key"""
+    license_key: str
+    org_id: str
+    tier: str
+    seats: int
+    expires_at: Optional[str]
+    created_at: datetime
+    message: str
 
 
 # ============================================================================
@@ -283,17 +304,18 @@ async def forgot_password(request: ForgotPasswordRequest):
             """, (email, reset_token, expires_at))
             conn.commit()
 
-            # In production, send email here
-            # For now, log the reset link
-            reset_link = f"https://app.seleen.io/reset-password?token={reset_token}"
-            logger.info(f"Password reset link for {email}: {reset_link}")
+            # Send password reset email
+            user_name = user.get('first_name') if user.get('first_name') else None
+            email_sent = send_password_reset_email(
+                to_email=email,
+                reset_token=reset_token,
+                user_name=user_name
+            )
 
-            # TODO: Send email using SendGrid or similar
-            # send_password_reset_email(
-            #     to_email=email,
-            #     user_name=user.get('first_name') or 'User',
-            #     reset_link=reset_link
-            # )
+            if email_sent:
+                logger.info(f"Password reset email sent to {email}")
+            else:
+                logger.error(f"Failed to send password reset email to {email}")
 
         return {"message": "If an account exists with that email, you will receive a password reset link shortly."}
 
@@ -738,6 +760,19 @@ async def initiate_admin_transfer(request: AdminTransferRequest, user_data: dict
         if not target_user:
             raise HTTPException(status_code=404, detail="Target user not found in your organization")
 
+        # Get org name and from user name for email
+        cursor.execute("""
+            SELECT org_name FROM organizations WHERE org_id = ?
+        """, (org_id,))
+        org = cursor.fetchone()
+        org_name = org["org_name"] if org else "your organization"
+
+        cursor.execute("""
+            SELECT first_name, last_name, email FROM users WHERE user_id = ?
+        """, (from_user_id,))
+        from_user = cursor.fetchone()
+        from_user_name = f"{from_user['first_name'] or ''} {from_user['last_name'] or ''}".strip() or from_user['email']
+
         # Generate transfer token
         token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(days=7)
@@ -773,12 +808,22 @@ async def initiate_admin_transfer(request: AdminTransferRequest, user_data: dict
 
         conn.commit()
 
-        # TODO: Send email to target user with acceptance link
-        # Email should contain: app.seleen.com/admin-transfer/accept?token={token}
+        # Send admin transfer email
+        email_sent = send_admin_transfer_email(
+            to_email=request.to_user_email,
+            org_name=org_name,
+            from_user_name=from_user_name,
+            transfer_token=token,
+            message=request.message
+        )
+
+        if email_sent:
+            logger.info(f"Admin transfer email sent to {request.to_user_email} for org {org_name}")
+        else:
+            logger.error(f"Failed to send admin transfer email to {request.to_user_email}")
 
         return {
-            "message": "Admin transfer initiated",
-            "token": token,  # In production, don't return token - send via email only
+            "message": "Admin transfer initiated. An email has been sent to the new admin.",
             "to_email": request.to_user_email,
             "expires_at": expires_at.isoformat()
         }
@@ -1346,6 +1391,172 @@ async def founder_deactivate_device(activation_id: str, user_data: dict = Depend
             "user_email": activation["email"],
             "org_name": activation["org_name"]
         }
+
+
+@router.post("/portal/founder/licenses/generate", response_model=LicenseGenerationResponse)
+async def founder_generate_license(
+    request: LicenseGenerationRequest,
+    user_data: dict = Depends(require_super_admin_role)
+):
+    """
+    Generate a new license key for an organization (super admin only)
+
+    This endpoint allows founders to create new license keys for customers.
+    The license key is a secure random token that can be used by customers
+    to activate the desktop add-in.
+
+    **Validation:**
+    - Tier must be 'professional' or 'enterprise'
+    - Seats must be > 0
+    - Organization must exist
+    - Expires_at must be future date (if provided)
+
+    **Returns:** LicenseGenerationResponse with generated key
+    """
+    admin_user_id = user_data["user_id"]
+
+    # Validate tier
+    if request.tier not in ['professional', 'enterprise']:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid tier. Must be 'professional' or 'enterprise'"
+        )
+
+    # Validate seats
+    if request.seats <= 0:
+        raise HTTPException(status_code=400, detail="Seats must be greater than 0")
+
+    # Validate expiration date
+    expires_at = None
+    if request.expires_at:
+        try:
+            expires_at = datetime.fromisoformat(request.expires_at.replace('Z', '+00:00'))
+            if expires_at <= datetime.now():
+                raise HTTPException(
+                    status_code=400,
+                    detail="Expiration date must be in the future"
+                )
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date format. Use ISO format (YYYY-MM-DD)"
+            )
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Verify organization exists
+        cursor.execute("""
+            SELECT org_id, org_name
+            FROM organizations
+            WHERE org_id = ?
+        """, (request.org_id,))
+
+        org = cursor.fetchone()
+        if not org:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Organization not found: {request.org_id}"
+            )
+
+        # Generate secure license key (format: SELEEN-XXXX-XXXX-XXXX-XXXX)
+        def generate_license_key():
+            """Generate a license key in format SELEEN-XXXX-XXXX-XXXX-XXXX"""
+            segments = []
+            for _ in range(4):
+                # Generate 4-character alphanumeric segment
+                segment = ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(4))
+                segments.append(segment)
+            return f"SELEEN-{'-'.join(segments)}"
+
+        # Generate unique key (check for collisions)
+        max_attempts = 10
+        license_key = None
+        for attempt in range(max_attempts):
+            candidate_key = generate_license_key()
+
+            # Check if key already exists
+            cursor.execute("""
+                SELECT license_key FROM license_keys WHERE license_key = ?
+            """, (candidate_key,))
+
+            if cursor.fetchone() is None:
+                license_key = candidate_key
+                break
+
+        if not license_key:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate unique license key. Please try again."
+            )
+
+        # Insert license key
+        created_at = datetime.now()
+        cursor.execute("""
+            INSERT INTO license_keys (
+                license_key, org_id, tier, seats,
+                created_at, expires_at, is_active,
+                created_by, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            license_key,
+            request.org_id,
+            request.tier,
+            request.seats,
+            created_at,
+            expires_at,
+            True,
+            admin_user_id,
+            request.notes
+        ))
+
+        # Update organization's license key if not set
+        cursor.execute("""
+            UPDATE organizations
+            SET license_key = ?,
+                seats_purchased = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE org_id = ? AND (license_key IS NULL OR license_key = '')
+        """, (license_key, request.seats, request.org_id))
+
+        # Log action
+        cursor.execute("""
+            INSERT INTO audit_logs (
+                log_id, org_id, user_id, action,
+                resource_type, resource_id, metadata, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            secrets.token_urlsafe(16),
+            request.org_id,
+            admin_user_id,
+            'license_generated',
+            'license_key',
+            license_key,
+            json.dumps({
+                "tier": request.tier,
+                "seats": request.seats,
+                "expires_at": request.expires_at,
+                "org_name": org["org_name"],
+                "generated_by": admin_user_id
+            })
+        ))
+
+        conn.commit()
+
+        logger.info(
+            f"License key generated: {license_key} for org={org['org_name']} "
+            f"(tier={request.tier}, seats={request.seats}) by admin={admin_user_id}"
+        )
+
+        return LicenseGenerationResponse(
+            license_key=license_key,
+            org_id=request.org_id,
+            tier=request.tier,
+            seats=request.seats,
+            expires_at=request.expires_at,
+            created_at=created_at,
+            message=f"License key generated successfully for {org['org_name']}"
+        )
 
 
 # ============================================================================
