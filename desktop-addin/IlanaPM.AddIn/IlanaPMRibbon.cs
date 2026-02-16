@@ -589,59 +589,6 @@ namespace IlanaPM.AddIn
             }
         }
 
-        // NEW: TAG TASKS WITH ENTITIES BUTTON
-        private void btnTagTasks_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                var app = Globals.ThisAddIn.Application;
-                var project = app.ActiveProject;
-
-                if (project == null)
-                {
-                    MessageBox.Show("No active project. Please open or create a project first.",
-                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Get selected tasks
-                var selectedTasks = new List<Microsoft.Office.Interop.MSProject.Task>();
-                var selection = app.ActiveSelection;
-
-                if (selection == null || selection.Tasks.Count == 0)
-                {
-                    MessageBox.Show("Please select one or more tasks to tag with clinical entities.",
-                        "No Tasks Selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                foreach (Microsoft.Office.Interop.MSProject.Task task in selection.Tasks)
-                {
-                    if (task != null)
-                    {
-                        selectedTasks.Add(task);
-                    }
-                }
-
-                if (selectedTasks.Count == 0)
-                {
-                    MessageBox.Show("No valid tasks selected.",
-                        "No Tasks Selected", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Open tagging form
-                var form = new ClinicalEntityTaggingForm();
-                form.LoadSelectedTasks(selectedTasks);
-                form.ShowDialog();
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show($"Error tagging tasks: {ex.Message}",
-                    "Tag Tasks Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
         #region Reports Menu Event Handlers
 
         // REPORTS: SITE STATUS DASHBOARD

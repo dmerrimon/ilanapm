@@ -32,7 +32,6 @@ namespace IlanaPM.AddIn
 
             this.menuClinical = this.Factory.CreateRibbonMenu();
             this.btnClinicalProjectManager = this.Factory.CreateRibbonButton();
-            this.btnTagTasks = this.Factory.CreateRibbonButton();
             this.btnEssentialDocs = this.Factory.CreateRibbonButton();
 
             this.menuAnalysis = this.Factory.CreateRibbonMenu();
@@ -93,7 +92,6 @@ namespace IlanaPM.AddIn
             //
             this.menuClinical.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.menuClinical.Items.Add(this.btnClinicalProjectManager);
-            this.menuClinical.Items.Add(this.btnTagTasks);
             // this.menuClinical.Items.Add(this.btnEssentialDocs);  // REMOVED - not working yet
             this.menuClinical.Label = "Clinical";
             this.menuClinical.Name = "menuClinical";
@@ -108,15 +106,6 @@ namespace IlanaPM.AddIn
             this.btnClinicalProjectManager.ShowImage = true;
             this.btnClinicalProjectManager.OfficeImageId = "ProjectManagement";
             this.btnClinicalProjectManager.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnClinicalProjectManager_Click);
-
-            //
-            // btnTagTasks (inside Clinical menu - tags tasks with Sites/Amendments/Cohorts)
-            //
-            this.btnTagTasks.Label = "Tag Tasks with Entities";
-            this.btnTagTasks.Name = "btnTagTasks";
-            this.btnTagTasks.ShowImage = true;
-            this.btnTagTasks.OfficeImageId = "TableAddColumnDialog";
-            this.btnTagTasks.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnTagTasks_Click);
 
             //
             // btnEssentialDocs (inside Clinical menu) - HIDDEN FOR NOW
@@ -284,7 +273,6 @@ namespace IlanaPM.AddIn
 
         internal Microsoft.Office.Tools.Ribbon.RibbonMenu menuClinical;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnClinicalProjectManager;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnTagTasks;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnEssentialDocs;
 
         internal Microsoft.Office.Tools.Ribbon.RibbonMenu menuAnalysis;

@@ -136,37 +136,8 @@ export default function TaskMappingPage() {
                 Manage how your task names map to our industry-standard ontology
               </p>
             </div>
-            {tier === 'core' && (
-              <button
-                onClick={() => window.location.href = '/billing'}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                Upgrade to Edit Mappings
-              </button>
-            )}
           </div>
         </div>
-
-        {/* Tier Notice */}
-        {tier === 'core' && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="text-blue-600 text-xl">ℹ️</div>
-              <div className="flex-1">
-                <h3 className="font-medium text-blue-900 mb-1">Core Tier - View Only</h3>
-                <p className="text-sm text-blue-800 mb-2">
-                  You can view auto-learned task mappings, but editing requires Calibrated tier or higher.
-                </p>
-                <button
-                  onClick={() => window.location.href = '/billing'}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  Learn about Calibrated tier →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -307,11 +278,9 @@ export default function TaskMappingPage() {
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
                       Created
                     </th>
-                    {tier !== 'core' && (
-                      <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">
-                        Actions
-                      </th>
-                    )}
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -341,13 +310,11 @@ export default function TaskMappingPage() {
                       <td className="py-4 px-4 text-sm text-gray-500">
                         {new Date(mapping.created_at).toLocaleDateString()}
                       </td>
-                      {tier !== 'core' && (
-                        <td className="py-4 px-4 text-right">
-                          <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                            Edit
-                          </button>
-                        </td>
-                      )}
+                      <td className="py-4 px-4 text-right">
+                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -377,17 +344,17 @@ export default function TaskMappingPage() {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium text-black mb-2">Core Tier</h4>
+              <h4 className="font-medium text-black mb-2">Editing Mappings</h4>
               <p>
-                View auto-learned mappings to understand how your tasks align with industry standards.
-                Mappings improve automatically over time as you use the system.
+                Manually edit mappings, confirm suggestions, and create custom task dictionaries.
+                All customers can edit and customize their task mappings.
               </p>
             </div>
             <div>
-              <h4 className="font-medium text-black mb-2">Calibrated Tier</h4>
+              <h4 className="font-medium text-black mb-2">Training the System</h4>
               <p>
-                Manually edit mappings, confirm suggestions, and create custom task dictionaries.
-                Upload historical timelines to train the system on your organization's naming conventions.
+                Upload historical timelines via Calibration feature to train the system on your
+                organization's naming conventions. Mappings improve automatically over time.
               </p>
             </div>
           </div>

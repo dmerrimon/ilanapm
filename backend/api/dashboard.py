@@ -1,29 +1,30 @@
 """
-Dashboard API Endpoints
+Dashboard API Endpoints (DEPRECATED)
 
-Provides REST API for Leadership Dashboard and Account Management views.
+HISTORICAL NOTE:
+This file previously contained Leadership Dashboard and Portfolio Intelligence endpoints.
+These features have been removed as part of the tracker-centric architecture redesign.
+
+New tracker upload system uses:
+- /api/v1/trackers/upload (in portal.py) - Upload trackers with signal extraction
+- /api/v1/account/trackers/* (in account_management.py) - Tracker configuration
+
+The dashboard functionality has been replaced with direct tracker uploads,
+signal extraction, and escalation management.
+
+This file is kept for historical reference only.
 """
 
-from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-import sqlite3
+from fastapi import APIRouter
 import logging
-from pathlib import Path
-import csv
-import io
-import json
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-
-# ============================================================================
-# Request/Response Models
-# ============================================================================
+# All dashboard endpoints have been removed.
+# See portal.py for tracker upload endpoints.
+# See account_management.py for tracker configuration endpoints.
 
 class DashboardFilters(BaseModel):
     """Filters for Leadership Dashboard"""

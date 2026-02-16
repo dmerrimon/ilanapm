@@ -179,7 +179,29 @@ async def get_supported_countries():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-class SiteTemplateRequest(BaseModel):
+# ============================================================================
+# SITE GENERATION ENDPOINTS REMOVED
+# ============================================================================
+#
+# The following endpoints have been removed as part of the tracker-centric
+# architecture redesign:
+#   - POST /templates/generate-site-startup
+#   - POST /templates/generate-site-closeout
+#   - POST /templates/generate-study-closeout
+#   - POST /templates/library
+#
+# These endpoints generated timeline templates for site-specific activities.
+# They have been replaced with the direct tracker upload system that uses
+# signal extraction from Excel files.
+#
+# See portal.py for new tracker upload endpoints.
+# See account_management.py for tracker configuration.
+#
+# Historical note: Site generation used country-specific regulatory data
+# from regulatory_data.py to generate authority-specific tasks (e.g., MHRA
+# for UK, NDA+UNCST for Uganda, etc.). This functionality is archived for
+# future reference.
+#
     """Request model for site-specific template generation"""
     country_code: str = Field(
         ...,

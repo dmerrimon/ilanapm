@@ -97,7 +97,6 @@ export default function DashboardPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <p className="text-sm opacity-70 mb-1">License Key</p>
             <p className="text-xl font-mono">{orgData.license_key || "N/A"}</p>
-            <p className="text-xs opacity-50 mt-2">Tier: {orgData.tier}</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow">

@@ -226,7 +226,8 @@ async def activate_license(request: ActivationRequest):
                     )
     
             org_id = license_row['org_id']
-            tier = license_row['org_tier']
+            # Always enterprise tier (single tier for all customers)
+            tier = "enterprise"
     
             # Step 2: Check organization subscription status
             if license_row['org_status'] != 'active':

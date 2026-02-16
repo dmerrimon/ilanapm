@@ -6,7 +6,7 @@ This module provides APIs for:
 - Founder Portal (admin.seleen.com): System-wide admin and analytics
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi import APIRouter, HTTPException, Depends, Header, Query, UploadFile, File
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -14,6 +14,8 @@ import secrets
 import json
 import logging
 import hashlib
+import os
+import uuid
 
 from database.connection import get_db_connection
 from api.licensing import create_access_token, decode_token
@@ -1344,6 +1346,201 @@ async def founder_deactivate_device(activation_id: str, user_data: dict = Depend
             "user_email": activation["email"],
             "org_name": activation["org_name"]
         }
+
+
+# ============================================================================
+# TRACKER UPLOAD WITH SIGNAL EXTRACTION
+# ============================================================================
+
+@router.post("/trackers/upload")
+async def upload_tracker_with_signal_extraction(
+    file: UploadFile,
+    org_id: str = Query(...),
+    project_id: str = Query(...),
+    tracker_type: str = Query(...)
+):
+    """
+    Upload tracker file, extract signals, run correlation/escalation
+
+    **Workflow:**
+    1. Validate file format (Excel/CSV only)
+    2. Get org's column mapping (configured by Account Admin)
+    3. Create tracker upload record
+    4. Extract signals using SignalExtractionEngine
+    5. Store signals in database
+    6. Run escalation engine
+    7. Calculate health score
+    8. Return TrackerUploadResult
+
+    **Returns:**
+    ```json
+    {
+      "success": true,
+      "upload_id": "upload_123",
+      "rows_processed": 25,
+      "signals_extracted": 3,
+      "escalations_detected": 2,
+      "health_score": 72.5,
+      "health_status": "warning"
+    }
+    ```
+    """
+    from intelligence.signal_extraction import SignalExtractionEngine
+    from intelligence.escalation_engine import EscalationEngine
+    from intelligence.health_score import HealthScoreCalculator
+
+    try:
+        # 1. Validate file format
+        if not file.filename or not file.filename.endswith(('.xlsx', '.xls', '.csv')):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file format. Must be Excel (.xlsx, .xls) or CSV (.csv)"
+            )
+
+        # 2. Get org's column mapping
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT column_mappings FROM tracker_column_mappings
+            WHERE org_id = ? AND tracker_type = ?
+        """, (org_id, tracker_type))
+
+        mapping_row = cursor.fetchone()
+        if not mapping_row:
+            conn.close()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Column mapping not configured for {tracker_type}. Account Admin must configure tracker first via Settings → Tracker Configuration."
+            )
+
+        column_mappings = json.loads(mapping_row['column_mappings'])
+
+        # 3. Save file temporarily
+        temp_path = f"/tmp/{uuid.uuid4()}_{file.filename}"
+        contents = await file.read()
+        with open(temp_path, 'wb') as f:
+            f.write(contents)
+
+        # 4. Create upload record
+        upload_id = str(uuid.uuid4())
+        cursor.execute("""
+            INSERT INTO tracker_uploads
+            (upload_id, org_id, project_id, tracker_def_id,
+             uploaded_by, original_filename, upload_timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        """, (upload_id, org_id, project_id, tracker_type,
+              "current_user", file.filename))
+        conn.commit()
+
+        # 5. Extract signals using SignalExtractionEngine
+        engine = SignalExtractionEngine(conn)
+        signals = engine.extract_signals_from_tracker(
+            file_path=temp_path,
+            tracker_type=tracker_type,
+            org_id=org_id,
+            project_id=project_id
+        )
+
+        # 6. Store signals in database
+        for signal in signals:
+            signal_dict = signal.to_dict()
+            cursor.execute("""
+                INSERT INTO signals
+                (signal_id, upload_id, org_id, project_id, signal_type,
+                 signal_category, signal_source, signal_description,
+                 signal_detail, priority, status, date_identified,
+                 target_date, escalation_level, escalation_notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                signal_dict['signal_id'], upload_id, org_id, project_id,
+                signal_dict['signal_type'], signal_dict['signal_category'],
+                signal_dict['signal_source'], signal_dict['signal_description'],
+                signal_dict['signal_detail'], signal_dict['priority'],
+                signal_dict['status'], signal_dict['date_identified'],
+                signal_dict['target_date'], signal_dict['escalation_level'],
+                signal_dict['escalation_notes']
+            ))
+        conn.commit()
+
+        # 7. Run escalation engine
+        esc_engine = EscalationEngine(conn)
+        signals_dicts = [s.to_dict() for s in signals]
+        escalations = esc_engine.evaluate_escalations(
+            org_id=org_id,
+            project_id=project_id,
+            signals=signals_dicts,
+            correlations=[],  # No correlations for now
+            patterns=[],  # No pattern detection for now
+            timeline={}  # No timeline for now
+        )
+
+        # Store escalations
+        for escalation in escalations:
+            if escalation.escalation_level in ['director', 'vp']:
+                esc_dict = escalation.to_dict()
+                cursor.execute("""
+                    INSERT INTO escalations
+                    (escalation_id, org_id, project_id, trigger_type, trigger_id,
+                     escalation_rule_id, escalation_level, escalation_reason,
+                     escalation_data, assigned_to, assigned_role, status, priority,
+                     intervention_recommended, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    esc_dict['escalation_id'], esc_dict['org_id'], esc_dict['project_id'],
+                    esc_dict['trigger_type'], esc_dict['trigger_id'],
+                    esc_dict.get('escalation_rule_id'), esc_dict['escalation_level'],
+                    esc_dict['escalation_reason'], esc_dict['escalation_data'],
+                    esc_dict.get('assigned_to'), esc_dict.get('assigned_role'),
+                    esc_dict['status'], esc_dict['priority'],
+                    esc_dict['intervention_recommended'], esc_dict['created_at'].isoformat()
+                ))
+        conn.commit()
+
+        # 8. Calculate health score
+        health_calc = HealthScoreCalculator(conn)
+        health = health_calc.calculate_health_score(
+            project_id=project_id,
+            signals=signals_dicts,
+            correlations=[],
+            timeline_data=None
+        )
+
+        # 9. Cleanup temp file
+        try:
+            os.remove(temp_path)
+        except Exception as e:
+            logger.warning(f"Failed to remove temp file {temp_path}: {e}")
+
+        conn.close()
+
+        # Count escalations by level
+        escalations_detected = len([
+            e for e in escalations
+            if e.escalation_level in ['director', 'vp']
+        ])
+
+        logger.info(f"Tracker upload successful: upload_id={upload_id}, signals={len(signals)}, escalations={escalations_detected}")
+
+        return {
+            "success": True,
+            "upload_id": upload_id,
+            "rows_processed": len(signals),
+            "signals_extracted": len(signals),
+            "escalations_detected": escalations_detected,
+            "health_score": round(health.overall_score, 1),
+            "health_status": health.health_status
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to upload tracker: {e}", exc_info=True)
+        if 'conn' in locals():
+            conn.close()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to upload tracker: {str(e)}"
+        )
 
 
 # ============================================================================
