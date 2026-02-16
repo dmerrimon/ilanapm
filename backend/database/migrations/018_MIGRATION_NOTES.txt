@@ -1,0 +1,56 @@
+Migration 018: Fix TPL_001 Dependency Task IDs
+================================================
+
+Problem Statement:
+-----------------
+The template_dependencies table contains predecessor_task_id and successor_task_id 
+values in the format 'SS_XXX' (e.g., SS_001, SS_084, SS_012), but the template_tasks 
+table defines tasks with IDs in the format 'STARTUP_XXX' (e.g., STARTUP_001, 
+STARTUP_084, STARTUP_012). This mismatch breaks foreign key relationships and 
+dependency lookups.
+
+Solution:
+--------
+This migration updates all dependency references from SS_XXX to STARTUP_XXX for 
+the TPL_001 (Study Start-Up) template.
+
+Mapping Pattern:
+---------------
+SS_001  → STARTUP_001
+SS_009  → STARTUP_009
+SS_012  → STARTUP_012
+... (49 unique task IDs total)
+
+Migration Details:
+-----------------
+- Affected Template: TPL_001 (Study Start-Up)
+- Total Dependencies Updated: 52
+- Total Task IDs Mapped: 49
+- Method: String substitution using SQLite substr() function
+- Formula: 'STARTUP_' || substr(old_id, 4)
+
+Idempotency:
+-----------
+✓ Safe to run multiple times
+✓ WHERE clause filters only 'SS_%' patterns
+✓ Already converted IDs (STARTUP_XXX) are ignored
+✓ No data loss or corruption possible
+
+Verification:
+------------
+The migration includes verification queries that:
+1. Count remaining SS_ references (should be 0 after migration)
+2. Display sample converted dependencies for visual inspection
+
+Changes Preserved:
+-----------------
+✓ dependency_type (finish-to-start, etc.)
+✓ lag_days
+✓ is_critical
+✓ All other dependency attributes remain unchanged
+✓ Only task ID references are updated
+
+Testing:
+--------
+Verified that all 49 SS_XXX task IDs have corresponding STARTUP_XXX 
+definitions in migration 015_populate_timeline_templates.sql
