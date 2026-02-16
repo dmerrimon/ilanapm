@@ -70,10 +70,25 @@ async function apiRequest<T>(
  */
 export const apiClient = {
   get: <T = any>(endpoint: string) => apiRequest<T>(endpoint, { method: 'GET' }),
-  post: <T = any>(endpoint: string, data?: any) => apiRequest<T>(endpoint, {
-    method: 'POST',
-    body: data ? JSON.stringify(data) : undefined,
-  }),
+  post: <T = any>(endpoint: string, data?: any) => {
+    // Handle FormData differently (don't set Content-Type, let browser set it with boundary)
+    if (data instanceof FormData) {
+      const token = getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      return apiRequest<T>(endpoint, {
+        method: 'POST',
+        body: data,
+        headers,
+      });
+    }
+    return apiRequest<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  },
   put: <T = any>(endpoint: string, data?: any) => apiRequest<T>(endpoint, {
     method: 'PUT',
     body: data ? JSON.stringify(data) : undefined,
