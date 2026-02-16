@@ -1,3 +1,4 @@
+-- PostgreSQL-compatible version
 -- Migration 017: Add Task Descriptions to Study Start-Up Template
 -- Created: 2026-02-15
 -- Description: Add descriptions/notes from Study Start-Up Guidance Document CSV

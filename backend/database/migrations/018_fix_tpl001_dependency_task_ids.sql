@@ -1,3 +1,4 @@
+-- PostgreSQL-compatible version
 -- Migration: Fix TPL_001 dependency task IDs
 -- Description: Updates template_dependencies predecessor_task_id and successor_task_id
 --              from SS_XXX format to STARTUP_XXX format for TPL_001 template
@@ -6,8 +7,6 @@
 
 -- This migration fixes the mismatch between task IDs in template_tasks (STARTUP_XXX)
 -- and the dependency references in template_dependencies (SS_XXX) for the Study Start-Up template
-
-BEGIN TRANSACTION;
 
 -- Update predecessor_task_id from SS_XXX to STARTUP_XXX
 UPDATE template_dependencies
@@ -51,5 +50,3 @@ SELECT
 FROM template_dependencies
 WHERE template_id = 'TPL_001'
 LIMIT 10;
-
-COMMIT;

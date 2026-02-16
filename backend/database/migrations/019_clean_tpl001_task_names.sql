@@ -1,3 +1,4 @@
+-- PostgreSQL-compatible version
 -- Migration 019: Clean TPL_001 Task Names
 -- Created: 2026-02-15
 -- Description: Remove multi-line text, bullets, and extra content from task_name field
@@ -9,8 +10,6 @@
 -- Problem: Task names contain multi-line text with bullet points that belong in notes
 -- Solution: Extract first line only and clean up trailing special characters
 -- Total updates: 33 tasks (out of 86 TPL_001 tasks)
-
-BEGIN TRANSACTION;
 
 -- ============================================================================
 -- UPDATE TEMPLATE_TASKS - CLEAN TASK NAMES FOR TPL_001
@@ -294,8 +293,6 @@ FROM template_tasks
 WHERE template_id = 'TPL_001'
 ORDER BY LENGTH(task_name) DESC
 LIMIT 5;
-
-COMMIT;
 
 -- Migration complete! Updated 33 task names for TPL_001
 -- All task names now contain only the first line, with bullets and extra content removed
