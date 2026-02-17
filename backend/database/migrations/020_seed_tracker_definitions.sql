@@ -190,7 +190,8 @@ INSERT INTO tracker_definitions (
     }',
     '1.0',
     NOW()
-);
+)
+ON CONFLICT (tracker_def_id) DO NOTHING;
 
 -- ==================================================================
 -- 2. TMF COMPLETENESS TRACKER
@@ -339,7 +340,8 @@ INSERT INTO tracker_definitions (
     }',
     '1.0',
     NOW()
-);
+)
+ON CONFLICT (tracker_def_id) DO NOTHING;
 
 -- ==================================================================
 -- 3. BUDGET TRACKER
@@ -456,7 +458,8 @@ INSERT INTO tracker_definitions (
     }',
     '1.0',
     NOW()
-);
+)
+ON CONFLICT (tracker_def_id) DO NOTHING;
 
 -- ==================================================================
 -- 4. VENDOR PERFORMANCE TRACKER
@@ -598,7 +601,8 @@ INSERT INTO tracker_definitions (
     }',
     '1.0',
     NOW()
-);
+)
+ON CONFLICT (tracker_def_id) DO NOTHING;
 
 -- ==================================================================
 -- VERIFICATION QUERIES
