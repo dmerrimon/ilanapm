@@ -666,24 +666,6 @@ namespace IlanaPM.AddIn.Services
             }
         }
 
-        /// <summary>
-        /// Get Leadership Dashboard web portal URL with auto-login token
-        /// Returns URL to app.seleen.io with authentication token
-        /// </summary>
-        public string GetLeadershipDashboardUrl()
-        {
-            string token = SecureStorage.ReadToken();
-            string orgId = SecureStorage.ReadOrgId();
-
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(orgId))
-            {
-                throw new Models.UnauthorizedException("No token or org_id available");
-            }
-
-            // Updated to point to new Study Dashboard
-            return $"https://app.seleen.io/studies?" +
-                   $"token={Uri.EscapeDataString(token)}&" +
-                   $"org_id={Uri.EscapeDataString(orgId)}";
-        }
+        // REMOVED 2026-02-17: GetLeadershipDashboardUrl() - CPMs should not access customer portal
     }
 }
