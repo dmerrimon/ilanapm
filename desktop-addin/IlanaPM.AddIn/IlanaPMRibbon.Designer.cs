@@ -42,9 +42,7 @@ namespace IlanaPM.AddIn
 
             this.btnSettings = this.Factory.CreateRibbonButton();
 
-            // Group 2: Reports - 4 standalone report buttons
-            this.btnSiteStatusDashboard = this.Factory.CreateRibbonButton();
-            this.btnSiteActivationTimeline = this.Factory.CreateRibbonButton();
+            // Group 2: Reports - 2 standalone report buttons (Site Status & Site Activation REMOVED 2026-02-17)
             this.btnEssentialDocsCompliance = this.Factory.CreateRibbonButton();
             this.btnStudyTimelineStatus = this.Factory.CreateRibbonButton();
 
@@ -167,34 +165,16 @@ namespace IlanaPM.AddIn
             this.btnLeadershipDashboard.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnLeadershipDashboard_Click);
 
             //
-            // grpReports - Reports Group with 2 standalone buttons
+            // grpReports - Reports Group (Site Status & Site Activation REMOVED 2026-02-17)
             //
-            this.grpReports.Items.Add(this.btnSiteStatusDashboard);
-            this.grpReports.Items.Add(this.btnSiteActivationTimeline);
+            // All report buttons removed - focus on tracker uploads instead
             // this.grpReports.Items.Add(this.btnEssentialDocsCompliance);  // REMOVED - focus on Essential Documents Tracker instead
             // this.grpReports.Items.Add(this.btnStudyTimelineStatus);  // REMOVED - not working yet
             this.grpReports.Label = "Reports";
             this.grpReports.Name = "grpReports";
 
-            //
-            // btnSiteStatusDashboard (standalone in Reports group)
-            //
-            this.btnSiteStatusDashboard.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.btnSiteStatusDashboard.Label = "Site Status\nDashboard";
-            this.btnSiteStatusDashboard.Name = "btnSiteStatusDashboard";
-            this.btnSiteStatusDashboard.ShowImage = true;
-            this.btnSiteStatusDashboard.Image = Properties.Resources.sitestatus;
-            this.btnSiteStatusDashboard.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSiteStatusDashboard_Click);
-
-            //
-            // btnSiteActivationTimeline (standalone in Reports group)
-            //
-            this.btnSiteActivationTimeline.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.btnSiteActivationTimeline.Label = "Site Activation\nTimeline";
-            this.btnSiteActivationTimeline.Name = "btnSiteActivationTimeline";
-            this.btnSiteActivationTimeline.ShowImage = true;
-            this.btnSiteActivationTimeline.Image = Properties.Resources.siteactivation;
-            this.btnSiteActivationTimeline.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.btnSiteActivationTimeline_Click);
+            // btnSiteStatusDashboard REMOVED 2026-02-17
+            // btnSiteActivationTimeline REMOVED 2026-02-17
 
             //
             // btnEssentialDocsCompliance (standalone in Reports group) - HIDDEN FOR NOW
@@ -283,10 +263,8 @@ namespace IlanaPM.AddIn
 
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSettings;
 
-        // Reports Group: 4 standalone report buttons
+        // Reports Group (Site Status & Site Activation REMOVED 2026-02-17)
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup grpReports;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSiteStatusDashboard;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton btnSiteActivationTimeline;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnEssentialDocsCompliance;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton btnStudyTimelineStatus;
 

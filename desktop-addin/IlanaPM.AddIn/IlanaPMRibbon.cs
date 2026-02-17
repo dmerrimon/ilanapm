@@ -591,50 +591,7 @@ namespace IlanaPM.AddIn
 
         #region Reports Menu Event Handlers
 
-        // REPORTS: SITE STATUS DASHBOARD
-        private void btnSiteStatusDashboard_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                var app = Globals.ThisAddIn.Application;
-                var project = app.ActiveProject;
-
-                if (project == null)
-                {
-                    MessageBox.Show("No active project. Please open or create a project first.",
-                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Track telemetry
-                var telemetryService = Globals.ThisAddIn.TelemetryService;
-                if (telemetryService != null)
-                {
-                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
-                    {
-                        { "feature", "SiteStatusDashboard" }
-                    });
-                }
-
-                // Launch Site Status Dashboard
-                var dashboardForm = new SiteStatusDashboardForm(app);
-                dashboardForm.ShowDialog();
-
-                // Track close
-                if (telemetryService != null)
-                {
-                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
-                    {
-                        { "feature", "SiteStatusDashboard" }
-                    });
-                }
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show($"Error opening Site Status Dashboard: {ex.Message}",
-                    "Report Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        // REMOVED 2026-02-17: Site Status Dashboard button removed from ribbon
 
         // REPORTS: ESSENTIAL DOCUMENTS COMPLIANCE (HIDDEN - NOT IMPLEMENTED)
         private void btnEssentialDocsCompliance_Click(object sender, RibbonControlEventArgs e)
@@ -650,50 +607,7 @@ namespace IlanaPM.AddIn
                 "Not Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        // REPORTS: SITE ACTIVATION TIMELINE
-        private void btnSiteActivationTimeline_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                var app = Globals.ThisAddIn.Application;
-                var project = app.ActiveProject;
-
-                if (project == null)
-                {
-                    MessageBox.Show("No active project. Please open or create a project first.",
-                        "No Active Project", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                // Track telemetry
-                var telemetryService = Globals.ThisAddIn.TelemetryService;
-                if (telemetryService != null)
-                {
-                    telemetryService.TrackEvent(TelemetryEventType.FeatureOpened, new Dictionary<string, object>
-                    {
-                        { "feature", "SiteActivationTimelineReport" }
-                    });
-                }
-
-                // Launch Site Activation Timeline Report
-                var timelineForm = new SiteActivationTimelineForm(app);
-                timelineForm.ShowDialog();
-
-                // Track close
-                if (telemetryService != null)
-                {
-                    telemetryService.TrackEvent(TelemetryEventType.FeatureClosed, new Dictionary<string, object>
-                    {
-                        { "feature", "SiteActivationTimelineReport" }
-                    });
-                }
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show($"Error opening Site Activation Timeline Report: {ex.Message}",
-                    "Report Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
+        // REMOVED 2026-02-17: Site Activation Timeline button removed from ribbon
 
         #endregion
 
