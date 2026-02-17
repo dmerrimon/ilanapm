@@ -22,11 +22,11 @@ def fix_super_admin_organization():
                 seleen_org_id = f"org_{secrets.token_urlsafe(16)}"
                 cursor.execute("""
                     INSERT INTO organizations (org_id, org_name, tier, seats_purchased, subscription_start, subscription_end, status)
-                    VALUES (?, ?, ?, ?, DATE('now'), DATE('now', '+10 years'), ?)
+                    VALUES (?, ?, ?, ?, CURRENT_DATE, CURRENT_DATE + INTERVAL '10 years', ?)
                 """, (seleen_org_id, "Seleen Internal", "enterprise", 100, "active"))
                 print(f"✅ Created Seleen Internal organization: {seleen_org_id}")
             else:
-                seleen_org_id = seleen_org["org_id"]
+                seleen_org_id = seleen_org["org_id"] if isinstance(seleen_org, dict) else seleen_org[0]
                 print(f"✅ Using existing Seleen Internal organization: {seleen_org_id}")
 
             # Find all super_admin users NOT in Seleen Internal org
