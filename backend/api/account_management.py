@@ -10,12 +10,12 @@ Provides REST API for Account Admin functions:
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
-import sqlite3
 import json
 import uuid
 import logging
 from pathlib import Path
 import pandas as pd
+from database.connection import get_db_connection
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +40,6 @@ class TrackerTemplateDownload(BaseModel):
     template_url: str
     required_columns: List[str]
     optional_columns: List[str]
-
-
-# ============================================================================
-# Helper Functions
-# ============================================================================
-
-def get_db_connection() -> sqlite3.Connection:
-    """Get database connection"""
-    db_path = Path(__file__).parent.parent / "database" / "feedback.db"
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    return conn
 
 
 # ============================================================================
