@@ -1601,7 +1601,7 @@ async def founder_get_all_users(
             params.append(org_id)
 
         if search:
-            query += " AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)"
+            query += " AND (LOWER(u.email) LIKE LOWER(?) OR LOWER(COALESCE(u.first_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(u.last_name, '')) LIKE LOWER(?))"
             search_pattern = f"%{search}%"
             params.extend([search_pattern, search_pattern, search_pattern])
 
@@ -1636,7 +1636,7 @@ async def founder_get_all_users(
             count_params.append(org_id)
 
         if search:
-            count_query += " AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)"
+            count_query += " AND (LOWER(u.email) LIKE LOWER(?) OR LOWER(COALESCE(u.first_name, '')) LIKE LOWER(?) OR LOWER(COALESCE(u.last_name, '')) LIKE LOWER(?))"
             search_pattern = f"%{search}%"
             count_params.extend([search_pattern, search_pattern, search_pattern])
 
