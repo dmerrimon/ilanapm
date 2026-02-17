@@ -733,64 +733,6 @@ namespace IlanaPM.AddIn
         /// <summary>
         /// Leadership Dashboard button - Open Leadership Dashboard in web browser
         /// Phase 5B: Leadership Dashboard Integration
-        /// </summary>
-        private void btnLeadershipDashboard_Click(object sender, RibbonControlEventArgs e)
-        {
-            try
-            {
-                // Get dashboard URL with auto-login token
-                var apiClient = new Services.ApiClient();
-                string dashboardUrl = apiClient.GetLeadershipDashboardUrl();
-
-                System.Diagnostics.Debug.WriteLine($"Opening Leadership Dashboard: {dashboardUrl}");
-
-                // Open in default browser
-                System.Diagnostics.Process.Start(dashboardUrl);
-
-                // Track telemetry
-                var telemetryService = Globals.ThisAddIn.TelemetryService;
-                if (telemetryService != null)
-                {
-                    telemetryService.TrackEvent(TelemetryEventType.LeadershipDashboardOpened, new Dictionary<string, object>
-                    {
-                        { "source", "ribbon_button" }
-                    });
-                }
-
-                System.Diagnostics.Debug.WriteLine("Leadership Dashboard opened successfully");
-            }
-            catch (Models.UnauthorizedException ex)
-            {
-                // License expired or no org_id - show activation form
-                MessageBox.Show(
-                    "Unable to open Leadership Dashboard.\n\n" + ex.Message +
-                    "\n\nPlease activate your license in Settings.",
-                    "License Required",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
-
-                var activationForm = new LicenseActivationForm();
-                activationForm.ShowDialog();
-            }
-            catch (System.Exception ex)
-            {
-                string detailedError = "Error opening Leadership Dashboard: " + ex.Message;
-                if (ex.InnerException != null)
-                {
-                    detailedError = detailedError + "\n\nInner: " + ex.InnerException.Message;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Dashboard open error: {detailedError}");
-
-                MessageBox.Show(
-                    detailedError +
-                    "\n\nPlease check your internet connection and try again.",
-                    "Dashboard Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error
-                );
-            }
-        }
+        // REMOVED 2026-02-17: Leadership Dashboard button removed - CPMs should not access customer portal
     }
 }
