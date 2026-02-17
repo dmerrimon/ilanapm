@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS task_mappings (
     ontology_task_name TEXT NOT NULL,
     confidence REAL DEFAULT 0.0,
     confirmed_by_user INTEGER DEFAULT 0,  -- SQLite uses INTEGER for boolean
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
     UNIQUE(org_id, customer_task_name),
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS project_profiles (
     primary_country TEXT,
     additional_countries TEXT,  -- JSON array as TEXT (SQLite doesn't have array type)
     metadata TEXT,  -- JSON object as TEXT
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS intelligence_usage (
     org_id TEXT NOT NULL,
     user_id TEXT,
     feature TEXT NOT NULL,  -- 'variance_detection', 'task_normalization', etc.
-    timestamp TEXT DEFAULT (datetime('now')),
+    timestamp TEXT DEFAULT (NOW()),
     execution_time_ms INTEGER,
     tasks_analyzed INTEGER,
     variances_detected INTEGER,
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS org_benchmarks (
     p75_days REAL NOT NULL,
     sample_size INTEGER NOT NULL,
     confidence REAL NOT NULL,
-    last_updated TEXT DEFAULT (datetime('now')),
+    last_updated TEXT DEFAULT (NOW()),
     UNIQUE(org_id, ontology_task_id),
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS calibration_results (
     patterns_detected TEXT,  -- JSON array of pattern detections
     quality_metrics TEXT,  -- JSON object with quality metrics
     metadata TEXT,  -- JSON object with additional metadata
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
 

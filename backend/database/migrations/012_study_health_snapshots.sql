@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS study_health_snapshots (
 
     -- Snapshot metadata
     snapshot_date DATE NOT NULL,
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
 
     -- One snapshot per project per day
     UNIQUE(org_id, project_id, snapshot_date)
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS dashboard_views (
     user_id TEXT REFERENCES users(user_id),
     view_type TEXT NOT NULL,  -- 'leadership_dashboard', 'portfolio_summary'
     view_data TEXT NOT NULL,  -- JSON with complete dashboard data
-    generated_at TEXT DEFAULT (datetime('now')),
+    generated_at TEXT DEFAULT (NOW()),
     expires_at TEXT,  -- Cache expiration timestamp
 
     -- Filter/sort preferences (for user-specific views)

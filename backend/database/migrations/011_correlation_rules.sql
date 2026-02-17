@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS correlation_rules (
     reasoning_template TEXT,  -- Template for human-readable explanation
 
     -- Metadata
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
     is_active BOOLEAN DEFAULT TRUE
 );
 

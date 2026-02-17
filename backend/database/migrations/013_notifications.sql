@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     status TEXT NOT NULL DEFAULT 'pending',  -- 'pending', 'sent', 'failed'
 
     -- Timestamps
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
     sent_at TEXT,
 
     -- Error tracking
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS notification_digest_queue (
     notification_ids TEXT NOT NULL,  -- JSON array of notification IDs
     scheduled_for TEXT NOT NULL,  -- When to send digest
     status TEXT DEFAULT 'pending',  -- 'pending', 'sent', 'failed'
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
     sent_at TEXT
 );
 

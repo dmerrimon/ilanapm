@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS cross_study_patterns (
     recommended_action TEXT,
 
     -- Metadata
-    detected_at TEXT DEFAULT (datetime('now')),
+    detected_at TEXT DEFAULT (NOW()),
     resolved_at TEXT,
     resolution_notes TEXT
 );
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS systemic_issues (
     responsible_party TEXT,  -- 'director', 'vp', 'executive'
 
     -- Metadata
-    detected_at TEXT DEFAULT (datetime('now')),
+    detected_at TEXT DEFAULT (NOW()),
     resolved_at TEXT,
     resolution_notes TEXT,
     intervention_taken TEXT
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS portfolio_health_snapshots (
 
     -- Metadata
     snapshot_date DATE NOT NULL,
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
 
     -- One snapshot per org per day
     UNIQUE(org_id, snapshot_date)
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS resource_allocations (
 
     -- Metadata
     analysis_date DATE NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (NOW())
 );
 
 CREATE INDEX IF NOT EXISTS idx_resource_allocations_org

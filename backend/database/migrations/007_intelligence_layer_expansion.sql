@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS timeline_templates (
     applicable_phases TEXT,  -- JSON array: ["Phase I", "Phase II", "Phase III"]
     applicable_authorities TEXT,  -- JSON array: ["FDA", "EMA", "PPB"]
     org_id TEXT,  -- NULL = system template, non-NULL = custom org template
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
 
@@ -57,8 +57,8 @@ CREATE TABLE IF NOT EXISTS template_tasks (
     sort_order INTEGER NOT NULL,
     outline_level INTEGER DEFAULT 1,  -- 1 = top level, 2 = subtask, etc.
 
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
 
     FOREIGN KEY (template_id) REFERENCES timeline_templates(template_id) ON DELETE CASCADE,
     FOREIGN KEY (parent_task_id) REFERENCES template_tasks(task_id) ON DELETE SET NULL
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS template_dependencies (
     lag_days INTEGER DEFAULT 0,
     is_hard_dependency INTEGER DEFAULT 1,  -- Boolean: 1 = hard blocker, 0 = soft
 
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
 
     FOREIGN KEY (template_id) REFERENCES timeline_templates(template_id) ON DELETE CASCADE,
     FOREIGN KEY (predecessor_task_id) REFERENCES template_tasks(task_id) ON DELETE CASCADE,
@@ -106,8 +106,8 @@ CREATE TABLE IF NOT EXISTS tracker_definitions (
     signal_extraction_rules TEXT,  -- JSON: Rules for extracting signals from this tracker
     version TEXT NOT NULL DEFAULT '1.0',
     is_system_tracker INTEGER DEFAULT 1,  -- Boolean: 1 = built-in, 0 = custom
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW())
 );
 
 CREATE INDEX IF NOT EXISTS idx_tracker_definitions_type ON tracker_definitions(tracker_type);
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS tracker_uploads (
     tracker_def_id TEXT NOT NULL,
 
     uploaded_by TEXT,
-    upload_timestamp TEXT DEFAULT (datetime('now')),
+    upload_timestamp TEXT DEFAULT (NOW()),
     original_filename TEXT,
     file_hash TEXT,  -- SHA256 for deduplication
 
@@ -183,8 +183,8 @@ CREATE TABLE IF NOT EXISTS signals (
     responsible_party TEXT,
     assigned_to TEXT,  -- user_id
 
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
 
     FOREIGN KEY (upload_id) REFERENCES tracker_uploads(upload_id) ON DELETE CASCADE,
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE,
@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS signal_state_history (
     old_value TEXT,
     new_value TEXT,
     changed_by TEXT,  -- user_id
-    changed_at TEXT DEFAULT (datetime('now')),
+    changed_at TEXT DEFAULT (NOW()),
 
     FOREIGN KEY (signal_id) REFERENCES signals(signal_id) ON DELETE CASCADE,
     FOREIGN KEY (changed_by) REFERENCES users(user_id) ON DELETE SET NULL
@@ -245,7 +245,7 @@ CREATE TABLE IF NOT EXISTS signal_timeline_correlations (
     correlation_rule_id TEXT,
     correlation_reasoning TEXT,  -- Human-readable explanation
 
-    detected_at TEXT DEFAULT (datetime('now')),
+    detected_at TEXT DEFAULT (NOW()),
     resolved_at TEXT,
 
     FOREIGN KEY (signal_id) REFERENCES signals(signal_id) ON DELETE CASCADE
@@ -271,8 +271,8 @@ CREATE TABLE IF NOT EXISTS escalation_rules (
     escalation_channel TEXT DEFAULT 'dashboard',  -- "dashboard", "email", "slack", "sms"
     notification_template TEXT,
     is_active INTEGER DEFAULT 1,  -- Boolean
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW())
 );
 
 CREATE INDEX IF NOT EXISTS idx_escalation_rules_level ON escalation_rules(escalation_level);
@@ -302,7 +302,7 @@ CREATE TABLE IF NOT EXISTS escalations (
     intervention_taken TEXT,  -- What was actually done
     resolution_notes TEXT,
 
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
     acknowledged_at TEXT,
     resolved_at TEXT,
 
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS study_health_snapshots (
     recommended_actions TEXT,
 
     snapshot_date TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
 
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE
 );
@@ -369,7 +369,7 @@ CREATE TABLE IF NOT EXISTS dashboard_views (
     user_id TEXT,
     view_type TEXT NOT NULL,  -- "cpm_daily", "director_weekly", "vp_monthly", "portfolio_summary"
     view_data TEXT NOT NULL,  -- JSON: Full dashboard data
-    generated_at TEXT DEFAULT (datetime('now')),
+    generated_at TEXT DEFAULT (NOW()),
     expires_at TEXT,
 
     FOREIGN KEY (org_id) REFERENCES organizations(org_id) ON DELETE CASCADE,
@@ -409,7 +409,7 @@ CREATE TABLE IF NOT EXISTS patterns (
     -- Recommendations
     recommended_interventions TEXT,  -- JSON array
 
-    detected_at TEXT DEFAULT (datetime('now')),
+    detected_at TEXT DEFAULT (NOW()),
     resolved_at TEXT,
     status TEXT DEFAULT 'active',  -- "active", "acknowledged", "mitigated", "resolved"
 

@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS tracker_column_mappings (
     transformation_rules TEXT,  -- JSON
 
     created_by TEXT REFERENCES users(user_id),
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (NOW()),
+    updated_at TEXT DEFAULT (NOW()),
 
     UNIQUE(org_id, tracker_type)
 );
