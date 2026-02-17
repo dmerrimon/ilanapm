@@ -301,5 +301,88 @@ export const apiClient = {
     method: 'PUT',
     body: data ? JSON.stringify(data) : undefined,
   }),
+  patch: <T = any>(endpoint: string, data?: any) => apiRequest<T>(endpoint, {
+    method: 'PATCH',
+    body: data ? JSON.stringify(data) : undefined,
+  }),
   delete: <T = any>(endpoint: string) => apiRequest<T>(endpoint, { method: 'DELETE' }),
 };
+
+// ============================================================================
+// User Management (Super Admin)
+// ============================================================================
+
+export interface User {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  last_login: string | null;
+  org_id: string;
+  org_name: string;
+  device_count: number;
+}
+
+export interface UsersResponse {
+  users: User[];
+  count: number;
+  total_count: number;
+  limit: number;
+  offset: number;
+}
+
+export interface UserManagementParams {
+  org_id?: string;
+  search?: string;
+  status?: 'active' | 'inactive';
+  limit?: number;
+  offset?: number;
+}
+
+export async function getAllUsers(params?: UserManagementParams): Promise<UsersResponse> {
+  const queryParams = new URLSearchParams();
+  if (params?.org_id) queryParams.append('org_id', params.org_id);
+  if (params?.search) queryParams.append('search', params.search);
+  if (params?.status) queryParams.append('status', params.status);
+  if (params?.limit) queryParams.append('limit', params.limit.toString());
+  if (params?.offset) queryParams.append('offset', params.offset.toString());
+
+  const query = queryParams.toString();
+  return apiRequest<UsersResponse>(`/portal/founder/users${query ? `?${query}` : ''}`);
+}
+
+export async function getCustomerUsers(orgId: string): Promise<{
+  org_id: string;
+  org_name: string;
+  users: User[];
+  count: number;
+}> {
+  return apiRequest(`/portal/founder/customers/${orgId}/users`);
+}
+
+export async function toggleUserActive(userId: string): Promise<{
+  message: string;
+  user_id: string;
+  email: string;
+  is_active: boolean;
+  devices_deactivated: number;
+}> {
+  return apiRequest(`/portal/founder/users/${userId}/toggle-active`, {
+    method: 'PATCH',
+  });
+}
+
+export async function resetUserPassword(userId: string): Promise<{
+  message: string;
+  user_id: string;
+  email: string;
+  email_sent: boolean;
+  expires_at: string;
+}> {
+  return apiRequest(`/portal/founder/users/${userId}/reset-password`, {
+    method: 'POST',
+  });
+}

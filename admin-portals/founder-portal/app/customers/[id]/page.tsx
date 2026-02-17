@@ -1,35 +1,72 @@
 'use client';
 
 import { useParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { apiClient } from "@/lib/api-client";
+
+interface User {
+  user_id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  last_login: string | null;
+  device_count: number;
+}
 
 export default function CustomerDetailPage() {
   const params = useParams();
   const customerId = params.id;
 
-  // TODO: Fetch actual customer data from API
-  const customer = {
-    org_id: customerId,
-    org_name: "MedTech Solutions",
-    admin_email: "admin@medtech.com",
-    seats_purchased: 50,
-    seats_used: 42,
-    seats_available: 8,
-    seat_rate: 18.00,
-    billing_cycle: "monthly",
-    mrr: 900.00,
-    status: "active",
-    license_key: "SELEEN-MTCH-5024-XK7P",
-    created_at: "2026-02-05",
-    next_billing_date: "2026-03-05"
+  const [customer, setCustomer] = useState<any>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchCustomerData();
+    fetchUsers();
+  }, [customerId]);
+
+  const fetchCustomerData = async () => {
+    try {
+      const response = await apiClient.get(`/portal/founder/customers/${customerId}`);
+      setCustomer(response);
+    } catch (err: any) {
+      setError(err.message || "Failed to load customer data");
+    }
   };
 
-  const users = [
-    { name: "John Doe", email: "john.doe@medtech.com", role: "admin", last_login: "2026-02-06" },
-    { name: "Jane Smith", email: "jane.smith@medtech.com", role: "user", last_login: "2026-02-06" },
-    { name: "Bob Johnson", email: "bob.johnson@medtech.com", role: "user", last_login: "2026-02-05" },
-  ];
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(`/portal/founder/customers/${customerId}/users`);
+      setUsers(response.users);
+    } catch (err: any) {
+      setError(err.message || "Failed to load users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback data while loading or if API fails
+  if (!customer) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+            Loading customer details...
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const activity = [
     { action: "Template generated", user: "John Doe", timestamp: "2026-02-06 10:30 AM" },
@@ -130,27 +167,57 @@ export default function CustomerDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Users */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl text-black">Users ({users.length})</h2>
+              <Link
+                href={`/users?org_id=${customerId}`}
+                className="text-sm text-black hover:underline"
+              >
+                View All →
+              </Link>
             </div>
             <div className="p-6">
-              <div className="space-y-3">
-                {users.map((user, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                    <div>
-                      <div className="text-black font-medium">{user.name}</div>
-                      <div className="text-sm text-gray-600">{user.email}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`px-2 py-1 text-xs rounded ${
-                        user.role === 'admin' ? 'bg-black text-white' : 'bg-gray-200 text-black'
-                      }`}>
-                        {user.role}
+              {loading ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black mx-auto mb-2"></div>
+                  Loading users...
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No users in this organization yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div key={user.user_id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <div className="flex-1">
+                        <div className="text-black font-medium">
+                          {user.first_name && user.last_name
+                            ? `${user.first_name} ${user.last_name}`
+                            : user.email}
+                        </div>
+                        <div className="text-sm text-gray-600">{user.email}</div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {user.device_count > 0 ? `${user.device_count} device${user.device_count !== 1 ? 's' : ''}` : 'No devices'}
+                          {user.last_login && ` • Last login ${new Date(user.last_login).toLocaleDateString()}`}
+                        </div>
+                      </div>
+                      <div className="text-right flex items-center gap-2">
+                        <div className={`px-2 py-1 text-xs rounded ${
+                          user.role === 'admin' || user.role === 'super_admin' ? 'bg-black text-white' : 'bg-gray-200 text-black'
+                        }`}>
+                          {user.role}
+                        </div>
+                        {!user.is_active && (
+                          <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-800">
+                            Inactive
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

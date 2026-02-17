@@ -17,6 +17,7 @@ export default function Header() {
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/customers", label: "Customers" },
+    { href: "/users", label: "Users" },
     { href: "/devices", label: "Devices" },
     { href: "/licenses", label: "Licenses" },
     { href: "/analytics", label: "Analytics" },

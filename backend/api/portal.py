@@ -1559,6 +1559,336 @@ async def founder_generate_license(
         )
 
 
+@router.get("/portal/founder/users")
+async def founder_get_all_users(
+    user_data: dict = Depends(require_super_admin_role),
+    org_id: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),  # 'active', 'inactive', or None for all
+    limit: int = Query(100, le=1000),
+    offset: int = Query(0)
+):
+    """
+    Get all users across all organizations (super admin only)
+
+    **Filters:**
+    - org_id: Filter by specific organization
+    - search: Search by email, first_name, last_name
+    - status: Filter by 'active' or 'inactive'
+    - limit: Max results to return (default 100, max 1000)
+    - offset: Pagination offset
+
+    **Returns:** List of users with org info and device count
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        query = """
+            SELECT
+                u.user_id, u.email, u.first_name, u.last_name,
+                u.role, u.is_active, u.created_at, u.last_login,
+                o.org_id, o.org_name,
+                COUNT(a.activation_id) as device_count
+            FROM users u
+            LEFT JOIN organizations o ON u.org_id = o.org_id
+            LEFT JOIN activations a ON u.user_id = a.user_id AND a.is_active = TRUE
+            WHERE 1=1
+        """
+        params = []
+
+        if org_id:
+            query += " AND u.org_id = ?"
+            params.append(org_id)
+
+        if search:
+            query += " AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)"
+            search_pattern = f"%{search}%"
+            params.extend([search_pattern, search_pattern, search_pattern])
+
+        if status == 'active':
+            query += " AND u.is_active = TRUE"
+        elif status == 'inactive':
+            query += " AND u.is_active = FALSE"
+
+        query += """
+            GROUP BY u.user_id, u.email, u.first_name, u.last_name,
+                     u.role, u.is_active, u.created_at, u.last_login,
+                     o.org_id, o.org_name
+            ORDER BY u.created_at DESC
+            LIMIT ? OFFSET ?
+        """
+        params.extend([limit, offset])
+
+        cursor.execute(query, params)
+        users = cursor.fetchall()
+
+        # Get total count
+        count_query = """
+            SELECT COUNT(DISTINCT u.user_id)
+            FROM users u
+            LEFT JOIN organizations o ON u.org_id = o.org_id
+            WHERE 1=1
+        """
+        count_params = []
+
+        if org_id:
+            count_query += " AND u.org_id = ?"
+            count_params.append(org_id)
+
+        if search:
+            count_query += " AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)"
+            search_pattern = f"%{search}%"
+            count_params.extend([search_pattern, search_pattern, search_pattern])
+
+        if status == 'active':
+            count_query += " AND u.is_active = TRUE"
+        elif status == 'inactive':
+            count_query += " AND u.is_active = FALSE"
+
+        cursor.execute(count_query, count_params)
+        total_count = cursor.fetchone()[0]
+
+        return {
+            "users": [dict(u) for u in users],
+            "count": len(users),
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+
+
+@router.get("/portal/founder/customers/{org_id}/users")
+async def founder_get_customer_users(
+    org_id: str,
+    user_data: dict = Depends(require_super_admin_role)
+):
+    """
+    Get all users for a specific organization (super admin only)
+    Used in customer detail page to show real user data
+
+    **Returns:** List of users with device counts for the organization
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Verify org exists
+        cursor.execute("""
+            SELECT org_id, org_name FROM organizations WHERE org_id = ?
+        """, (org_id,))
+
+        org = cursor.fetchone()
+        if not org:
+            raise HTTPException(status_code=404, detail="Organization not found")
+
+        # Get users with device counts
+        cursor.execute("""
+            SELECT
+                u.user_id, u.email, u.first_name, u.last_name,
+                u.role, u.is_active, u.created_at, u.last_login,
+                COUNT(a.activation_id) as device_count
+            FROM users u
+            LEFT JOIN activations a ON u.user_id = a.user_id AND a.is_active = TRUE
+            WHERE u.org_id = ?
+            GROUP BY u.user_id, u.email, u.first_name, u.last_name,
+                     u.role, u.is_active, u.created_at, u.last_login
+            ORDER BY u.created_at DESC
+        """, (org_id,))
+
+        users = cursor.fetchall()
+
+        return {
+            "org_id": org_id,
+            "org_name": org["org_name"],
+            "users": [dict(u) for u in users],
+            "count": len(users)
+        }
+
+
+@router.patch("/portal/founder/users/{user_id}/toggle-active")
+async def founder_toggle_user_active(
+    user_id: str,
+    user_data: dict = Depends(require_super_admin_role)
+):
+    """
+    Toggle user active status (super admin only)
+
+    When deactivating a user:
+    - Sets is_active = FALSE
+    - Deactivates all user's devices
+    - Frees up seats
+
+    When activating a user:
+    - Sets is_active = TRUE
+    - User can activate new devices
+
+    **Returns:** Updated user status
+    """
+    admin_user_id = user_data["user_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Get current user status
+        cursor.execute("""
+            SELECT user_id, email, is_active, org_id, first_name, last_name
+            FROM users
+            WHERE user_id = ?
+        """, (user_id,))
+
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        new_status = not user["is_active"]
+
+        # Update user status
+        cursor.execute("""
+            UPDATE users
+            SET is_active = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+        """, (new_status, user_id))
+
+        devices_deactivated = 0
+
+        # If deactivating, deactivate all devices
+        if not new_status:
+            cursor.execute("""
+                UPDATE activations
+                SET is_active = FALSE, deactivated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND is_active = TRUE
+            """, (user_id,))
+
+            devices_deactivated = cursor.rowcount
+
+            # Update seats_used count
+            if devices_deactivated > 0:
+                cursor.execute("""
+                    UPDATE organizations
+                    SET seats_used = seats_used - ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE org_id = ?
+                """, (devices_deactivated, user["org_id"]))
+
+        # Log action
+        cursor.execute("""
+            INSERT INTO audit_logs (
+                log_id, org_id, user_id, action,
+                resource_type, resource_id, metadata, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            secrets.token_urlsafe(16),
+            user["org_id"],
+            admin_user_id,
+            'user_toggled_by_super_admin',
+            'user',
+            user_id,
+            json.dumps({
+                "email": user["email"],
+                "new_status": "active" if new_status else "inactive",
+                "admin_user_id": admin_user_id,
+                "devices_deactivated": devices_deactivated
+            })
+        ))
+
+        conn.commit()
+
+        logger.info(
+            f"User {'activated' if new_status else 'deactivated'} by super admin: "
+            f"user={user['email']}, devices_deactivated={devices_deactivated}, admin={admin_user_id}"
+        )
+
+        return {
+            "message": f"User {'activated' if new_status else 'deactivated'} successfully",
+            "user_id": user_id,
+            "email": user["email"],
+            "is_active": new_status,
+            "devices_deactivated": devices_deactivated
+        }
+
+
+@router.post("/portal/founder/users/{user_id}/reset-password")
+async def founder_reset_user_password(
+    user_id: str,
+    user_data: dict = Depends(require_super_admin_role)
+):
+    """
+    Force password reset for a user (super admin only)
+
+    Generates a password reset token and sends email to the user.
+    This is a support function to help users who are locked out.
+
+    **Returns:** Confirmation that reset email was sent
+    """
+    admin_user_id = user_data["user_id"]
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+
+        # Get user
+        cursor.execute("""
+            SELECT user_id, email, first_name, org_id
+            FROM users
+            WHERE user_id = ?
+        """, (user_id,))
+
+        user = cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Generate reset token
+        reset_token = secrets.token_urlsafe(32)
+        expires_at = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+
+        # Store token
+        cursor.execute("""
+            INSERT INTO password_reset_tokens (email, token, expires_at, used)
+            VALUES (?, ?, ?, FALSE)
+        """, (user["email"], reset_token, expires_at))
+
+        # Send email
+        from services.email_service import send_password_reset_email
+        email_sent = send_password_reset_email(
+            to_email=user["email"],
+            reset_token=reset_token,
+            user_name=user.get('first_name')
+        )
+
+        # Log action
+        cursor.execute("""
+            INSERT INTO audit_logs (
+                log_id, org_id, user_id, action,
+                resource_type, resource_id, metadata, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """, (
+            secrets.token_urlsafe(16),
+            user["org_id"],
+            admin_user_id,
+            'password_reset_forced_by_super_admin',
+            'user',
+            user_id,
+            json.dumps({
+                "target_email": user["email"],
+                "admin_user_id": admin_user_id,
+                "email_sent": email_sent
+            })
+        ))
+
+        conn.commit()
+
+        logger.info(
+            f"Password reset forced by super admin: user={user['email']}, "
+            f"email_sent={email_sent}, admin={admin_user_id}"
+        )
+
+        return {
+            "message": "Password reset email sent" if email_sent else "Password reset initiated (email failed)",
+            "user_id": user_id,
+            "email": user["email"],
+            "email_sent": email_sent,
+            "expires_at": expires_at
+        }
+
+
 # ============================================================================
 # TRACKER UPLOAD WITH SIGNAL EXTRACTION
 # ============================================================================
