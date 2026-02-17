@@ -16,7 +16,7 @@ import logging
 from jose import JWTError, jwt
 from datetime import datetime
 
-from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal, freshbooks, intelligence, signals
+from api import health, validate, config, analytics, advisory, teams, feedback, templates, licensing, admin, debug, telemetry, portal, freshbooks, intelligence, signals, account_management
 from database import init_db, run_migrations
 
 # Configure logging
@@ -141,6 +141,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(licensing.router, prefix="/api/v1", tags=["licensing"])  # NEW: License activation & validation
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])  # NEW: Admin endpoints for org/license management
 app.include_router(portal.router, prefix="/api/v1", tags=["portal"])  # NEW: Customer & Founder portals
+app.include_router(account_management.router, prefix="/api/v1", tags=["account"])  # NEW: Account settings & tracker configuration
 app.include_router(intelligence.router, prefix="/api/v1", tags=["intelligence"])  # NEW: Intelligence layer (variance detection, benchmarks)
 app.include_router(signals.router, prefix="/api/v1", tags=["signals"])  # NEW: Signal & escalation retrieval endpoints
 app.include_router(debug.router, prefix="/api/v1", tags=["debug"])  # Debug endpoints
