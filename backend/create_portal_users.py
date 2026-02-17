@@ -58,7 +58,22 @@ def create_test_users():
             else:
                 print(f"✅ Admin user already exists: {admin_email}")
 
-            # Create super_admin user (for founder portal)
+            # Create Seleen Internal organization for super admin
+            cursor.execute("SELECT org_id FROM organizations WHERE org_name = 'Seleen Internal' LIMIT 1")
+            seleen_org = cursor.fetchone()
+
+            if not seleen_org:
+                seleen_org_id = f"org_{secrets.token_urlsafe(16)}"
+                cursor.execute("""
+                    INSERT INTO organizations (org_id, org_name, tier, seats_purchased, subscription_start, subscription_end, status)
+                    VALUES (?, ?, ?, ?, DATE('now'), DATE('now', '+10 years'), ?)
+                """, (seleen_org_id, "Seleen Internal", "enterprise", 100, "active"))
+                print(f"✅ Created Seleen Internal organization: {seleen_org_id}")
+            else:
+                seleen_org_id = seleen_org["org_id"]
+                print(f"✅ Using existing Seleen Internal organization: {seleen_org_id}")
+
+            # Create super_admin user (for founder portal) in Seleen Internal org
             super_admin_email = "founder@seleen.com"
             cursor.execute("SELECT user_id FROM users WHERE email = ?", (super_admin_email,))
             if not cursor.fetchone():
@@ -69,7 +84,7 @@ def create_test_users():
                     INSERT INTO users (user_id, org_id, email, password_hash, role, first_name, last_name, is_active,
                                        customer_portal_access, founder_portal_access)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (super_admin_user_id, org_id, super_admin_email, super_admin_password, "super_admin",
+                """, (super_admin_user_id, seleen_org_id, super_admin_email, super_admin_password, "super_admin",
                       "Founder", "Admin", True, False, True))
 
                 print(f"✅ Created super_admin user:")
